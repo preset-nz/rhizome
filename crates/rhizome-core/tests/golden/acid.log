@@ -1,0 +1,46 @@
+== Build ==
+/images  order draw  [] → [sea, sky]
+/images/hero  added group
+/images/sea  added image
+/images/sky  added image
+/images/sky/blur  added blur
+/masks/vignette  added mask
+/modulators/wobble  added lfo
+/renders/final  added render
+== Rename ==
+/images/dusk  moved from /images/sky
+== Reorder ==
+/images  order draw  [sea, dusk] → [dusk, sea]
+== Move Blur ==
+/images/dusk  order modifiers  [blur] → []
+/images/sea/blur  moved from /images/dusk/blur
+== Append ==
+/images/sea  order modifiers  [] → [blur]
+== Reset ==
+/images/dusk  opacity  0.8 → unset
+== Unique ==
+/images/dusk-2  added image
+== Leave ==
+/images/hero  members  -/images/sea
+== Unbind ==
+/images/dusk  value opacity ← /modulators/wobble  bound {depth=0.25} → unbound
+== Clear Ref ==
+/images/dusk  source  file:sky.png → unset
+== Duplicate ==
+/images  order draw  [dusk, sea] → [dusk, sea, sea-2]
+/images/sea-2  added image
+/images/sea-2/blur  added blur
+== Join ==
+/images/hero  members  +/images/sea-2
+== Point Final ==
+/renders/final  input  /images/dusk → /images/sea-2
+== Bind Sea ==
+/images/sea  slot mask ← /masks/vignette  unbound → bound
+== Remove ==
+/images  order draw  [dusk, sea, sea-2] → [dusk, sea]
+/images/dusk  slot mask ← /masks/vignette  bound → unbound
+/images/hero  members  -/images/sea-2
+/images/sea  slot mask ← /masks/vignette  bound → unbound
+/images/sea-2  removed
+/images/sea-2/blur  removed
+/masks/vignette  removed

@@ -1,0 +1,137 @@
+{
+  "rhizome": 1,
+  "nodes": [
+    {
+      "path": "/",
+      "id": "00000000000000000000000001",
+      "type": "root"
+    },
+    {
+      "path": "/images",
+      "id": "00000000000000000000000002",
+      "type": "category",
+      "orders": {
+        "draw": [
+          "00000000000000000000000008",
+          "00000000000000000000000006"
+        ]
+      }
+    },
+    {
+      "path": "/images/hero",
+      "id": "00000000000000000000000009",
+      "type": "group",
+      "members": [
+        "00000000000000000000000006",
+        "00000000000000000000000008"
+      ]
+    },
+    {
+      "path": "/images/sea",
+      "id": "00000000000000000000000008",
+      "type": "image"
+    },
+    {
+      "path": "/images/sky",
+      "id": "00000000000000000000000006",
+      "type": "image",
+      "values": {
+        "blend": "screen",
+        "label": "Sky at dusk",
+        "layer": 3,
+        "offset": [
+          12.5,
+          -4.0
+        ],
+        "opacity": 0.8,
+        "tint": [
+          1.0,
+          0.8,
+          0.6,
+          1.0
+        ],
+        "visible": false
+      },
+      "refs": {
+        "source": {
+          "file": "sky.png"
+        }
+      },
+      "orders": {
+        "modifiers": [
+          "00000000000000000000000007"
+        ]
+      },
+      "bindings": [
+        {
+          "on": {
+            "slot": "mask"
+          },
+          "source": "0000000000000000000000000A"
+        },
+        {
+          "on": {
+            "value": "opacity"
+          },
+          "source": "0000000000000000000000000B",
+          "values": {
+            "depth": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "path": "/images/sky/blur",
+      "id": "00000000000000000000000007",
+      "type": "blur",
+      "values": {
+        "axis": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "radius": 18.0
+      }
+    },
+    {
+      "path": "/masks",
+      "id": "00000000000000000000000003",
+      "type": "category"
+    },
+    {
+      "path": "/masks/vignette",
+      "id": "0000000000000000000000000A",
+      "type": "mask"
+    },
+    {
+      "path": "/modulators",
+      "id": "00000000000000000000000004",
+      "type": "category"
+    },
+    {
+      "path": "/modulators/wobble",
+      "id": "0000000000000000000000000B",
+      "type": "lfo",
+      "values": {
+        "rate": 0.25,
+        "shape": "square"
+      }
+    },
+    {
+      "path": "/renders",
+      "id": "00000000000000000000000005",
+      "type": "category"
+    },
+    {
+      "path": "/renders/final",
+      "id": "0000000000000000000000000C",
+      "type": "render",
+      "refs": {
+        "input": {
+          "node": "00000000000000000000000006",
+          "path": "/images/sky"
+        }
+      }
+    }
+  ]
+}

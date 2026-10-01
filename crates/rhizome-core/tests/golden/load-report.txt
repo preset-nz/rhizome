@@ -1,0 +1,9 @@
+/extra: unknown category, kept as is
+/images/a: `blend` has no choice overlay, dropped
+/images/a: `layer` should be Int, dropped
+/images/a: unknown key `nope`, dropped
+/images/a: `opacity` = 4.0 is out of range, clamped to 1.0
+/images/b: duplicate id, dropped
+/images/c/d: parent is missing, dropped
+/images/e: invalid id, dropped
+/loose: only categories live at /, dropped
