@@ -2,7 +2,7 @@
 title: Rhizome — the node API and object models the desktop suite shares
 type: design
 status: draft
-updated: 2026-09-17
+updated: 2026-10-02
 ---
 
 # Rhizome — node API and object models
@@ -190,7 +190,7 @@ A search result is never serialised and never diffed. Only the query is.
 
 ## The API
 
-A sketch, not a signature. Node types come from the registry the object model filled (decision 20); `add` names a declared type.
+A sketch, not a signature. **Superseded by [`rhizome-api.md`](rhizome-api.md)** (2026-10-02): verbs, shape and guarantees from the caller's side. Node types come from the registry the object model filled (decision 20); `add` names a declared type.
 
 ```rust
 let root = api::node("/");
