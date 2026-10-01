@@ -70,6 +70,11 @@ The object-model name is Georg's choice, after Houdini's HOM. In Houdini, HOM al
 27. **Structural edits mid-performance use a whole-plan crossfade first.** State migration by node id comes when a delay tail makes it matter. Georg: *"Shard is likely the only app that has an author and a performance mode, if at all."* It is a Shard concern, not an API one.
 28. **Oblique's transport (wasm or Tauri commands) is decided when Oblique migrates.**
 
+**From the API layout of 2026-10-02** ([`rhizome-api.md`](rhizome-api.md)):
+
+29. **Unknown node types pass through.** *"Unsupported nodes, yes, keep, don't change. Treat as pass-through noop."* Loaded as opaque nodes: reported, refused by every write verb, carried along when an ancestor is removed, moved or copied, and saved back byte for byte.
+30. **Don't overfit to Shard.** Shard is the first consumer, not the shape. A core feature needs a second app that wants it.
+
 ---
 
 ## The model
@@ -95,7 +100,7 @@ registry.declare(NodeType {
 });
 ```
 
-The core validates values against the schema on write, serialises the type name with the node, and refuses a file naming a type the running app never declared, reporting it the way Shard's `LoadReport` reports an unknown id. Shard's `ParamDef` table is the precedent for what a value schema holds: range, default, taper, unit, smoothing.
+The core validates values against the schema on write, serialises the type name with the node, and keeps a node whose type the running app never declared as an **opaque** node: reported, never edited, saved back unchanged (decision 29, superseding the earlier "refuses a file"). Shard's `ParamDef` table is the precedent for what a value schema holds: range, default, taper, unit, smoothing.
 
 ### Categories — where nodes live
 
