@@ -31,7 +31,9 @@ impl ObjectModel for Synth {
     const EXTENSION: &'static str = "synth";
     type Projection = Plan;
 
-    fn kinds(k: &mut Kinds) {
+    type Context = ();
+
+    fn kinds(k: &mut Kinds, _: &()) {
         k.category("voices", Origin::Loaded)
             .category("mods", Origin::Loaded);
         k.kind(NodeType::new("voice").in_categories(&["voices"]).float(
@@ -409,7 +411,9 @@ impl ObjectModel for Atlas {
     const EXTENSION: &'static str = "atlas";
     type Projection = Vec<String>;
 
-    fn kinds(k: &mut Kinds) {
+    type Context = ();
+
+    fn kinds(k: &mut Kinds, _: &()) {
         k.category("campaigns", Origin::Loaded);
         k.category("themes", Origin::Loaded);
         // a theme is a node with values and no op; followers hold a reference to it
@@ -885,7 +889,9 @@ impl ObjectModel for TakesPresets {
     const NAME: &'static str = "x";
     const EXTENSION: &'static str = "x";
     type Projection = ();
-    fn kinds(k: &mut Kinds) {
+    type Context = ();
+
+    fn kinds(k: &mut Kinds, _: &()) {
         k.category("presets", Origin::Loaded);
     }
 }
@@ -952,4 +958,78 @@ fn open_reports_policy_breaches() {
         issues,
         ["/campaigns/realm/north/grid: policy: must stay last in `draw`"]
     );
+}
+
+// ---------------------------------------------------------------- kinds from runtime data
+
+/// A model whose modifier kinds come from a catalogue known only at run time, as an app's
+/// sidecar reports its operations (decision 52).
+struct Stack;
+
+/// Op name and its params.
+type Catalogue = Vec<(&'static str, Vec<ValueSpec>)>;
+
+impl ObjectModel for Stack {
+    const NAME: &'static str = "Stack";
+    const EXTENSION: &'static str = "stack";
+    type Projection = ();
+    type Context = Catalogue;
+
+    fn kinds(k: &mut Kinds, ops: &Catalogue) {
+        k.category("layers", Origin::Loaded);
+        k.kind(NodeType::new("layer").in_categories(&["layers"]));
+        for (name, params) in ops {
+            let mut t = NodeType::new(name).in_categories(&["layers"]);
+            for p in params {
+                t = t.value(p.clone());
+            }
+            k.kind(t);
+        }
+    }
+}
+
+#[test]
+fn kinds_can_come_from_runtime_data() {
+    let with_blur: Catalogue = vec![("blur", vec![ValueSpec::float("radius", 0.0..=50.0, 2.0)])];
+    let store = MemoryStore::default();
+    let mut d = Document::<Stack>::new_in(
+        std::sync::Arc::new(with_blur),
+        store.clone(),
+        IdSource::sequential(),
+    )
+    .unwrap();
+    assert_eq!(d.context()[0].0, "blur");
+    d.edit("Build", |tx| {
+        let l = tx.add("/layers", "layer", "photo")?;
+        let b = tx.add(l, "blur", "blur")?;
+        tx.set_value(b, "radius", Value::Float(9.0))
+    })
+    .unwrap();
+    assert!(
+        d.edit("Too much", |tx| tx.set_value(
+            "/layers/photo/blur",
+            "radius",
+            Value::Float(99.0)
+        ))
+        .is_err(),
+        "the catalogue's range holds"
+    );
+    d.save_as("/a.stack").unwrap();
+    let saved = store.get("/a.stack").unwrap();
+
+    // a build whose sidecar lacks the op: the node opens opaque and saves back unchanged
+    let (mut e, report) = Document::<Stack>::open_in(
+        std::sync::Arc::new(vec![]),
+        store.clone(),
+        "/a.stack",
+        IdSource::sequential(),
+    )
+    .unwrap();
+    assert!(e.tree().at("/layers/photo/blur").unwrap().is_opaque());
+    assert!(
+        report.issues.iter().any(|i| i.message.contains("blur")),
+        "{report:?}"
+    );
+    e.save_as("/b.stack").unwrap();
+    assert_eq!(store.get("/b.stack").unwrap(), saved);
 }

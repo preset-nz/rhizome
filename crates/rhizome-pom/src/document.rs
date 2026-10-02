@@ -97,19 +97,33 @@ pub struct Document<M: ObjectModel> {
 
 impl<M: ObjectModel> Document<M> {
     /// A new, untitled document.
-    pub fn new(store: impl Store + 'static) -> Result<Self> {
+    pub fn new(store: impl Store + 'static) -> Result<Self>
+    where
+        M::Context: Default,
+    {
         Self::new_with_ids(store, IdSource::Ulid)
     }
 
-    pub fn new_with_ids(store: impl Store + 'static, ids: IdSource) -> Result<Self> {
-        let model = Model::<M>::build()?;
+    pub fn new_with_ids(store: impl Store + 'static, ids: IdSource) -> Result<Self>
+    where
+        M::Context: Default,
+    {
+        Self::new_in(Arc::default(), store, ids)
+    }
+
+    /// A new, untitled document of a model built with `cx` (decision 52).
+    pub fn new_in(cx: Arc<M::Context>, store: impl Store + 'static, ids: IdSource) -> Result<Self> {
+        let model = Model::<M>::build(cx)?;
         let tree = Tree::with_ids(model.registry.clone(), ids);
         Ok(Self::from_tree(model, tree, Box::new(store), None))
     }
 
     /// Opens a document. Fails only when the file can't be read or isn't a rhizome file;
     /// everything else it couldn't take as written is in the report.
-    pub fn open(store: impl Store + 'static, path: impl AsRef<Path>) -> Result<(Self, LoadReport)> {
+    pub fn open(store: impl Store + 'static, path: impl AsRef<Path>) -> Result<(Self, LoadReport)>
+    where
+        M::Context: Default,
+    {
         Self::open_with_ids(store, path, IdSource::Ulid)
     }
 
@@ -117,9 +131,22 @@ impl<M: ObjectModel> Document<M> {
         store: impl Store + 'static,
         path: impl AsRef<Path>,
         ids: IdSource,
+    ) -> Result<(Self, LoadReport)>
+    where
+        M::Context: Default,
+    {
+        Self::open_in(Arc::default(), store, path, ids)
+    }
+
+    /// Opens a document of a model built with `cx` (decision 52).
+    pub fn open_in(
+        cx: Arc<M::Context>,
+        store: impl Store + 'static,
+        path: impl AsRef<Path>,
+        ids: IdSource,
     ) -> Result<(Self, LoadReport)> {
         let path = path.as_ref();
-        let model = Model::<M>::build()?;
+        let model = Model::<M>::build(cx)?;
         let text = store.read(path).map_err(|e| io(path, e))?;
         let (tree, mut report) = Tree::load_with_ids(&text, model.registry.clone(), ids)?;
         report_breaches(&model, &tree, &mut report);
@@ -185,6 +212,11 @@ impl<M: ObjectModel> Document<M> {
     /// How many times the whole tree has been replaced since this document was made.
     pub fn generation(&self) -> u64 {
         self.generation
+    }
+
+    /// What the model was built with (decision 52).
+    pub fn context(&self) -> &M::Context {
+        &self.model.context
     }
 
     pub fn policy(&self, type_name: &str) -> Policy {

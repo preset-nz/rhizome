@@ -16,7 +16,9 @@ impl ObjectModel for Loom {
     /// How many threads there are, rebuilt on every change.
     type Projection = usize;
 
-    fn kinds(k: &mut Kinds) {
+    type Context = ();
+
+    fn kinds(k: &mut Kinds, _: &()) {
         k.category("threads", Origin::Loaded);
         k.kind(
             NodeType::new("thread")

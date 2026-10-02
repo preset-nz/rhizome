@@ -150,6 +150,7 @@ struct Inner<M: ObjectModel> {
 /// One open document of `M`, shared between the transport and the app's own Rust.
 pub struct Pom<M: ObjectModel> {
     inner: Mutex<Inner<M>>,
+    cx: Arc<M::Context>,
     store: StoreFn,
     ids: IdsFn,
     on_change: Vec<ChangeFn<M>>,
@@ -157,16 +158,36 @@ pub struct Pom<M: ObjectModel> {
 
 impl<M: ObjectModel> Pom<M> {
     /// Documents on disk, starting untitled.
-    pub fn files() -> Result<Self> {
-        Self::new(|| Box::new(FileStore), || IdSource::Ulid)
+    pub fn files() -> Result<Self>
+    where
+        M::Context: Default,
+    {
+        Self::files_in(Arc::default())
+    }
+
+    /// Documents on disk of a model built with `cx` (decision 52), starting untitled.
+    pub fn files_in(cx: Arc<M::Context>) -> Result<Self> {
+        Self::new_in(cx, || Box::new(FileStore), || IdSource::Ulid)
     }
 
     /// Documents in `store`, made fresh for each document, with ids from `ids`.
     pub fn new(
         store: impl Fn() -> Box<dyn Store> + Send + Sync + 'static,
         ids: impl Fn() -> IdSource + Send + Sync + 'static,
+    ) -> Result<Self>
+    where
+        M::Context: Default,
+    {
+        Self::new_in(Arc::default(), store, ids)
+    }
+
+    /// As [`Pom::new`], for a model built with `cx`.
+    pub fn new_in(
+        cx: Arc<M::Context>,
+        store: impl Fn() -> Box<dyn Store> + Send + Sync + 'static,
+        ids: impl Fn() -> IdSource + Send + Sync + 'static,
     ) -> Result<Self> {
-        let doc = Document::new_with_ids(store(), ids())?;
+        let doc = Document::new_in(cx.clone(), store(), ids())?;
         Ok(Pom {
             inner: Mutex::new(Inner {
                 doc,
@@ -175,6 +196,7 @@ impl<M: ObjectModel> Pom<M> {
                 replaced: 0,
                 sent: None,
             }),
+            cx,
             store: Box::new(store),
             ids: Box::new(ids),
             on_change: Vec::new(),
@@ -360,13 +382,13 @@ impl<M: ObjectModel> Host for Pom<M> {
     }
 
     fn new_document(&self) -> Result<Vec<Event>> {
-        let doc = Document::new_with_ids((self.store)(), (self.ids)())?;
+        let doc = Document::new_in(self.cx.clone(), (self.store)(), (self.ids)())?;
         let mut inner = self.lock();
         Ok(self.replace(&mut inner, doc))
     }
 
     fn open(&self, path: &Path) -> Result<(Vec<Issue>, Vec<Event>)> {
-        let (doc, report) = Document::open_with_ids((self.store)(), path, (self.ids)())?;
+        let (doc, report) = Document::open_in(self.cx.clone(), (self.store)(), path, (self.ids)())?;
         let issues = report
             .issues
             .into_iter()

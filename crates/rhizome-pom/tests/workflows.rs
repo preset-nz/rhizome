@@ -78,7 +78,9 @@ impl ObjectModel for Gazetteer {
     const EXTENSION: &'static str = "gaz";
     type Projection = ();
 
-    fn kinds(k: &mut Kinds) {
+    type Context = ();
+
+    fn kinds(k: &mut Kinds, _: &()) {
         k.category("realms", Origin::Loaded);
         k.kind(NodeType::new("realm").in_categories(&["realms"]));
         k.kind(

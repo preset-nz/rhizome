@@ -25,8 +25,12 @@ pub trait ObjectModel: Sized + 'static {
     /// list. `()` when there is none.
     type Projection: Default + Send;
 
+    /// What the app knows only at run time and its kinds depend on, such as a catalogue of
+    /// operations a sidecar reports (decision 52). `()` when there is none.
+    type Context: Send + Sync + 'static;
+
     /// The app's categories and kinds: node types plus their policy and presets.
-    fn kinds(k: &mut Kinds);
+    fn kinds(k: &mut Kinds, cx: &Self::Context);
 
     /// The app's own commands, next to the built-in ones.
     fn commands(_c: &mut Commands<Self>) {}
@@ -147,12 +151,13 @@ pub(crate) struct Model<M: ObjectModel> {
     pub policies: BTreeMap<String, Policy>,
     pub presets: Presets,
     pub commands: Commands<M>,
+    pub context: Arc<M::Context>,
 }
 
 impl<M: ObjectModel> Model<M> {
-    pub fn build() -> Result<Arc<Model<M>>> {
+    pub fn build(cx: Arc<M::Context>) -> Result<Arc<Model<M>>> {
         let mut kinds = Kinds::default();
-        M::kinds(&mut kinds);
+        M::kinds(&mut kinds, &cx);
 
         // POM's own category and type first, so an app can't take their names
         let mut b = Registry::builder();
@@ -185,6 +190,7 @@ impl<M: ObjectModel> Model<M> {
             policies,
             presets,
             commands,
+            context: cx,
         }))
     }
 

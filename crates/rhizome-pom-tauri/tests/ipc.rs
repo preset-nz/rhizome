@@ -20,7 +20,9 @@ impl ObjectModel for Loom {
     const EXTENSION: &'static str = "loom";
     type Projection = ();
 
-    fn kinds(k: &mut Kinds) {
+    type Context = ();
+
+    fn kinds(k: &mut Kinds, _: &()) {
         k.category("threads", Origin::Loaded);
         k.kind(NodeType::new("thread").in_categories(&["threads"]).float(
             "thread.tension",
