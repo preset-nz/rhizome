@@ -2,7 +2,7 @@
 //! `enabled` test, and a `run`. POM supplies the ones every app needs; an app adds its own.
 //! `native-menu` builds the menu from them; POM never touches a menu.
 
-use rhizome_core::{Commit, Fragment, Op};
+use rhizome_core::{Commit, Fragment, Op, Value, ValueKind};
 use serde::de::DeserializeOwned;
 use serde_json::Value as Json;
 
@@ -76,6 +76,20 @@ struct AddArgs {
     name: String,
     #[serde(default)]
     preset: Option<PresetRef>,
+}
+
+#[derive(serde::Deserialize)]
+struct SetArgs {
+    at: String,
+    key: String,
+    value: Json,
+}
+
+/// The kind a node's schema gives `key`, if it has one.
+fn value_kind<M: ObjectModel>(d: &Document<M>, at: &str, key: &str) -> Option<ValueKind> {
+    let n = d.tree().at(at)?;
+    let t = n.node_type()?;
+    t.values().iter().find(|s| s.key == key).map(|s| s.kind)
 }
 
 #[derive(serde::Deserialize)]
@@ -246,6 +260,23 @@ impl<M: ObjectModel> Commands<M> {
             },
         );
 
+        c.add(
+            "value.set",
+            fixed("Set Value"),
+            |d, p| payload::<SetArgs>(p).is_ok_and(|a| value_kind(d, &a.at, &a.key).is_some()),
+            |d, p| {
+                let a: SetArgs = payload(p)?;
+                let kind = value_kind(d, &a.at, &a.key)
+                    .ok_or_else(|| Error::Payload(format!("{} has no value `{}`", a.at, a.key)))?;
+                let v = Value::from_json(kind, &a.value).ok_or_else(|| {
+                    Error::Payload(format!("{} doesn't fit `{}`", a.value, a.key))
+                })?;
+                let label = format!("Set {}", a.key);
+                Ok(d.edit(&label, |tx| tx.set_value(a.at.as_str(), &a.key, v))?
+                    .1
+                    .into())
+            },
+        );
         c.add(
             "node.add",
             fixed("New"),

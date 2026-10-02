@@ -51,6 +51,16 @@ impl MemoryStore {
     }
 }
 
+impl Store for Box<dyn Store> {
+    fn read(&self, path: &Path) -> std::io::Result<String> {
+        (**self).read(path)
+    }
+
+    fn write(&mut self, path: &Path, text: &str) -> std::io::Result<()> {
+        (**self).write(path, text)
+    }
+}
+
 impl Store for MemoryStore {
     fn read(&self, path: &Path) -> std::io::Result<String> {
         self.get(path)
@@ -78,7 +88,11 @@ pub struct Document<M: ObjectModel> {
     store: Box<dyn Store>,
     path: Option<PathBuf>,
     projection: M::Projection,
-    _m: PhantomData<M>,
+    /// While set, edits coalesce under this key: a command run as part of a drag.
+    coalesce: Option<String>,
+    /// Bumped whenever the whole tree is replaced (revert), so a mirror knows to re-read.
+    generation: u64,
+    _m: PhantomData<fn() -> M>,
 }
 
 impl<M: ObjectModel> Document<M> {
@@ -129,6 +143,8 @@ impl<M: ObjectModel> Document<M> {
             store,
             path,
             projection,
+            coalesce: None,
+            generation: 0,
             _m: PhantomData,
         }
     }
@@ -164,6 +180,11 @@ impl<M: ObjectModel> Document<M> {
         } else {
             name
         }
+    }
+
+    /// How many times the whole tree has been replaced since this document was made.
+    pub fn generation(&self) -> u64 {
+        self.generation
     }
 
     pub fn policy(&self, type_name: &str) -> Policy {
@@ -202,6 +223,7 @@ impl<M: ObjectModel> Document<M> {
         let (tree, mut report) = Tree::load(&text, self.model.registry.clone())?;
         report_breaches(&self.model, &tree, &mut report);
         self.tree = tree;
+        self.generation += 1;
         self.projection = M::Projection::default();
         M::project(&self.tree, &mut self.projection, None);
         Ok(report)
@@ -221,7 +243,10 @@ impl<M: ObjectModel> Document<M> {
         label: &str,
         f: impl FnOnce(&mut Edit<'_>) -> rhizome_core::Result<T>,
     ) -> Result<(T, Option<Commit>)> {
-        let (v, c) = self.tree.edit(label, f)?;
+        let (v, c) = match self.coalesce.clone() {
+            Some(key) => self.tree.edit_coalesced(label, &key, f)?,
+            None => self.tree.edit(label, f)?,
+        };
         Ok((v, self.projected(c)))
     }
 
@@ -423,6 +448,15 @@ impl<M: ObjectModel> Document<M> {
             return Err(Error::Disabled(id.into()));
         }
         (c.run)(self, payload)
+    }
+
+    /// Runs a command as part of a drag: consecutive runs with the same `key`, each within
+    /// the coalescing window of the last, are one undo step.
+    pub fn run_coalesced(&mut self, id: &str, payload: &Json, key: &str) -> Result<Outcome> {
+        self.coalesce = Some(key.to_string());
+        let out = self.run(id, payload);
+        self.coalesce = None;
+        out
     }
 }
 

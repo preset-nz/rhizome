@@ -11,12 +11,14 @@
 mod command;
 mod document;
 mod error;
+mod host;
 mod model;
 mod presets;
 
 pub use command::{Command, Commands, Outcome, payload};
 pub use document::{Document, FileStore, MemoryStore, Store};
 pub use error::{Error, Result};
+pub use host::{CommandState, Event, Host, Issue, Pom, Ran, Status, host};
 pub use model::{KindRef, Kinds, ObjectModel, Pin, Policy};
 pub use presets::{
     Aggregate, BindingState, KindPresetsRef, NodeValues, NodeValuesState, PRESET, PRESETS,
