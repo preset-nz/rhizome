@@ -73,3 +73,42 @@ fn every_change_kind_on_the_wire() {
         &(serde_json::to_string_pretty(&view).unwrap() + "\n"),
     );
 }
+
+/// A float survives the file format bit for bit. serde_json's default parser can be one
+/// unit in the last place off (1026.5436337625179 read back as 1026.543633762518); rhizome
+/// turns on `float_roundtrip`. Found by the Oblique spike on a real project.
+#[test]
+fn floats_survive_the_file_bit_for_bit() {
+    let registry = Registry::builder()
+        .category("images", Origin::Loaded)
+        .node(
+            NodeType::new("image")
+                .in_categories(&["images"])
+                .float_unbounded("x", 0.0),
+        )
+        .build()
+        .unwrap();
+    let mut tree = Tree::with_ids(registry.clone(), IdSource::sequential());
+    let tricky = [
+        1026.5436337625179,
+        0.1 + 0.2,
+        1.0 / 3.0,
+        -2.5e-300,
+        123456789.12345679,
+    ];
+    for (i, x) in tricky.iter().enumerate() {
+        tree.edit("Set", |tx| {
+            let n = tx.add("/images", "image", &format!("n{i}"))?;
+            tx.set_value(n, "x", Value::Float(*x))
+        })
+        .unwrap();
+    }
+    let (again, _) = Tree::load(&tree.serialise(), registry).unwrap();
+    for (i, x) in tricky.iter().enumerate() {
+        let got = again
+            .at(format!("/images/n{i}").as_str())
+            .unwrap()
+            .value("x");
+        assert_eq!(got, Some(Value::Float(*x)), "{x:?}");
+    }
+}
