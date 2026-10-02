@@ -5,7 +5,7 @@ status: current
 repo: /Users/georg/rhizomatic-preset/packages/rhizome
 branch: main
 project: rhizome
-topic: rhizome-core (mechanics), rhizome-pom (POM) and rhizome-pom-tauri (phase 2) — all built, nothing consumed by an app yet.
+topic: rhizome-core, rhizome-pom, rhizome-pom-tauri built; next the Oblique spike (first adopter).
 updated: 2026-10-02
 ---
 
@@ -17,8 +17,9 @@ updated: 2026-10-02
 - **rhizome-core: shipped** (epic 01). Registry, tree, edits/gestures/coalescing, undo, diff, file format, opaque nodes, copy/paste, `Op` as data, tree rules. `5d86ea8`: `Commit`/`Changeset`/`Value` serialise; shape pinned in `tests/golden/commit.json` (`tests/wire.rs`).
 - **rhizome-pom phase 1: shipped.** Kinds and policy, presets on the kind (catalogue, user presets, apply, current, `add_from_preset`), preset files (`0f9edc2`: flat JSON, one kind, bindings stripped), built-in commands. Themes removed (`0d54204`, decision 39).
 - **POM phase 2: shipped** (`4c750a1`, `bed6ae2`). `Pom<M>` / `Host` in `rhizome-pom/src/host.rs` (no Tauri): commands only, coalesce key, gestures by token, `Status` with a monotonic `generation`, events returned not emitted, `on_change` hook. `value.set` built in. `crates/rhizome-pom-tauri`: app-level commands `commands::pom_*`, events `pom://commit|status|open-document`, `opened.rs` lifted from Shard.
+- **Decision 48 built** (`ef8f202` core rows/schema/patch + mirror invariant; `766528e` POM `View`, `Update` events, `pom_view`, `values.set` batch).
 - **Tests:** `just check` green. pom.rs 12, host.rs 6, POM workflows 6, ipc.rs 2 (Tauri mock runtime), opened 4, wire 1.
-- **Decisions 39–48** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document. 48: the mirror is DTOs, snapshot then patches.
+- **Decisions 39–49** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document. 48: the mirror is DTOs, snapshot then patches. 49: a shared platform; Oblique adopts first via a spike.
 - **Georg is unsure we're fully on the same page** about the model (2026-10-02). His framing: rhizome on disk = IFD/RIB, restores exact state, feeds the app graph, all edits through the object model. Decisions 46–47 record it; keep checking new work against that framing.
 - Georg mentioned Swift FOMO (a friend's Swift app). Answered: stay on Rust/Tauri; the commands-only boundary would let a SwiftUI shell sit on the same `Pom<M>` via UniFFI later. No action.
 
@@ -35,11 +36,16 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. Phase 3, `@preset.nz/pom` (TypeScript, ships source like facets): the mirror (read `pom_tree`, apply `pom://commit` in `seq` order, re-read on a gap or a `generation` change), hooks (`useNode`, `useStatus`, `useCommands`), `run`/`begin`/`end` wrappers, the facets bridge (needs inspector hints on kinds). **Decided (decision 48): DTOs, a snapshot view then patches.** Rust side first: `Host::view()` (resolved rows + schema), and commit events carrying touched rows and removed ids next to the raw changeset; pin both shapes with goldens. Then the TS mirror (map of immutable rows by id, `useSyncExternalStore` per node).
-2. Cross-file `Ref` resolution (decision 23 → 40): before any app loads a library rhizome. Design pass with Georg.
-3. First adoption is an app's epic (Shard's object model is the worked one). Path dependency on `packages/rhizome/crates/rhizome-pom{,-tauri}`.
-4. Open conversation on ops (decisions 43–44, direction only). Don't build unasked.
-5. After any doc change: update `updated`, recopy into `packages/rhizome/guidance/`, commit and push both repos.
+1. **The Oblique spike** (decision 49; plan in `projects/oblique/design/object-model.md`). Worktree of `initiatives/oblique` on `spike/rhizome`, path deps on `packages/rhizome/crates/{rhizome-pom,rhizome-pom-tauri}`. Slice: pixel layers. Rewire canvas move drag, opacity slider, save/open; an adapter rebuilds Oblique's `Scene` from the mirror. Before writing: read `src/scene/types.ts`, `store.ts`, `history.ts`, the dependency-cruiser config, project io.
+   - Protect real projects: spike documents use their own extension or a scratch folder; no opening existing `.oblique` files.
+   - Cmd+Z for the slice routes to `edit.undo`; adapter writes stay out of Oblique's `history.ts`.
+   - The adapter keeps object identity for untouched nodes (or `sceneDiff`/prefix cache invalidate everything and the latency number lies).
+   - A position as one `Vec2` key makes a canvas drag one `value.set` with a coalesce key.
+   - Measure: canvas drag feel and round-trip time, slider, undo of a drag as one step, save/reopen. Findings into Oblique's object-model doc; that decides the transport (decision 28).
+2. The spike's mirror is the first draft of `@preset.nz/pom` (phase 3); lift it after, shaped by Oblique.
+3. Cross-file `Ref` resolution (decision 40) before any app loads a library rhizome.
+4. Ops (decisions 43–44): direction only, don't build unasked.
+5. After any doc change: recopy into `packages/rhizome/guidance/`, commit and push both repos.
 
 ## Gotchas
 
