@@ -15,7 +15,7 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use rhizome_core::{Commit, GestureId, IdSource};
+use rhizome_core::{Changeset, Commit, GestureId, IdSource, NodeId, Row, Schema};
 use serde::Serialize;
 use serde_json::Value as Json;
 
@@ -73,11 +73,35 @@ pub struct Issue {
     pub message: String,
 }
 
+/// The whole document for a mirror to start from (decision 48). A mirror drops any update
+/// with `seq <= view.seq`, re-reads on a gap, and starts over when `generation` moves (a
+/// replaced tree counts `seq` from 0 again).
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct View {
+    pub seq: u64,
+    pub generation: u64,
+    pub schema: Schema,
+    pub rows: Vec<Row>,
+}
+
+/// A commit as a mirror takes it: what changed, and the fresh rows of every node it touched.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Update {
+    pub seq: u64,
+    pub label: String,
+    /// For a UI that lists or animates what changed.
+    pub changes: Changeset,
+    pub rows: Vec<Row>,
+    pub removed: Vec<NodeId>,
+    /// The tree this belongs to; an update from another generation is stale.
+    pub generation: u64,
+}
+
 /// What a call caused, for the shell to emit after the lock is released.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Event {
     /// Every commit, in order: undo, redo and cancel included.
-    Commit(Commit),
+    Commit(Update),
     /// The status changed.
     Status(Status),
 }
@@ -87,8 +111,10 @@ pub trait Host: Send + Sync {
     /// The document's file extension, without the dot.
     fn extension(&self) -> &'static str;
     fn status(&self) -> Status;
-    /// The whole tree in the file format: what a mirror starts from.
+    /// The whole tree in the file format.
     fn tree(&self) -> String;
+    /// The whole document as rows and schema: what a mirror starts from.
+    fn view(&self) -> View;
     /// Every command with its label and whether it can run with `payload`.
     fn commands(&self, payload: &Json) -> Vec<CommandState>;
     /// Runs a command. With `coalesce`, consecutive runs with that key are one undo step.
@@ -177,7 +203,21 @@ impl<M: ObjectModel> Pom<M> {
         for f in &self.on_change {
             f(&inner.doc);
         }
-        let mut events: Vec<Event> = commit.into_iter().map(Event::Commit).collect();
+        let generation = status(inner).generation;
+        let mut events: Vec<Event> = commit
+            .into_iter()
+            .map(|c| {
+                let patch = inner.doc.tree().patch(&c.changes);
+                Event::Commit(Update {
+                    seq: c.seq,
+                    label: c.label,
+                    changes: c.changes,
+                    rows: patch.rows,
+                    removed: patch.removed,
+                    generation,
+                })
+            })
+            .collect();
         events.extend(self.status_event(inner));
         events
     }
@@ -239,6 +279,17 @@ impl<M: ObjectModel> Host for Pom<M> {
 
     fn tree(&self) -> String {
         self.lock().doc.tree().serialise()
+    }
+
+    fn view(&self) -> View {
+        let inner = self.lock();
+        let t = inner.doc.tree();
+        View {
+            seq: t.seq(),
+            generation: status(&inner).generation,
+            schema: t.registry().schema(),
+            rows: t.rows(),
+        }
     }
 
     fn commands(&self, payload: &Json) -> Vec<CommandState> {

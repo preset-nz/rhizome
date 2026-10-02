@@ -11,6 +11,7 @@
 //!     .manage(PomHost::new(pom.clone()))
 //!     .invoke_handler(tauri::generate_handler![
 //!         rhizome_pom_tauri::commands::pom_status,
+//!         rhizome_pom_tauri::commands::pom_view,
 //!         rhizome_pom_tauri::commands::pom_tree,
 //!         rhizome_pom_tauri::commands::pom_commands,
 //!         rhizome_pom_tauri::commands::pom_run,
@@ -31,9 +32,11 @@
 //!     });
 //! ```
 //!
-//! **Events.** [`COMMIT`] carries every commit (undo, redo and cancel included) as
-//! `{"seq", "label", "changes"}`. [`STATUS`] carries the [`Status`] whenever it changes; when
-//! its `generation` moves, the whole tree was replaced and the mirror re-reads [`pom_tree`](commands::pom_tree).
+//! **Events.** [`COMMIT`] carries every commit (undo, redo and cancel included) as an
+//! [`Update`](rhizome_pom::Update): `{seq, label, changes, rows, removed, generation}`, the
+//! fresh rows of every node it touched. [`STATUS`] carries the [`Status`] whenever it
+//! changes; when its `generation` moves, the whole tree was replaced and the mirror re-reads
+//! [`pom_view`](commands::pom_view).
 //! [`OPEN_DOCUMENT`] carries a path macOS asked the app to open once the front end is
 //! listening; the front end then calls [`pom_open`](commands::pom_open).
 //!

@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use rhizome_pom::{CommandState, Issue, Ran, Status};
+use rhizome_pom::{CommandState, Issue, Ran, Status, View};
 use serde_json::Value as Json;
 use tauri::{AppHandle, Runtime, State};
 
@@ -17,8 +17,14 @@ pub fn pom_status(pom: State<'_, PomHost>) -> Status {
     pom.host().status()
 }
 
-/// The whole tree in the file format: what a mirror starts from, and re-reads when the
-/// status's generation moves.
+/// The whole document as rows and schema: what a mirror starts from, and re-reads on a gap
+/// in `seq` or when the status's generation moves (decision 48).
+#[tauri::command]
+pub fn pom_view(pom: State<'_, PomHost>) -> View {
+    pom.host().view()
+}
+
+/// The whole tree in the file format.
 #[tauri::command]
 pub fn pom_tree(pom: State<'_, PomHost>) -> String {
     pom.host().tree()

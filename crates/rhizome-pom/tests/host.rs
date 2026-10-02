@@ -265,3 +265,133 @@ fn a_host_goes_to_another_thread() {
     send_sync::<dyn Host>();
     send_sync::<Pom<Loom>>();
 }
+
+/// A mirror as the webview keeps one: a view, then updates (decision 48).
+struct Mirror {
+    seq: u64,
+    generation: u64,
+    rows: std::collections::BTreeMap<rhizome_core::NodeId, rhizome_core::Row>,
+}
+
+impl Mirror {
+    fn of(h: &dyn Host) -> Mirror {
+        let v = h.view();
+        Mirror {
+            seq: v.seq,
+            generation: v.generation,
+            rows: v.rows.into_iter().map(|r| (r.id, r)).collect(),
+        }
+    }
+
+    /// Takes a call's events as a webview would: re-reads when the tree was replaced.
+    fn take(&mut self, h: &dyn Host, events: &[Event]) {
+        for e in events {
+            match e {
+                Event::Commit(u) if u.generation == self.generation && u.seq > self.seq => {
+                    assert_eq!(u.seq, self.seq + 1, "no gaps");
+                    self.seq = u.seq;
+                    for id in &u.removed {
+                        self.rows.remove(id);
+                    }
+                    for r in &u.rows {
+                        self.rows.insert(r.id, r.clone());
+                    }
+                }
+                Event::Status(s) if s.generation != self.generation => *self = Mirror::of(h),
+                _ => {}
+            }
+        }
+    }
+
+    fn matches(&self, h: &dyn Host) {
+        let fresh = Mirror::of(h);
+        assert_eq!(self.rows, fresh.rows);
+        assert_eq!(self.seq, fresh.seq);
+    }
+}
+
+#[test]
+fn a_mirror_kept_by_updates_matches_the_view() {
+    let (h, _, _, _) = loom();
+    let mut m = Mirror::of(&*h);
+    let step = |m: &mut Mirror, events: Vec<Event>| {
+        m.take(&*h, &events);
+        m.matches(&*h);
+    };
+    let run = |id: &str, p: serde_json::Value, key: Option<&str>| h.run(id, &p, key).unwrap().1;
+    step(
+        &mut m,
+        run(
+            "node.add",
+            json!({"parent": "/threads", "type": "thread", "name": "weft"}),
+            None,
+        ),
+    );
+    for v in [0.6, 0.7] {
+        step(&mut m, run("value.set", set(json!(v)), Some("drag")));
+    }
+    step(&mut m, run("edit.duplicate", json!({"at": AT}), None));
+    step(&mut m, run("edit.undo", json!({}), None));
+    let (token, events) = h.begin("Comb").unwrap();
+    step(&mut m, events);
+    step(&mut m, run("value.set", set(json!(0.1)), None));
+    step(&mut m, h.cancel(token).unwrap());
+    step(&mut m, h.save_as("/m".as_ref()).unwrap());
+    step(&mut m, run("value.set", set(json!(0.3)), None));
+    step(&mut m, run("file.revert", json!({}), None));
+    step(&mut m, h.new_document().unwrap());
+
+    // the view: rows with resolved values, and the schema
+    let v = h.view();
+    assert!(v.rows.iter().any(|r| r.path.to_string() == "/threads"));
+    let thread = v.schema.types.iter().find(|t| t.name == "thread").unwrap();
+    assert_eq!(thread.values[0].key, "thread.tension");
+}
+
+#[test]
+fn several_values_in_one_step() {
+    let (h, pom, _, _) = loom();
+    h.run(
+        "node.add",
+        &json!({"parent": "/threads", "type": "thread", "name": "weft"}),
+        None,
+    )
+    .unwrap();
+    let steps = pom.read(|d| d.tree().history_len());
+    let both = json!({"changes": [
+        {"at": AT, "key": "thread.tension", "value": 0.9},
+        {"at": "/threads/weft", "key": "thread.tension", "value": 0.2},
+    ]});
+    let (ran, events) = h.run("values.set", &both, None).unwrap();
+    let Ran::Committed(c) = ran else { panic!() };
+    assert_eq!(c.label, "Set thread.tension", "one key, named");
+    assert_eq!(
+        pom.read(|d| d.tree().history_len()),
+        steps + 1,
+        "one undo step"
+    );
+    let Event::Commit(u) = &events[0] else {
+        panic!()
+    };
+    assert_eq!(u.rows.len(), 2, "both rows in one update");
+
+    // all or nothing: one bad value refuses the batch
+    let bad = json!({"changes": [
+        {"at": AT, "key": "thread.tension", "value": 0.1},
+        {"at": "/threads/weft", "key": "thread.tension", "value": 5.0},
+    ]});
+    assert!(h.run("values.set", &bad, None).is_err());
+    assert_eq!(tension(&pom), Some(0.9));
+    let mixed = json!({"changes": [
+        {"at": AT, "key": "thread.tension", "value": 0.4},
+        {"at": AT, "key": "thread.colour", "value": "red"},
+    ]});
+    let (ran, _) = h.run("values.set", &mixed, None).unwrap();
+    let Ran::Committed(c) = ran else { panic!() };
+    assert_eq!(c.label, "Set Values");
+    assert!(
+        !h.commands(&json!({"changes": []}))
+            .iter()
+            .any(|c| c.id == "values.set" && c.enabled)
+    );
+}

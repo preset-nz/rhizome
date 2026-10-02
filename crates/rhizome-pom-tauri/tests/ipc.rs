@@ -44,6 +44,7 @@ fn app() -> App {
         .manage(PomHost::new(pom))
         .invoke_handler(tauri::generate_handler![
             commands::pom_status,
+            commands::pom_view,
             commands::pom_tree,
             commands::pom_commands,
             commands::pom_run,
@@ -114,6 +115,18 @@ fn commands_in_events_out() {
     let events = a.take_events();
     assert_eq!(events[0].0, COMMIT);
     assert_eq!(events[0].1["changes"][0]["change"], "added");
+    assert_eq!(
+        events[0].1["rows"][0]["path"], "/threads/warp",
+        "the fresh row"
+    );
+    assert_eq!(
+        events[0].1["rows"][0]["values"]["thread.tension"], 0.5,
+        "resolved"
+    );
+    let view = a.invoke("pom_view", json!({})).unwrap();
+    assert_eq!(view["seq"], 1);
+    let types = view["schema"]["types"].as_array().unwrap();
+    assert!(types.iter().any(|t| t["name"] == "thread"), "{types:?}");
     assert_eq!(events[1].0, STATUS);
     assert_eq!(events[1].1["undo"], "New thread");
 

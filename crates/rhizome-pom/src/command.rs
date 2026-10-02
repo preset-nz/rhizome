@@ -85,6 +85,27 @@ struct SetArgs {
     value: Json,
 }
 
+#[derive(serde::Deserialize)]
+struct SetManyArgs {
+    changes: Vec<SetArgs>,
+}
+
+/// Every `SetArgs` as a value its schema takes, or why not.
+fn checked<M: ObjectModel>(
+    d: &Document<M>,
+    args: Vec<SetArgs>,
+) -> Result<Vec<(String, String, Value)>> {
+    args.into_iter()
+        .map(|a| {
+            let kind = value_kind(d, &a.at, &a.key)
+                .ok_or_else(|| Error::Payload(format!("{} has no value `{}`", a.at, a.key)))?;
+            let v = Value::from_json(kind, &a.value)
+                .ok_or_else(|| Error::Payload(format!("{} doesn't fit `{}`", a.value, a.key)))?;
+            Ok((a.at, a.key, v))
+        })
+        .collect()
+}
+
 /// The kind a node's schema gives `key`, if it has one.
 fn value_kind<M: ObjectModel>(d: &Document<M>, at: &str, key: &str) -> Option<ValueKind> {
     let n = d.tree().at(at)?;
@@ -266,15 +287,42 @@ impl<M: ObjectModel> Commands<M> {
             |d, p| payload::<SetArgs>(p).is_ok_and(|a| value_kind(d, &a.at, &a.key).is_some()),
             |d, p| {
                 let a: SetArgs = payload(p)?;
-                let kind = value_kind(d, &a.at, &a.key)
-                    .ok_or_else(|| Error::Payload(format!("{} has no value `{}`", a.at, a.key)))?;
-                let v = Value::from_json(kind, &a.value).ok_or_else(|| {
-                    Error::Payload(format!("{} doesn't fit `{}`", a.value, a.key))
-                })?;
-                let label = format!("Set {}", a.key);
-                Ok(d.edit(&label, |tx| tx.set_value(a.at.as_str(), &a.key, v))?
+                let [(at, key, v)]: [_; 1] = checked(d, vec![a])?.try_into().expect("one");
+                let label = format!("Set {key}");
+                Ok(d.edit(&label, |tx| tx.set_value(at.as_str(), &key, v))?
                     .1
                     .into())
+            },
+        );
+        c.add(
+            "values.set",
+            fixed("Set Values"),
+            |d, p| {
+                payload::<SetManyArgs>(p).is_ok_and(|a| {
+                    !a.changes.is_empty()
+                        && a.changes
+                            .iter()
+                            .all(|c| value_kind(d, &c.at, &c.key).is_some())
+                })
+            },
+            |d, p| {
+                let a: SetManyArgs = payload(p)?;
+                let sets = checked(d, a.changes)?;
+                let mut keys: Vec<&str> = sets.iter().map(|(_, k, _)| k.as_str()).collect();
+                keys.sort();
+                keys.dedup();
+                let label = match keys.as_slice() {
+                    [one] => format!("Set {one}"),
+                    _ => "Set Values".to_string(),
+                };
+                Ok(d.edit(&label, |tx| {
+                    for (at, key, v) in sets {
+                        tx.set_value(at.as_str(), &key, v)?;
+                    }
+                    Ok(())
+                })?
+                .1
+                .into())
             },
         );
         c.add(
