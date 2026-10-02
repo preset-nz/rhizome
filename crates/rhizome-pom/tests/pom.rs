@@ -975,7 +975,7 @@ impl ObjectModel for Stack {
     type Projection = ();
     type Context = Catalogue;
 
-    fn seed(tx: &mut Edit<'_>, _: &Catalogue) -> rhizome_core::Result<()> {
+    fn new_document(tx: &mut Edit<'_>, _: &Catalogue) -> rhizome_core::Result<()> {
         tx.add("/layers", "layer", "background").map(drop)
     }
 
@@ -1039,7 +1039,7 @@ fn kinds_can_come_from_runtime_data() {
 }
 
 #[test]
-fn a_new_document_is_born_with_its_seed() {
+fn a_new_document_starts_with_what_the_model_says() {
     let d = Document::<Stack>::new_in(
         std::sync::Arc::new(vec![]),
         MemoryStore::default(),
@@ -1047,7 +1047,11 @@ fn a_new_document_is_born_with_its_seed() {
     )
     .unwrap();
     assert!(d.tree().at("/layers/background").is_some());
-    assert_eq!(d.tree().history_len(), 0, "the seed can't be undone");
+    assert_eq!(
+        d.tree().history_len(),
+        0,
+        "what it starts with can't be undone"
+    );
     assert!(!d.is_unsaved(), "a new document isn't edited");
     assert_eq!(d.tree().seq(), 0);
 }

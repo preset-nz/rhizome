@@ -115,7 +115,9 @@ impl<M: ObjectModel> Document<M> {
     pub fn new_in(cx: Arc<M::Context>, store: impl Store + 'static, ids: IdSource) -> Result<Self> {
         let model = Model::<M>::build(cx)?;
         let context = model.context.clone();
-        let tree = Tree::seeded(model.registry.clone(), ids, |tx| M::seed(tx, &context))?;
+        let tree = Tree::starting_with(model.registry.clone(), ids, |tx| {
+            M::new_document(tx, &context)
+        })?;
         Ok(Self::from_tree(model, tree, Box::new(store), None))
     }
 

@@ -1,6 +1,6 @@
 [package]
 name = "rhizome-pom"
-version = "0.1.1"
+version = "0.1.2"
 description = "POM, the Preset Object Model: the app-unaware base every app's object model is built on. Documents, kinds and their policy, presets, commands, projections."
 edition.workspace = true
 license.workspace = true
