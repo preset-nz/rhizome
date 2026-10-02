@@ -13,7 +13,7 @@ updated: 2026-10-02
 
 ## Current status
 
-- **Pushed up to the doc recopy after `7da4514`** (2026-10-02, both repos). `0f9edc2` and later are local; ask before pushing.
+- **Everything pushed** (2026-10-02, both repos). Georg: push without asking (see memory `push-without-asking`).
 - **rhizome-core, first slice: shipped** (epic 01; `6f3513f`, `fe0a210`, `f7cf71b`, `33490ea`). Registry, tree, edits/gestures/coalescing, undo, diff, canonical JSON file, opaque nodes, copy/paste, `Op` as data, tree rules.
 - **rhizome-pom, phase 1 (headless): shipped.** `ObjectModel` + `Document<M>`; kinds with policy; presets on the kind (catalogue, user presets as document nodes keyed by kind, apply, current, `add_from_preset`); built-in commands.
 - **Themes removed from POM** (`0d54204`, decision 39). An app builds them from primitives; `tests/pom.rs` Atlas shows how (palette nodes in a `themes` category, `Ref::here`, app-side cascade). Workflow 03 retired; numbering kept.
@@ -35,13 +35,12 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. Ask Georg whether to push `0f9edc2` and the doc commits (both repos).
-2. Continue the presets/ops conversation if he wants; record answers as decisions in `node-api.md`.
-3. Cross-file `Ref` resolution (`Ref::node_in`, decision 23 → 40): needed before any app adopts a library catalogue. Needs a design pass with Georg: how a document opens a library rhizome, read-only or not, how ids resolve.
-4. POM phase 2, `rhizome-pom-tauri`: commands and gestures as Tauri commands, `Commit` events, opened-from-Finder (lift Shard `src-tauri/src/opened.rs`), the command list for `native-menu`. Keep Tauri out of `rhizome-pom`.
-5. Phase 3, `@preset.nz/pom`: mirror, hooks, Tauri transport, facets bridge.
-6. First adoption is an app's epic (Shard's object model is the worked one). Path dependency on `packages/rhizome/crates/rhizome-pom`.
-7. After any doc change: update `status`/`updated`, recopy into `packages/rhizome/guidance/`, commit both repos.
+1. Continue the presets/ops conversation if he wants; record answers as decisions in `node-api.md`.
+2. Cross-file `Ref` resolution (`Ref::node_in`, decision 23 → 40): needed before any app adopts a library catalogue. Needs a design pass with Georg: how a document opens a library rhizome, read-only or not, how ids resolve.
+3. POM phase 2, `rhizome-pom-tauri`: commands and gestures as Tauri commands, `Commit` events, opened-from-Finder (lift Shard `src-tauri/src/opened.rs`), the command list for `native-menu`. Keep Tauri out of `rhizome-pom`.
+4. Phase 3, `@preset.nz/pom`: mirror, hooks, Tauri transport, facets bridge.
+5. First adoption is an app's epic (Shard's object model is the worked one). Path dependency on `packages/rhizome/crates/rhizome-pom`.
+6. After any doc change: update `status`/`updated`, recopy into `packages/rhizome/guidance/`, commit both repos.
 
 ## Gotchas
 
