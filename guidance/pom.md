@@ -117,7 +117,7 @@ The app writes the aggregate. POM supplies everything around it, as methods on `
 | **Apply** | `apply_preset(node, &PresetRef)` | One edit, one undo step; returns a `Report` of what was applied and skipped |
 | **Make from** | `add_from_preset(parent, kind, name, &PresetRef)` | Instantiates the template filled from a preset: add and apply, one edit, one undo step |
 | **Current** | `current_preset(node)` | The first preset, built-in then user, whose state `matches` the node now |
-| **Export / import** | `export_preset(node, label)`, `import_preset(text)` | A user preset as text: its `preset` node as a rhizome fragment, so an export, a user preset in a document and an entry in a library rhizome (decision 40) are one shape. Import is one edit, one undo step, and refuses (changing nothing) anything but one preset, for a kind this model has, whose state fits that kind's aggregate, under a free name (decision 45) |
+| **Export / import** | `export_presets(node, labels)`, `import_presets(text)` | A **preset file**: plain JSON for one kind, one or more presets: `{"preset": 1, "for": "osc", "presets": [{"label": "Warm", "state": {…}}]}`. Export makes each state portable (`Aggregate::portable`; `NodeValues` leaves bindings behind, since they name nodes of this file). Import is all or nothing, one edit, one undo step: refused unless the kind is this model's, every state fits, and every name is valid and free (decision 45) |
 | **`NodeValues`** | — | The ready-made aggregate: every value in the schema (resolved, so `current` works), optionally the bindings. Customise with `.skip(pred)` and `.with_bindings()` |
 
 `PresetRef` is `Catalogue(name)` or `User(label)`; in JSON `{"catalogue": "…"}` / `{"user": "…"}`. A preset is copied into a node, never followed.
@@ -132,7 +132,7 @@ The app writes the aggregate. POM supplies everything around it, as methods on `
 
 ### Where user presets live
 
-Nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.for` (the kind), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else, and go wherever the file goes. A pasted node doesn't bring its file's user presets into another file; `export_preset` / `import_preset` move one deliberately. **Caveat:** a `NodeValues` preset with bindings names its sources by `NodeId`, which only means something in the file it was saved in. Imported into another file, those bindings are reported as skipped on apply, unless that file happens to hold a node with the same id (a Save As copy of the source does), where they reattach to it. An app can't declare the names `presets` or `preset`: POM registers first, and rhizome refuses duplicates.
+Nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.for` (the kind), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else, and go wherever the file goes. A pasted node doesn't bring its file's user presets into another file; a preset file moves them deliberately, without bindings. An app can't declare the names `presets` or `preset`: POM registers first, and rhizome refuses duplicates.
 
 ---
 
@@ -159,8 +159,8 @@ POM implements the **commands-first contract** of [`plugin-primitive.md`](plugin
 | `edit.paste` | `{ parent, fragment }` | Re-pins |
 | `node.add` | `{ parent, type, name, preset? }` | With a preset, made from it |
 | `preset.apply`, `.save`, `.update`, `.rename`, `.delete` | `{ at, preset?, label?, to? }` | Enabled on kinds with presets |
-| `preset.export` | `{ at, label }` | Returns the preset as `Text` |
-| `preset.import` | `{ text }` | Enabled when the text is a fragment |
+| `preset.export` | `{ at, labels }` | Returns the preset file as `Text` |
+| `preset.import` | `{ text }` | Enabled when the text is a preset file |
 
 An app adds its own with `c.add(id, label, enabled, run)`; the same id replaces a built-in. New and Open aren't document commands: they make a `Document`. Capability tokens arrive with the TypeScript half; `enabled` is a closure for now.
 
@@ -204,7 +204,7 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 
 `just pom`, and in `just check`. Both suites use made-up object models, never an app's:
 
-- **`tests/pom.rs`** (12 tests). *Synth*: user presets of one kind's sound skipping its switch, with bindings; a user preset exported and imported into another document (its bindings reported as skipped there); the document lifecycle and projection. *Atlas*: anchored singleton layers, a palette theme built from primitives, a computed aspect preset on the map kind, a node made from a preset, the commands, a layer pasted into another map, policy breaches on open, and models that can't be built.
+- **`tests/pom.rs`** (12 tests). *Synth*: user presets of one kind's sound skipping its switch, with bindings; user presets exported as a preset file and imported into another document, bindings left behind, every refusal; the document lifecycle and projection. *Atlas*: anchored singleton layers, a palette theme built from primitives, a computed aspect preset on the map kind, a node made from a preset, the commands, a layer pasted into another map, policy breaches on open, and models that can't be built.
 - **`tests/workflows.rs`** (6 workflows as data in `tests/workflows/*.json`, numbered 01–07 with 03 retired, transcripts pinned beside them): driven only through commands by id with JSON payloads, `Op` JSON, files and preset reads, against a frozen model of its own. A change to POM that alters a workflow fails here.
 
 ## Phases
