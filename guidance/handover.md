@@ -18,7 +18,7 @@ updated: 2026-10-02
 - **rhizome-pom phase 1: shipped.** Kinds and policy, presets on the kind (catalogue, user presets, apply, current, `add_from_preset`), preset files (`0f9edc2`: flat JSON, one kind, bindings stripped), built-in commands. Themes removed (`0d54204`, decision 39).
 - **POM phase 2: shipped** (`4c750a1`, `bed6ae2`). `Pom<M>` / `Host` in `rhizome-pom/src/host.rs` (no Tauri): commands only, coalesce key, gestures by token, `Status` with a monotonic `generation`, events returned not emitted, `on_change` hook. `value.set` built in. `crates/rhizome-pom-tauri`: app-level commands `commands::pom_*`, events `pom://commit|status|open-document`, `opened.rs` lifted from Shard.
 - **Tests:** `just check` green. pom.rs 12, host.rs 6, POM workflows 6, ipc.rs 2 (Tauri mock runtime), opened 4, wire 1.
-- **Decisions 39–47** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document.
+- **Decisions 39–48** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document. 48: the mirror is DTOs, snapshot then patches.
 - **Georg is unsure we're fully on the same page** about the model (2026-10-02). His framing: rhizome on disk = IFD/RIB, restores exact state, feeds the app graph, all edits through the object model. Decisions 46–47 record it; keep checking new work against that framing.
 - Georg mentioned Swift FOMO (a friend's Swift app). Answered: stay on Rust/Tauri; the commands-only boundary would let a SwiftUI shell sit on the same `Pom<M>` via UniFFI later. No action.
 
@@ -35,7 +35,7 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. Phase 3, `@preset.nz/pom` (TypeScript, ships source like facets): the mirror (read `pom_tree`, apply `pom://commit` in `seq` order, re-read on a gap or a `generation` change), hooks (`useNode`, `useStatus`, `useCommands`), `run`/`begin`/`end` wrappers, the facets bridge (needs inspector hints on kinds). Decide with Georg: does the mirror parse the file format in TS, or does Rust send a JSON tree view?
+1. Phase 3, `@preset.nz/pom` (TypeScript, ships source like facets): the mirror (read `pom_tree`, apply `pom://commit` in `seq` order, re-read on a gap or a `generation` change), hooks (`useNode`, `useStatus`, `useCommands`), `run`/`begin`/`end` wrappers, the facets bridge (needs inspector hints on kinds). **Decided (decision 48): DTOs, a snapshot view then patches.** Rust side first: `Host::view()` (resolved rows + schema), and commit events carrying touched rows and removed ids next to the raw changeset; pin both shapes with goldens. Then the TS mirror (map of immutable rows by id, `useSyncExternalStore` per node).
 2. Cross-file `Ref` resolution (decision 23 → 40): before any app loads a library rhizome. Design pass with Georg.
 3. First adoption is an app's epic (Shard's object model is the worked one). Path dependency on `packages/rhizome/crates/rhizome-pom{,-tauri}`.
 4. Open conversation on ops (decisions 43–44, direction only). Don't build unasked.
