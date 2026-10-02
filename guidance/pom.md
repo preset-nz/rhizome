@@ -111,7 +111,7 @@ The app writes the aggregate. POM supplies everything around it, as methods on `
 
 | Machinery | `Document` method | What it does |
 |---|---|---|
-| **Catalogue** | — | The kind's built-in presets, in code, never saved |
+| **Catalogue** | — | The kind's built-in presets, in code, never saved. For now: decision 40 moves them into a library rhizome once cross-file references resolve |
 | **Names** | `preset_names(node)` | The kind's catalogue, then the user's presets for that kind. Empty for a kind without presets |
 | **User presets** | `save_preset`, `update_preset`, `rename_preset`, `delete_preset` | Document data, keyed by kind, so they **travel with the file** and every node of the kind sees them. Save refuses a taken name, update a missing one, rename a taken one; 1 to 60 characters. One edit, one undo step each |
 | **Apply** | `apply_preset(node, &PresetRef)` | One edit, one undo step; returns a `Report` of what was applied and skipped |
@@ -132,7 +132,7 @@ The app writes the aggregate. POM supplies everything around it, as methods on `
 
 ### Where user presets live
 
-Nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.for` (the kind), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else, and go wherever the file goes. A pasted node doesn't bring its file's user presets into another file; `export_preset` / `import_preset` move one deliberately. **Caveat:** a `NodeValues` preset with bindings names its sources by `NodeId`, which only means something in the file it was saved in. Imported elsewhere, those bindings are reported as skipped on apply. An app can't declare the names `presets` or `preset`: POM registers first, and rhizome refuses duplicates.
+Nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.for` (the kind), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else, and go wherever the file goes. A pasted node doesn't bring its file's user presets into another file; `export_preset` / `import_preset` move one deliberately. **Caveat:** a `NodeValues` preset with bindings names its sources by `NodeId`, which only means something in the file it was saved in. Imported into another file, those bindings are reported as skipped on apply, unless that file happens to hold a node with the same id (a Save As copy of the source does), where they reattach to it. An app can't declare the names `presets` or `preset`: POM registers first, and rhizome refuses duplicates.
 
 ---
 
