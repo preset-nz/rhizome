@@ -1,4 +1,4 @@
-# Choose a palette for a realm and a map
+# Choose a palette theme for a realm and a map
 > new
 > edit Realm
   /realms/west  added realm
@@ -11,20 +11,20 @@
   /realms/west/north/hills  added layer
 > resolve palette at /realms/west/north/hills
   ember from the fallback  {"fill":"#3a1c12"}
-> run preset.follow {"at":"/realms/west","kind":"palette","preset":{"catalogue":"night"}}
-  /realms/west  follow.palette  unset → file:catalogue:palette/night
+> run theme.follow {"at":"/realms/west","kind":"palette","theme":"night"}
+  /realms/west  theme.palette  unset → file:theme:palette/night
 > resolve palette at /realms/west/north/hills
   night from /realms/west  {"fill":"#0b1030"}
-> run preset.follow {"at":"/realms/west/north","kind":"palette","preset":{"catalogue":"tide"}}
-  /realms/west/north  follow.palette  unset → file:catalogue:palette/tide
+> run theme.follow {"at":"/realms/west/north","kind":"palette","theme":"tide"}
+  /realms/west/north  theme.palette  unset → file:theme:palette/tide
 > resolve palette at /realms/west/north/hills
   tide from /realms/west/north  {"fill":"#0a2a30"}
-> run preset.follow {"at":"/realms/west/north","kind":"palette"}
-  /realms/west/north  follow.palette  file:catalogue:palette/tide → unset
+> run theme.follow {"at":"/realms/west/north","kind":"palette"}
+  /realms/west/north  theme.palette  file:theme:palette/tide → unset
 > resolve palette at /realms/west/north/hills
   night from /realms/west  {"fill":"#0b1030"}
-> run preset.follow {"at":"/realms/west/north/hills","kind":"palette","preset":{"catalogue":"night"}}
-  refused: /realms/west/north/hills has no key `follow.palette`
+> run theme.follow {"at":"/realms/west/north/hills","kind":"palette","theme":"night"}
+  refused: /realms/west/north/hills has no key `theme.palette`
 > save as /atlas/west
 > reopen
 > resolve palette at /realms/west/north/hills

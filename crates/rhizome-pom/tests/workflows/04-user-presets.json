@@ -1,6 +1,6 @@
 {
-  "title": "Save, follow, rename and delete a user preset",
-  "why": "A user preset is document data: saved from one map, followed by another by id, so a rename keeps it and a delete unfollows.",
+  "title": "Save, apply, rename and delete a layer preset; make a layer from one",
+  "why": "Presets belong to a kind. A user preset is document data: saved from one layer, offered on every layer, and a new layer can be made from it in one step.",
   "steps": [
     "new",
     {
@@ -36,22 +36,22 @@
     },
     {
       "run": {
-        "id": "map.add",
+        "id": "layer.add",
         "payload": {
-          "to": "/realms/west",
-          "name": "south"
+          "to": "/realms/west/north",
+          "name": "woods"
         }
       }
     },
     {
       "edit": {
-        "label": "Zoom",
+        "label": "Seed",
         "ops": [
           {
             "op": "set",
-            "at": "/realms/west/north",
-            "key": "map.zoom",
-            "value": 4
+            "at": "/realms/west/north/hills",
+            "key": "layer.seed",
+            "value": 123
           }
         ]
       }
@@ -60,9 +60,8 @@
       "run": {
         "id": "preset.save",
         "payload": {
-          "kind": "style",
-          "at": "/realms/west/north",
-          "label": "Close Up"
+          "at": "/realms/west/north/hills",
+          "label": "Mountains"
         }
       }
     },
@@ -70,50 +69,64 @@
       "run": {
         "id": "preset.save",
         "payload": {
-          "kind": "style",
-          "at": "/realms/west/north",
-          "label": "Close Up"
+          "at": "/realms/west/north/hills",
+          "label": "Mountains"
         }
       }
     },
     {
       "names": {
-        "kind": "style",
-        "at": "/realms/west/south"
+        "at": "/realms/west/north/woods"
       }
     },
     {
       "current": {
-        "kind": "style",
-        "at": "/realms/west/north"
+        "at": "/realms/west/north/hills"
+      }
+    },
+    {
+      "current": {
+        "at": "/realms/west/north/woods"
       }
     },
     {
       "run": {
         "id": "preset.apply",
         "payload": {
-          "kind": "style",
-          "at": "/realms/west/south",
+          "at": "/realms/west/north/woods",
           "preset": {
-            "user": "Close Up"
+            "user": "Mountains"
           }
         }
       }
     },
     {
       "current": {
-        "kind": "style",
-        "at": "/realms/west/south"
+        "at": "/realms/west/north/woods"
       }
     },
     {
       "run": {
-        "id": "preset.follow",
+        "id": "node.add",
         "payload": {
-          "kind": "style",
-          "at": "/realms/west/south",
+          "parent": "/realms/west/north",
+          "type": "layer",
+          "name": "crags",
           "preset": {
-            "user": "Close Up"
+            "user": "Mountains"
+          }
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "node.add",
+        "payload": {
+          "parent": "/realms/west/north",
+          "type": "layer",
+          "name": "scree",
+          "preset": {
+            "catalogue": "rocky"
           }
         }
       }
@@ -122,33 +135,29 @@
       "run": {
         "id": "preset.rename",
         "payload": {
-          "kind": "style",
-          "at": "/realms/west/north",
-          "label": "Close Up",
-          "to": "Near"
+          "at": "/realms/west/north/hills",
+          "label": "Mountains",
+          "to": "Peaks"
         }
       }
     },
     {
-      "resolve": {
-        "kind": "style",
-        "at": "/realms/west/south"
+      "names": {
+        "at": "/realms/west/north/woods"
       }
     },
     {
       "run": {
         "id": "preset.delete",
         "payload": {
-          "kind": "style",
-          "at": "/realms/west/north",
-          "label": "Near"
+          "at": "/realms/west/north/hills",
+          "label": "Peaks"
         }
       }
     },
     {
-      "resolve": {
-        "kind": "style",
-        "at": "/realms/west/south"
+      "names": {
+        "at": "/realms/west/north/woods"
       }
     },
     {
@@ -158,9 +167,13 @@
       }
     },
     {
-      "resolve": {
-        "kind": "style",
-        "at": "/realms/west/south"
+      "names": {
+        "at": "/realms/west/north/woods"
+      }
+    },
+    {
+      "names": {
+        "at": "/realms/west"
       }
     },
     "status"

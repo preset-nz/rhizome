@@ -1,6 +1,6 @@
 {
   "title": "Pick a map's aspect",
-  "why": "A computed preset: the state is a ratio, the setter keeps the long edge, and a near match still counts as current.",
+  "why": "A computed preset on the map kind: the state is a ratio, the setter keeps the long edge, and a near match still counts as current.",
   "steps": [
     "new",
     {
@@ -36,19 +36,16 @@
     },
     {
       "names": {
-        "kind": "aspect",
         "at": "/realms/west/north"
       }
     },
     {
       "names": {
-        "kind": "aspect",
         "at": "/realms/west/north/hills"
       }
     },
     {
       "current": {
-        "kind": "aspect",
         "at": "/realms/west/north"
       }
     },
@@ -56,7 +53,6 @@
       "run": {
         "id": "preset.apply",
         "payload": {
-          "kind": "aspect",
           "at": "/realms/west/north",
           "preset": {
             "catalogue": "16x9"
@@ -66,7 +62,6 @@
     },
     {
       "current": {
-        "kind": "aspect",
         "at": "/realms/west/north"
       }
     },
@@ -88,7 +83,6 @@
     },
     {
       "current": {
-        "kind": "aspect",
         "at": "/realms/west/north"
       }
     },
@@ -96,7 +90,6 @@
       "run": {
         "id": "preset.apply",
         "payload": {
-          "kind": "aspect",
           "at": "/realms/west/north/hills",
           "preset": {
             "catalogue": "square"
@@ -118,7 +111,6 @@
     },
     {
       "current": {
-        "kind": "aspect",
         "at": "/realms/west/north"
       }
     }

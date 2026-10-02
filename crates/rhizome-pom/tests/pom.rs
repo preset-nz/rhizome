@@ -45,21 +45,17 @@ impl ObjectModel for Synth {
                 .bool(ON, false)
                 .float(MIX, 0.0..=1.0, 0.0)
                 .float(PITCH, -24.0..=24.0, 0.0),
+        )
+        .presets(
+            NodeValues::new()
+                .skip(|k| k.ends_with(".on"))
+                .with_bindings(),
         );
         k.kind(
             NodeType::new("lfo")
                 .in_categories(&["mods"])
                 .float("lfo.rate", 0.01..=20.0, 1.0)
                 .bindable([ValueSpec::float("depth", -1.0..=1.0, 0.5)]),
-        );
-    }
-
-    fn presets(p: &mut Presets) {
-        p.kind(
-            "sound",
-            NodeValues::new()
-                .skip(|k| k.ends_with(".on"))
-                .with_bindings(),
         );
     }
 
@@ -98,9 +94,9 @@ fn synth_presets_of_one_nodes_sound() {
         tx.bind(osc, On::value(PITCH), lfo, [("depth", Value::Float(0.3))])
     })
     .unwrap();
-    d.save_preset("sound", osc, "Warm").unwrap();
+    d.save_preset(osc, "Warm").unwrap();
     assert_eq!(
-        d.current_preset("sound", osc).unwrap(),
+        d.current_preset(osc).unwrap(),
         Some(PresetRef::User("Warm".into()))
     );
 
@@ -112,10 +108,10 @@ fn synth_presets_of_one_nodes_sound() {
         tx.unbind(osc, On::value(PITCH), lfo)
     })
     .unwrap();
-    assert_eq!(d.current_preset("sound", osc).unwrap(), None);
+    assert_eq!(d.current_preset(osc).unwrap(), None);
     let steps = d.tree().history_len();
     let (report, commit) = d
-        .apply_preset("sound", osc, &PresetRef::User("Warm".into()))
+        .apply_preset(osc, &PresetRef::User("Warm".into()))
         .unwrap();
     assert!(commit.is_some());
     assert_eq!(
@@ -132,37 +128,37 @@ fn synth_presets_of_one_nodes_sound() {
     );
     assert_eq!(n.bindings()[0].value("depth"), Some(Value::Float(0.3)));
     assert_eq!(
-        d.current_preset("sound", osc).unwrap(),
+        d.current_preset(osc).unwrap(),
         Some(PresetRef::User("Warm".into()))
     );
     d.undo().unwrap();
     assert_eq!(d.tree().get(osc).unwrap().get(PITCH), Some(-12.0));
 
     // Shard's rules: save refuses a taken name, update and the rest refuse a missing one
-    let err = d.save_preset("sound", osc, "Warm").unwrap_err().to_string();
+    let err = d.save_preset(osc, "Warm").unwrap_err().to_string();
     assert!(err.contains("already exists"), "{err}");
-    assert!(d.update_preset("sound", osc, "Cold").is_err());
+    assert!(d.update_preset(osc, "Cold").is_err());
     assert!(
-        d.save_preset("sound", osc, "   ").is_err(),
+        d.save_preset(osc, "   ").is_err(),
         "a name needs characters"
     );
-    d.update_preset("sound", osc, "Warm").unwrap();
-    d.save_preset("sound", osc, "Cold").unwrap();
-    d.rename_preset("sound", osc, "Cold", "Icy").unwrap();
+    d.update_preset(osc, "Warm").unwrap();
+    d.save_preset(osc, "Cold").unwrap();
+    d.rename_preset(osc, "Cold", "Icy").unwrap();
     assert!(
-        d.rename_preset("sound", osc, "Icy", "Warm").is_err(),
+        d.rename_preset(osc, "Icy", "Warm").is_err(),
         "rename refuses a taken name"
     );
     assert_eq!(
-        d.preset_names("sound", osc).unwrap(),
+        d.preset_names(osc).unwrap(),
         [
             PresetRef::User("Icy".into()),
             PresetRef::User("Warm".into())
         ]
     );
-    d.delete_preset("sound", osc, "Icy").unwrap();
+    d.delete_preset(osc, "Icy").unwrap();
     assert_eq!(
-        d.preset_names("sound", osc).unwrap(),
+        d.preset_names(osc).unwrap(),
         [PresetRef::User("Warm".into())]
     );
 
@@ -174,7 +170,7 @@ fn synth_presets_of_one_nodes_sound() {
     let (again, report) = Document::<Synth>::open(store, "/x.synth").unwrap();
     assert!(report.issues.is_empty());
     assert_eq!(
-        again.preset_names("sound", osc).unwrap(),
+        again.preset_names(osc).unwrap(),
         [PresetRef::User("Warm".into())]
     );
 }
@@ -229,6 +225,7 @@ fn synth_document_lifecycle_and_projection() {
 struct Atlas;
 
 const SIZE: Key<[f64; 2]> = Key::new("map.size");
+const SEED: Key<i64> = Key::new("terrain.seed");
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct Palette {
@@ -236,31 +233,13 @@ struct Palette {
     line: String,
 }
 
-/// Palettes are followed, never written onto a node.
-struct PaletteKind;
-
-impl Aggregate for PaletteKind {
-    type State = Palette;
-    fn get(&self, _node: rhizome_core::Node<'_>) -> Palette {
-        Palette {
-            fill: String::new(),
-            line: String::new(),
-        }
-    }
-    fn set(&self, _tx: &mut Edit<'_>, _node: NodeId, _s: &Palette) -> rhizome_core::Result<Report> {
-        Err(rhizome_core::Error::Structural(
-            "palettes are chosen, not applied".into(),
-        ))
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct Aspect {
     ratio: f64,
 }
 
-/// The state is derived: a ratio, not the stored size. The setter computes the size,
-/// keeping the long edge.
+/// The map kind's presets. The state is derived: a ratio, not the stored size. The
+/// setter computes the size, keeping the long edge.
 struct AspectKind;
 
 impl Aggregate for AspectKind {
@@ -281,9 +260,6 @@ impl Aggregate for AspectKind {
     fn matches(&self, now: &Aspect, p: &Aspect) -> bool {
         (now.ratio - p.ratio).abs() < 0.02
     }
-    fn applies_to(&self, node: rhizome_core::Node<'_>) -> bool {
-        node.type_name() == "map"
-    }
 }
 
 impl ObjectModel for Atlas {
@@ -298,7 +274,13 @@ impl ObjectModel for Atlas {
             NodeType::new("map")
                 .in_categories(&["campaigns"])
                 .vec2(SIZE, [800.0, 600.0]),
-        );
+        )
+        .presets(AspectKind)
+        .catalogue([
+            ("4x3", Aspect { ratio: 4.0 / 3.0 }),
+            ("16x9", Aspect { ratio: 16.0 / 9.0 }),
+            ("square", Aspect { ratio: 1.0 }),
+        ]);
         k.kind(NodeType::new("paper").in_categories(&["campaigns"]))
             .not_deletable()
             .not_duplicable()
@@ -309,19 +291,25 @@ impl ObjectModel for Atlas {
             .not_duplicable()
             .max_per_parent(1)
             .pinned_last("draw");
-        k.kind(NodeType::new("terrain").in_categories(&["campaigns"]).int(
-            "terrain.seed",
-            0..=999,
-            0,
-        ));
+        let seeded = |seed: i64| NodeValuesState {
+            values: [("terrain.seed".to_string(), json!(seed))].into(),
+            bindings: vec![],
+        };
+        k.kind(
+            NodeType::new("terrain")
+                .in_categories(&["campaigns"])
+                .int(SEED, 0..=999, 0),
+        )
+        .presets(NodeValues::new())
+        .catalogue([("rocky", seeded(7)), ("plains", seeded(42))]);
     }
 
-    fn presets(p: &mut Presets) {
+    fn themes(t: &mut Themes) {
         let pal = |fill: &str, line: &str| Palette {
             fill: fill.into(),
             line: line.into(),
         };
-        p.kind("palette", PaletteKind)
+        t.theme("palette")
             .catalogue([
                 ("doom-forge", pal("#3a1c12", "#f0a040")),
                 ("space-opera", pal("#0b1030", "#80a0ff")),
@@ -329,12 +317,6 @@ impl ObjectModel for Atlas {
             ])
             .fallback("doom-forge")
             .followed_by(&["campaign", "map"]);
-        p.kind("aspect", AspectKind).catalogue([
-            ("4x3", Aspect { ratio: 4.0 / 3.0 }),
-            ("16x9", Aspect { ratio: 16.0 / 9.0 }),
-            ("square", Aspect { ratio: 1.0 }),
-        ]);
-        p.kind("map-style", NodeValues::new()).followed_by(&["map"]);
     }
 
     fn project(tree: &Tree, into: &mut Vec<String>, _changes: Option<&Changeset>) {
@@ -452,55 +434,47 @@ fn atlas_policy_holds_however_the_tree_is_edited() {
 }
 
 #[test]
-fn atlas_palette_follows_by_cascade() {
+fn atlas_palette_theme_follows_by_cascade() {
     let (mut d, campaign, map) = atlas();
     let hills = d.tree().at("/campaigns/realm/north/hills").unwrap().id();
-    let palette = |d: &Document<Atlas>, n| d.resolve_preset("palette", n).unwrap().unwrap();
+    let palette = |d: &Document<Atlas>, n| d.resolve_theme("palette", n).unwrap().unwrap();
 
     let r = palette(&d, hills);
     assert_eq!(
-        (r.follower, &r.preset),
-        (None, &PresetRef::Catalogue("doom-forge".into())),
+        (r.follower, r.name.as_str()),
+        (None, "doom-forge"),
         "the fallback"
     );
     assert_eq!(r.state::<Palette>().unwrap().line, "#f0a040");
 
-    d.follow_preset(
-        "palette",
-        campaign,
-        Some(&PresetRef::Catalogue("space-opera".into())),
-    )
-    .unwrap();
+    d.follow_theme("palette", campaign, Some("space-opera"))
+        .unwrap();
     let r = palette(&d, hills);
     assert_eq!(
-        (r.follower, r.preset),
-        (Some(campaign), PresetRef::Catalogue("space-opera".into())),
+        (r.follower, r.name.as_str()),
+        (Some(campaign), "space-opera"),
         "from the campaign"
     );
 
-    d.follow_preset(
-        "palette",
-        map,
-        Some(&PresetRef::Catalogue("hostile-waters".into())),
-    )
-    .unwrap();
+    d.follow_theme("palette", map, Some("hostile-waters"))
+        .unwrap();
     assert_eq!(
         palette(&d, hills).follower,
         Some(map),
         "the map overrides the campaign"
     );
 
-    d.follow_preset("palette", map, None).unwrap();
+    d.follow_theme("palette", map, None).unwrap();
     assert_eq!(
         palette(&d, hills).follower,
         Some(campaign),
         "unfollowing falls back to the campaign"
     );
 
-    // the choice is document data: it saves, and a catalogue ref is readable on disk
+    // the choice is document data: it saves, and readably
     let text = d.tree().serialise();
     assert!(
-        text.contains("\"file\": \"catalogue:palette/space-opera\""),
+        text.contains("\"file\": \"theme:palette/space-opera\""),
         "{text}"
     );
     let store = MemoryStore::default();
@@ -508,81 +482,38 @@ fn atlas_palette_follows_by_cascade() {
     let (again, _) = Document::<Atlas>::open(store, "/r.atlas").unwrap();
     assert_eq!(
         again
-            .resolve_preset("palette", hills)
+            .resolve_theme("palette", hills)
             .unwrap()
             .unwrap()
             .follower,
         Some(campaign)
     );
 
-    assert!(
-        d.follow_preset(
-            "palette",
-            campaign,
-            Some(&PresetRef::Catalogue("nope".into()))
-        )
-        .is_err()
+    assert_eq!(
+        d.theme_names("palette").unwrap(),
+        ["doom-forge", "space-opera", "hostile-waters"]
     );
+    assert!(d.follow_theme("palette", campaign, Some("nope")).is_err());
     assert!(
-        d.follow_preset(
-            "palette",
-            hills,
-            Some(&PresetRef::Catalogue("space-opera".into()))
-        )
-        .is_err(),
+        d.follow_theme("palette", hills, Some("space-opera"))
+            .is_err(),
         "a terrain can't follow"
     );
-    assert!(
-        d.apply_preset(
-            "palette",
-            campaign,
-            &PresetRef::Catalogue("space-opera".into())
-        )
-        .is_err(),
-        "the aggregate says so"
-    );
+    assert!(matches!(
+        d.resolve_theme("nope", hills),
+        Err(Error::UnknownTheme(_))
+    ));
 }
 
 #[test]
-fn atlas_follows_a_user_preset_by_id() {
-    let (mut d, campaign, north) = atlas();
-    let (south, _) = d.edit("South", |tx| tx.add_map(campaign, "south")).unwrap();
-    d.edit("Big", |tx| tx.set(north, SIZE, [2000.0, 1000.0]))
-        .unwrap();
-    d.save_preset("map-style", north, "Big").unwrap();
-    d.follow_preset("map-style", south, Some(&PresetRef::User("Big".into())))
-        .unwrap();
-    let r = d.resolve_preset("map-style", south).unwrap().unwrap();
-    assert_eq!(
-        r.state::<NodeValuesState>().unwrap().values["map.size"],
-        json!([2000.0, 1000.0])
-    );
-    d.rename_preset("map-style", north, "Big", "Huge").unwrap();
-    assert_eq!(
-        d.resolve_preset("map-style", south)
-            .unwrap()
-            .unwrap()
-            .preset,
-        PresetRef::User("Huge".into()),
-        "a follower holds the preset by id, so a rename keeps it"
-    );
-    d.delete_preset("map-style", north, "Huge").unwrap();
-    assert_eq!(
-        d.resolve_preset("map-style", south).unwrap(),
-        None,
-        "no fallback, nothing to resolve"
-    );
-}
-
-#[test]
-fn atlas_aspect_is_computed_and_matched() {
+fn atlas_aspect_preset_is_computed_and_matched() {
     let (mut d, _, map) = atlas();
     assert_eq!(
-        d.current_preset("aspect", map).unwrap(),
+        d.current_preset(map).unwrap(),
         Some(PresetRef::Catalogue("4x3".into()))
     );
     let (report, _) = d
-        .apply_preset("aspect", map, &PresetRef::Catalogue("16x9".into()))
+        .apply_preset(map, &PresetRef::Catalogue("16x9".into()))
         .unwrap();
     assert_eq!(report.applied, 1);
     assert_eq!(
@@ -591,25 +522,98 @@ fn atlas_aspect_is_computed_and_matched() {
         "the long edge stays"
     );
     assert_eq!(
-        d.current_preset("aspect", map).unwrap(),
+        d.current_preset(map).unwrap(),
         Some(PresetRef::Catalogue("16x9".into()))
     );
     d.edit("Nudge", |tx| tx.set(map, SIZE, [800.0, 452.0]))
         .unwrap();
     assert_eq!(
-        d.current_preset("aspect", map).unwrap(),
+        d.current_preset(map).unwrap(),
         Some(PresetRef::Catalogue("16x9".into())),
         "close enough"
     );
+
+    // a preset belongs to its kind: a terrain's are its own
     let hills = d.tree().at("/campaigns/realm/north/hills").unwrap().id();
+    assert_eq!(
+        d.preset_names(hills).unwrap(),
+        [
+            PresetRef::Catalogue("rocky".into()),
+            PresetRef::Catalogue("plains".into())
+        ]
+    );
+    let e = d
+        .apply_preset(hills, &PresetRef::Catalogue("square".into()))
+        .unwrap_err()
+        .to_string();
     assert!(
-        d.preset_names("aspect", hills).unwrap().is_empty(),
-        "aspect applies to maps only"
+        e.contains("a terrain has no built-in preset “square”"),
+        "{e}"
+    );
+    let campaign = d.tree().at("/campaigns/realm").unwrap().id();
+    assert!(
+        d.preset_names(campaign).unwrap().is_empty(),
+        "a kind without presets has none"
+    );
+    assert!(d.save_preset(campaign, "x").is_err());
+
+    // user presets of a kind travel with the file, and any node of that kind sees them
+    d.save_preset(map, "Poster").unwrap();
+    let names = d.preset_names(map).unwrap();
+    assert_eq!(names.last(), Some(&PresetRef::User("Poster".into())));
+}
+
+#[test]
+fn a_node_made_from_a_preset() {
+    let (mut d, _, map) = atlas();
+    let ((id, report), commit) = d
+        .add_from_preset(
+            "/campaigns/realm/north",
+            "terrain",
+            "dunes",
+            &PresetRef::Catalogue("plains".into()),
+        )
+        .unwrap();
+    assert_eq!(report.applied, 1);
+    let c = commit.unwrap();
+    assert_eq!(c.label, "New terrain");
+    assert_eq!(d.tree().get(id).unwrap().get(SEED), Some(42));
+    d.undo().unwrap();
+    assert!(d.tree().get(id).is_none(), "one edit, one undo step");
+
+    // a user preset fills the template too
+    let hills = d.tree().at("/campaigns/realm/north/hills").unwrap().id();
+    d.edit("Seed", |tx| tx.set(hills, SEED, 99)).unwrap();
+    d.save_preset(hills, "Mine").unwrap();
+    let ((dunes, _), _) = d
+        .add_from_preset(
+            "/campaigns/realm/north",
+            "terrain",
+            "dunes",
+            &PresetRef::User("Mine".into()),
+        )
+        .unwrap();
+    assert_eq!(d.tree().get(dunes).unwrap().get(SEED), Some(99));
+    assert!(
+        d.add_from_preset(
+            "/campaigns/realm/north",
+            "terrain",
+            "x",
+            &PresetRef::User("Nope".into())
+        )
+        .is_err()
     );
     assert!(
-        d.apply_preset("aspect", hills, &PresetRef::Catalogue("square".into()))
-            .is_err()
+        d.add_from_preset(
+            "/campaigns/realm",
+            "campaign",
+            "x",
+            &PresetRef::Catalogue("a".into())
+        )
+        .is_err(),
+        "no presets on that kind"
     );
+    let _ = map;
 }
 
 #[test]
@@ -676,21 +680,52 @@ fn commands_every_app_gets() {
     ));
     assert_eq!(d.label("edit.redo").unwrap(), "Redo Duplicate");
 
-    let Outcome::Committed(_) = d.run("preset.apply", &json!({"kind": "aspect", "at": "/campaigns/realm/north", "preset": {"catalogue": "square"}})).unwrap() else { panic!() };
+    let Outcome::Committed(_) = d
+        .run(
+            "preset.apply",
+            &json!({"at": "/campaigns/realm/north", "preset": {"catalogue": "square"}}),
+        )
+        .unwrap()
+    else {
+        panic!()
+    };
     assert_eq!(
         d.tree().at("/campaigns/realm/north").unwrap().get(SIZE),
         Some([800.0, 800.0])
     );
-    let Outcome::Committed(_) = d.run("preset.follow", &json!({"kind": "palette", "at": "/campaigns/realm", "preset": {"catalogue": "space-opera"}})).unwrap() else { panic!() };
+    assert!(
+        !d.is_enabled("preset.apply", &at("/campaigns/realm"))
+            .unwrap(),
+        "no presets on a campaign"
+    );
+    let Outcome::Committed(c) = d.run("node.add", &json!({"parent": "/campaigns/realm/north", "type": "terrain", "name": "dunes", "preset": {"catalogue": "rocky"}})).unwrap() else { panic!() };
+    assert!(
+        c.changes
+            .to_string()
+            .contains("/campaigns/realm/north/dunes  added terrain")
+    );
+    assert_eq!(
+        d.tree()
+            .at("/campaigns/realm/north/dunes")
+            .unwrap()
+            .get(SEED),
+        Some(7)
+    );
+    let Outcome::Committed(_) = d
+        .run(
+            "theme.follow",
+            &json!({"kind": "palette", "at": "/campaigns/realm", "theme": "space-opera"}),
+        )
+        .unwrap()
+    else {
+        panic!()
+    };
     assert!(matches!(
         d.run("nope", &json!({})),
         Err(Error::UnknownCommand(_))
     ));
     assert!(matches!(
-        d.run(
-            "preset.save",
-            &json!({"kind": "map-style", "at": "/campaigns/realm/north"})
-        ),
+        d.run("preset.save", &at("/campaigns/realm/north")),
         Err(Error::Payload(_))
     ));
     let ids: Vec<String> = d
@@ -698,7 +733,7 @@ fn commands_every_app_gets() {
         .into_iter()
         .map(|(id, _, _)| id)
         .collect();
-    assert!(ids.contains(&"file.save".to_string()) && ids.contains(&"preset.follow".to_string()));
+    assert!(ids.contains(&"file.save".to_string()) && ids.contains(&"theme.follow".to_string()));
 }
 
 // ---------------------------------------------------------------- bad models
@@ -719,8 +754,8 @@ impl ObjectModel for BadFallback {
     const EXTENSION: &'static str = "x";
     type Projection = ();
     fn kinds(_: &mut Kinds) {}
-    fn presets(p: &mut Presets) {
-        p.kind("aspect", AspectKind).fallback("nope");
+    fn themes(t: &mut Themes) {
+        t.theme::<Palette>("palette").fallback("nope");
     }
 }
 
@@ -730,8 +765,8 @@ impl ObjectModel for BadFollower {
     const EXTENSION: &'static str = "x";
     type Projection = ();
     fn kinds(_: &mut Kinds) {}
-    fn presets(p: &mut Presets) {
-        p.kind("palette", PaletteKind).followed_by(&["ghost"]);
+    fn themes(t: &mut Themes) {
+        t.theme::<Palette>("palette").followed_by(&["ghost"]);
     }
 }
 
@@ -806,26 +841,5 @@ fn open_reports_policy_breaches() {
     assert_eq!(
         issues,
         ["/campaigns/realm/north/grid: policy: must stay last in `draw`"]
-    );
-}
-
-#[test]
-fn deleting_a_followed_preset_unfollows() {
-    let (mut d, campaign, north) = atlas();
-    let (south, _) = d.edit("South", |tx| tx.add_map(campaign, "south")).unwrap();
-    d.save_preset("map-style", north, "Big").unwrap();
-    d.follow_preset("map-style", south, Some(&PresetRef::User("Big".into())))
-        .unwrap();
-    let c = d.delete_preset("map-style", north, "Big").unwrap().unwrap();
-    let lines = c.changes.to_string();
-    assert!(
-        lines.contains("/campaigns/realm/south  follow.map-style"),
-        "{lines}"
-    );
-    let (_, report) = Tree::load(&d.tree().serialise(), d.tree().registry().clone()).unwrap();
-    assert!(
-        report.issues.is_empty(),
-        "nothing left pointing at the deleted preset: {:?}",
-        report.issues
     );
 }

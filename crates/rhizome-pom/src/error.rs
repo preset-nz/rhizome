@@ -7,8 +7,8 @@ pub enum Error {
     Io { path: String, message: String },
     #[error("the document has no file yet; save it as something first")]
     NoPath,
-    #[error("no preset kind `{0}`")]
-    UnknownPresetKind(String),
+    #[error("no theme `{0}`")]
+    UnknownTheme(String),
     #[error("{0}")]
     Preset(String),
     #[error("no command `{0}`")]

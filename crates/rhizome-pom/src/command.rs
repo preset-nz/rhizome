@@ -59,7 +59,6 @@ struct Paste {
 
 #[derive(serde::Deserialize)]
 struct PresetArgs {
-    kind: String,
     at: String,
     #[serde(default)]
     preset: Option<PresetRef>,
@@ -67,6 +66,24 @@ struct PresetArgs {
     label: Option<String>,
     #[serde(default)]
     to: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct AddArgs {
+    parent: String,
+    #[serde(rename = "type")]
+    type_name: String,
+    name: String,
+    #[serde(default)]
+    preset: Option<PresetRef>,
+}
+
+#[derive(serde::Deserialize)]
+struct ThemeArgs {
+    kind: String,
+    at: String,
+    #[serde(default)]
+    theme: Option<String>,
 }
 
 fn node_of<M: ObjectModel>(d: &Document<M>, at: &str) -> Result<rhizome_core::NodeId> {
@@ -226,13 +243,38 @@ impl<M: ObjectModel> Commands<M> {
             },
         );
 
+        c.add(
+            "node.add",
+            fixed("New"),
+            |d, p| payload::<AddArgs>(p).is_ok_and(|a| d.tree().at(a.parent.as_str()).is_some()),
+            |d, p| {
+                let a: AddArgs = payload(p)?;
+                Ok(match a.preset {
+                    Some(preset) => d
+                        .add_from_preset(&a.parent, &a.type_name, &a.name, &preset)?
+                        .1
+                        .into(),
+                    None => d
+                        .edit_ops(
+                            &format!("New {}", a.type_name),
+                            &[Op::Add {
+                                parent: a.parent,
+                                type_name: a.type_name,
+                                name: a.name,
+                            }],
+                        )?
+                        .into(),
+                })
+            },
+        );
+
         let preset_enabled = |d: &Document<M>, p: &Json| {
             let Ok(a) = payload::<PresetArgs>(p) else {
                 return false;
             };
             d.tree()
                 .at(a.at.as_str())
-                .is_some_and(|n| d.preset_names(&a.kind, n.id()).is_ok())
+                .is_some_and(|n| d.has_presets(n.type_name()))
         };
         c.add(
             "preset.apply",
@@ -241,8 +283,7 @@ impl<M: ObjectModel> Commands<M> {
             |d, p| {
                 let a: PresetArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
-                let preset = need(a.preset, "preset")?;
-                Ok(d.apply_preset(&a.kind, node, &preset)?.1.into())
+                Ok(d.apply_preset(node, &need(a.preset, "preset")?)?.1.into())
             },
         );
         c.add(
@@ -252,8 +293,7 @@ impl<M: ObjectModel> Commands<M> {
             |d, p| {
                 let a: PresetArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
-                Ok(d.save_preset(&a.kind, node, &need(a.label, "label")?)?
-                    .into())
+                Ok(d.save_preset(node, &need(a.label, "label")?)?.into())
             },
         );
         c.add(
@@ -263,8 +303,7 @@ impl<M: ObjectModel> Commands<M> {
             |d, p| {
                 let a: PresetArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
-                Ok(d.update_preset(&a.kind, node, &need(a.label, "label")?)?
-                    .into())
+                Ok(d.update_preset(node, &need(a.label, "label")?)?.into())
             },
         );
         c.add(
@@ -275,7 +314,7 @@ impl<M: ObjectModel> Commands<M> {
                 let a: PresetArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
                 Ok(
-                    d.rename_preset(&a.kind, node, &need(a.label, "label")?, &need(a.to, "to")?)?
+                    d.rename_preset(node, &need(a.label, "label")?, &need(a.to, "to")?)?
                         .into(),
                 )
             },
@@ -287,18 +326,21 @@ impl<M: ObjectModel> Commands<M> {
             |d, p| {
                 let a: PresetArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
-                Ok(d.delete_preset(&a.kind, node, &need(a.label, "label")?)?
-                    .into())
+                Ok(d.delete_preset(node, &need(a.label, "label")?)?.into())
             },
         );
         c.add(
-            "preset.follow",
-            fixed("Choose Preset"),
-            preset_enabled,
+            "theme.follow",
+            fixed("Choose Theme"),
             |d, p| {
-                let a: PresetArgs = payload(p)?;
+                payload::<ThemeArgs>(p).is_ok_and(|a| {
+                    d.tree().at(a.at.as_str()).is_some() && d.theme_names(&a.kind).is_ok()
+                })
+            },
+            |d, p| {
+                let a: ThemeArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
-                Ok(d.follow_preset(&a.kind, node, a.preset.as_ref())?.into())
+                Ok(d.follow_theme(&a.kind, node, a.theme.as_deref())?.into())
             },
         );
         c

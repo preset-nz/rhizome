@@ -9,25 +9,25 @@
 > run layer.add {"name":"hills","to":"/realms/west/north"}
   /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
   /realms/west/north/hills  added layer
-> names aspect at /realms/west/north
+> presets at /realms/west/north
   4x3, 16x9, square
-> names aspect at /realms/west/north/hills
-  (none)
-> current aspect at /realms/west/north
+> presets at /realms/west/north/hills
+  rocky
+> current preset at /realms/west/north
   4x3
-> run preset.apply {"at":"/realms/west/north","kind":"aspect","preset":{"catalogue":"16x9"}}
+> run preset.apply {"at":"/realms/west/north","preset":{"catalogue":"16x9"}}
   /realms/west/north  map.size  unset → (800.0, 450.0)
-> current aspect at /realms/west/north
+> current preset at /realms/west/north
   16x9
 > edit Nudge
   /realms/west/north  map.size  (800.0, 450.0) → (800.0, 452.0)
-> current aspect at /realms/west/north
+> current preset at /realms/west/north
   16x9
-> run preset.apply {"at":"/realms/west/north/hills","kind":"aspect","preset":{"catalogue":"square"}}
-  refused: aspect presets don't apply here
+> run preset.apply {"at":"/realms/west/north/hills","preset":{"catalogue":"square"}}
+  refused: a layer has no built-in preset “square”
 > run edit.undo {}
   /realms/west/north  map.size  (800.0, 452.0) → (800.0, 450.0)
 > run edit.undo {}
   /realms/west/north  map.size  (800.0, 450.0) → unset
-> current aspect at /realms/west/north
+> current preset at /realms/west/north
   4x3

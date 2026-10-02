@@ -9,7 +9,8 @@ use serde_json::Value as Json;
 use crate::command::Outcome;
 use crate::error::{Error, Result};
 use crate::model::{Model, ObjectModel, Policy, breaches, repin};
-use crate::presets::{PresetRef, Report, Resolved};
+use crate::presets::{PresetRef, Report};
+use crate::themes::ResolvedTheme;
 
 /// Where a document's text lives. Single files today; a bundle folder and a database later.
 pub trait Store: Send {
@@ -312,98 +313,101 @@ impl<M: ObjectModel> Document<M> {
         Ok(self.projected(c))
     }
 
-    // ---- presets ----
+    // ---- presets: on the kind, copied into a node ----
 
-    pub fn preset_names(&self, kind: &str, node: NodeId) -> Result<Vec<PresetRef>> {
-        self.model.presets.names(&self.tree, kind, node)
+    /// The node's kind's built-in presets, then the user's saved for that kind.
+    pub fn preset_names(&self, node: NodeId) -> Result<Vec<PresetRef>> {
+        self.model.presets.names(&self.tree, node)
     }
 
-    pub fn current_preset(&self, kind: &str, node: NodeId) -> Result<Option<PresetRef>> {
-        self.model.presets.current(&self.tree, kind, node)
+    /// Whether a kind declares presets.
+    pub fn has_presets(&self, type_name: &str) -> bool {
+        self.model.presets.by_type.contains_key(type_name)
     }
 
-    /// What `node` resolves to through followed presets and the fallback.
-    pub fn resolve_preset(&self, kind: &str, node: NodeId) -> Result<Option<Resolved>> {
-        self.model.presets.resolve(&self.tree, kind, node)
+    /// The first preset whose state matches the node now.
+    pub fn current_preset(&self, node: NodeId) -> Result<Option<PresetRef>> {
+        self.model.presets.current(&self.tree, node)
     }
 
-    pub fn save_preset(&mut self, kind: &str, node: NodeId, label: &str) -> Result<Option<Commit>> {
+    /// Saves the node's state as a user preset for its kind. It lives in the document.
+    pub fn save_preset(&mut self, node: NodeId, label: &str) -> Result<Option<Commit>> {
         let model = self.model.clone();
         Ok(self
-            .edit("Save Preset", |tx| {
-                model.presets.save(tx, kind, node, label)
-            })?
+            .edit("Save Preset", |tx| model.presets.save(tx, node, label))?
             .1)
     }
 
-    pub fn update_preset(
-        &mut self,
-        kind: &str,
-        node: NodeId,
-        label: &str,
-    ) -> Result<Option<Commit>> {
+    pub fn update_preset(&mut self, node: NodeId, label: &str) -> Result<Option<Commit>> {
         let model = self.model.clone();
         Ok(self
-            .edit("Update Preset", |tx| {
-                model.presets.update(tx, kind, node, label)
-            })?
+            .edit("Update Preset", |tx| model.presets.update(tx, node, label))?
             .1)
     }
 
-    pub fn rename_preset(
-        &mut self,
-        kind: &str,
-        node: NodeId,
-        label: &str,
-        to: &str,
-    ) -> Result<Option<Commit>> {
+    pub fn rename_preset(&mut self, node: NodeId, label: &str, to: &str) -> Result<Option<Commit>> {
         let model = self.model.clone();
         Ok(self
             .edit("Rename Preset", |tx| {
-                model.presets.rename(tx, kind, node, label, to)
+                model.presets.rename(tx, node, label, to)
             })?
             .1)
     }
 
-    pub fn delete_preset(
-        &mut self,
-        kind: &str,
-        node: NodeId,
-        label: &str,
-    ) -> Result<Option<Commit>> {
+    pub fn delete_preset(&mut self, node: NodeId, label: &str) -> Result<Option<Commit>> {
         let model = self.model.clone();
         Ok(self
-            .edit("Delete Preset", |tx| {
-                model.presets.delete(tx, kind, node, label)
-            })?
+            .edit("Delete Preset", |tx| model.presets.delete(tx, node, label))?
             .1)
     }
 
     /// Applies a preset to a node in one edit, one undo step.
     pub fn apply_preset(
         &mut self,
-        kind: &str,
         node: NodeId,
         preset: &PresetRef,
     ) -> Result<(Report, Option<Commit>)> {
         let model = self.model.clone();
-        self.edit("Apply Preset", |tx| {
-            model.presets.apply(tx, kind, node, preset)
+        self.edit("Apply Preset", |tx| model.presets.apply(tx, node, preset))
+    }
+
+    /// Makes a node of `type_name` from one of its presets, in one edit, one undo step.
+    pub fn add_from_preset(
+        &mut self,
+        parent: &str,
+        type_name: &str,
+        name: &str,
+        preset: &PresetRef,
+    ) -> Result<((NodeId, Report), Option<Commit>)> {
+        let model = self.model.clone();
+        let label = format!("New {type_name}");
+        self.edit(&label, |tx| {
+            model.presets.add_from(tx, parent, type_name, name, preset)
         })
     }
 
-    /// Makes `node` follow a preset by reference (`None` to stop). Its descendants resolve
-    /// through it.
-    pub fn follow_preset(
+    // ---- themes: shared choices, followed by cascade ----
+
+    pub fn theme_names(&self, kind: &str) -> Result<Vec<String>> {
+        self.model.themes.names(kind)
+    }
+
+    /// What `node` resolves to: its own choice, else the nearest ancestor's, else the fallback.
+    pub fn resolve_theme(&self, kind: &str, node: NodeId) -> Result<Option<ResolvedTheme>> {
+        self.model.themes.resolve(&self.tree, kind, node)
+    }
+
+    /// Makes `node` follow a theme (`None` to stop). Its descendants resolve through it.
+    pub fn follow_theme(
         &mut self,
         kind: &str,
         node: NodeId,
-        preset: Option<&PresetRef>,
+        name: Option<&str>,
     ) -> Result<Option<Commit>> {
         let model = self.model.clone();
         Ok(self
-            .edit("Choose Preset", |tx| {
-                model.presets.follow(tx, kind, node, preset)
+            .edit("Choose Theme", |tx| {
+                model.themes.follow(tx, kind, node, name)
             })?
             .1)
     }

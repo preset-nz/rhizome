@@ -1,6 +1,6 @@
 {
-  "title": "Choose a palette for a realm and a map",
-  "why": "A layer resolves its palette from its map, else its realm, else the built-in fallback. The choice is saved.",
+  "title": "Choose a palette theme for a realm and a map",
+  "why": "A theme is a shared choice, never written onto a node. A layer resolves it from its map, else its realm, else the built-in fallback. The choice is saved.",
   "steps": [
     "new",
     {
@@ -42,13 +42,11 @@
     },
     {
       "run": {
-        "id": "preset.follow",
+        "id": "theme.follow",
         "payload": {
           "kind": "palette",
           "at": "/realms/west",
-          "preset": {
-            "catalogue": "night"
-          }
+          "theme": "night"
         }
       }
     },
@@ -60,13 +58,11 @@
     },
     {
       "run": {
-        "id": "preset.follow",
+        "id": "theme.follow",
         "payload": {
           "kind": "palette",
           "at": "/realms/west/north",
-          "preset": {
-            "catalogue": "tide"
-          }
+          "theme": "tide"
         }
       }
     },
@@ -78,7 +74,7 @@
     },
     {
       "run": {
-        "id": "preset.follow",
+        "id": "theme.follow",
         "payload": {
           "kind": "palette",
           "at": "/realms/west/north"
@@ -93,13 +89,11 @@
     },
     {
       "run": {
-        "id": "preset.follow",
+        "id": "theme.follow",
         "payload": {
           "kind": "palette",
           "at": "/realms/west/north/hills",
-          "preset": {
-            "catalogue": "night"
-          }
+          "theme": "night"
         }
       }
     },

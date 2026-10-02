@@ -13,12 +13,14 @@ mod document;
 mod error;
 mod model;
 mod presets;
+mod themes;
 
 pub use command::{Command, Commands, Outcome, payload};
 pub use document::{Document, FileStore, MemoryStore, Store};
 pub use error::{Error, Result};
 pub use model::{KindRef, Kinds, ObjectModel, Pin, Policy};
 pub use presets::{
-    Aggregate, BindingState, NodeValues, NodeValuesState, PRESET, PRESETS, PresetKindRef,
-    PresetRef, Presets, Report, Resolved, follow_key,
+    Aggregate, BindingState, KindPresetsRef, NodeValues, NodeValuesState, PRESET, PRESETS,
+    PresetRef, Report,
 };
+pub use themes::{ResolvedTheme, ThemeRef, Themes, theme_key};

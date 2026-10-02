@@ -23,22 +23,6 @@ struct Palette {
     fill: String,
 }
 
-struct PaletteKind;
-
-impl Aggregate for PaletteKind {
-    type State = Palette;
-    fn get(&self, _: rhizome_core::Node<'_>) -> Palette {
-        Palette {
-            fill: String::new(),
-        }
-    }
-    fn set(&self, _: &mut Edit<'_>, _: NodeId, _: &Palette) -> rhizome_core::Result<Report> {
-        Err(rhizome_core::Error::Structural(
-            "palettes are chosen, not applied".into(),
-        ))
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct Aspect {
     ratio: f64,
@@ -63,9 +47,6 @@ impl Aggregate for AspectKind {
     }
     fn matches(&self, a: &Aspect, b: &Aspect) -> bool {
         (a.ratio - b.ratio).abs() < 0.02
-    }
-    fn applies_to(&self, n: rhizome_core::Node<'_>) -> bool {
-        n.type_name() == "map"
     }
 }
 
@@ -110,7 +91,13 @@ impl ObjectModel for Gazetteer {
                 .in_categories(&["realms"])
                 .vec2(SIZE, [800.0, 600.0])
                 .int("map.zoom", 1..=8, 1),
-        );
+        )
+        .presets(AspectKind)
+        .catalogue([
+            ("4x3", Aspect { ratio: 4.0 / 3.0 }),
+            ("16x9", Aspect { ratio: 16.0 / 9.0 }),
+            ("square", Aspect { ratio: 1.0 }),
+        ]);
         k.kind(NodeType::new("paper").in_categories(&["realms"]))
             .not_deletable()
             .not_duplicable()
@@ -125,12 +112,20 @@ impl ObjectModel for Gazetteer {
             NodeType::new("layer")
                 .in_categories(&["realms"])
                 .int("layer.seed", 0..=999, 0),
-        );
+        )
+        .presets(NodeValues::new())
+        .catalogue([(
+            "rocky",
+            NodeValuesState {
+                values: [("layer.seed".to_string(), json!(7))].into(),
+                bindings: vec![],
+            },
+        )]);
     }
 
-    fn presets(p: &mut Presets) {
+    fn themes(t: &mut Themes) {
         let pal = |f: &str| Palette { fill: f.into() };
-        p.kind("palette", PaletteKind)
+        t.theme("palette")
             .catalogue([
                 ("ember", pal("#3a1c12")),
                 ("night", pal("#0b1030")),
@@ -138,13 +133,6 @@ impl ObjectModel for Gazetteer {
             ])
             .fallback("ember")
             .followed_by(&["realm", "map"]);
-        p.kind("aspect", AspectKind).catalogue([
-            ("4x3", Aspect { ratio: 4.0 / 3.0 }),
-            ("16x9", Aspect { ratio: 16.0 / 9.0 }),
-            ("square", Aspect { ratio: 1.0 }),
-        ]);
-        p.kind("style", NodeValues::new().skip(|k| k == "map.size"))
-            .followed_by(&["map"]);
     }
 
     fn commands(c: &mut Commands<Self>) {
@@ -189,7 +177,13 @@ struct Workflow {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct PresetQuery {
+struct At {
+    at: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ThemeQuery {
     kind: String,
     at: String,
 }
@@ -216,9 +210,11 @@ enum Step {
     /// Each command's label and whether it's enabled for one payload.
     Menu(Menu),
     Status,
-    Names(PresetQuery),
-    Current(PresetQuery),
-    Resolve(PresetQuery),
+    /// A node's presets: its kind's built-in ones, then the user's.
+    Names(At),
+    Current(At),
+    /// What a node's theme resolves to, through its ancestors.
+    Resolve(ThemeQuery),
     SaveAs(String),
     Reopen,
 }
@@ -319,10 +315,10 @@ impl Session {
             }
             Step::Names(q) => {
                 let n = self.node(&q.at);
-                let names = self.doc().preset_names(&q.kind, n).unwrap();
+                let names = self.doc().preset_names(n).unwrap();
                 let line = names.iter().map(preset).collect::<Vec<_>>().join(", ");
                 (
-                    format!("names {} at {}", q.kind, q.at),
+                    format!("presets at {}", q.at),
                     vec![if line.is_empty() {
                         "(none)".into()
                     } else {
@@ -332,15 +328,15 @@ impl Session {
             }
             Step::Current(q) => {
                 let n = self.node(&q.at);
-                let c = self.doc().current_preset(&q.kind, n).unwrap();
+                let c = self.doc().current_preset(n).unwrap();
                 (
-                    format!("current {} at {}", q.kind, q.at),
+                    format!("current preset at {}", q.at),
                     vec![c.as_ref().map_or("(none)".into(), preset)],
                 )
             }
             Step::Resolve(q) => {
                 let n = self.node(&q.at);
-                let r = self.doc().resolve_preset(&q.kind, n).unwrap();
+                let r = self.doc().resolve_theme(&q.kind, n).unwrap();
                 let line = match r {
                     None => "(nothing)".to_string(),
                     Some(r) => {
@@ -348,7 +344,7 @@ impl Session {
                             .follower
                             .map(|f| self.doc().tree().get(f).unwrap().path().to_string())
                             .unwrap_or_else(|| "the fallback".into());
-                        format!("{} from {from}  {}", preset(&r.preset), r.state)
+                        format!("{} from {from}  {}", r.name, r.state)
                     }
                 };
                 (format!("resolve {} at {}", q.kind, q.at), vec![line])

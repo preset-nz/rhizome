@@ -3,12 +3,16 @@ use std::sync::Arc;
 
 use rhizome_core::{
     ChangeKind, Changeset, Edit, Node, NodeId, NodeType, Origin, Path, Registry, Tree, Violation,
-    valid_name,
 };
 
 use crate::command::Commands;
 use crate::error::{Error, Result};
-use crate::presets::{PRESET, PRESETS, Presets, follow_key, preset_node_type};
+use std::marker::PhantomData;
+
+use crate::presets::{
+    Aggregate, KindPresets, KindPresetsRef, PRESET, PRESETS, Presets, preset_node_type,
+};
+use crate::themes::{Themes, theme_key};
 
 /// The base every app's object model is built on. Implement it with only your parts;
 /// [`Document`](crate::Document) supplies the rest.
@@ -22,11 +26,11 @@ pub trait ObjectModel: Sized + 'static {
     /// list. `()` when there is none.
     type Projection: Default + Send;
 
-    /// The app's categories and kinds: node types plus their policy.
+    /// The app's categories and kinds: node types plus their policy and presets.
     fn kinds(k: &mut Kinds);
 
-    /// The app's preset kinds. None by default.
-    fn presets(_p: &mut Presets) {}
+    /// The app's themes: shared choices nodes follow by cascade. None by default.
+    fn themes(_t: &mut Themes) {}
 
     /// The app's own commands, next to the built-in ones.
     fn commands(_c: &mut Commands<Self>) {}
@@ -67,6 +71,7 @@ impl Default for Policy {
 pub(crate) struct Kind {
     pub node_type: NodeType,
     pub policy: Policy,
+    pub presets: Option<KindPresets>,
 }
 
 /// The app's categories and kinds, as [`ObjectModel::kinds`] declares them.
@@ -79,7 +84,7 @@ pub struct Kinds {
 /// One kind being declared. Chain policy onto it.
 pub struct KindRef<'a>(&'a mut Kind);
 
-impl KindRef<'_> {
+impl<'a> KindRef<'a> {
     /// It can't be removed on its own; it leaves only with its parent.
     pub fn not_deletable(self) -> Self {
         self.0.policy.deletable = false;
@@ -107,6 +112,20 @@ impl KindRef<'_> {
         self.0.policy.pinned = Some(Pin::Last(order.into()));
         self
     }
+
+    /// The kind's presets: how to read a preset off a node of this kind and write it back.
+    /// Last in the chain; the catalogue follows it. Pass a clone to share one aggregate
+    /// across kinds.
+    pub fn presets<A: Aggregate>(self, aggregate: A) -> KindPresetsRef<'a, A> {
+        let entry = self.0.presets.insert(KindPresets {
+            aggregate: Arc::new(aggregate),
+            catalogue: Vec::new(),
+        });
+        KindPresetsRef {
+            entry,
+            _a: PhantomData,
+        }
+    }
 }
 
 impl Kinds {
@@ -119,6 +138,7 @@ impl Kinds {
         self.kinds.push(Kind {
             node_type: t,
             policy: Policy::default(),
+            presets: None,
         });
         KindRef(self.kinds.last_mut().expect("just pushed"))
     }
@@ -134,6 +154,7 @@ pub(crate) struct Model<M: ObjectModel> {
     pub registry: Arc<Registry>,
     pub policies: BTreeMap<String, Policy>,
     pub presets: Presets,
+    pub themes: Themes,
     pub commands: Commands<M>,
 }
 
@@ -141,19 +162,19 @@ impl<M: ObjectModel> Model<M> {
     pub fn build() -> Result<Arc<Model<M>>> {
         let mut kinds = Kinds::default();
         M::kinds(&mut kinds);
-        let mut presets = Presets::default();
-        M::presets(&mut presets);
-        presets.validate()?;
+        let mut themes = Themes::default();
+        M::themes(&mut themes);
+        themes.validate()?;
 
-        // a kind that follows a preset kind gets a reference key for it
-        for (kind_id, followers) in presets.followers() {
+        // a kind that follows a theme gets a reference key for it
+        for (theme, followers) in themes.followers() {
             for t in followers {
                 let k = kinds.find_mut(&t).ok_or_else(|| {
                     Error::Model(format!(
-                        "preset kind `{kind_id}` is followed by undeclared kind `{t}`"
+                        "theme `{theme}` is followed by undeclared kind `{t}`"
                     ))
                 })?;
-                k.node_type = k.node_type.clone().reference(follow_key(&kind_id));
+                k.node_type = k.node_type.clone().reference(theme_key(&theme));
             }
         }
 
@@ -164,7 +185,11 @@ impl<M: ObjectModel> Model<M> {
             b.category(name, *origin);
         }
         let mut policies = BTreeMap::new();
-        for k in kinds.kinds {
+        let mut presets = Presets::default();
+        for mut k in kinds.kinds {
+            if let Some(p) = k.presets.take() {
+                presets.by_type.insert(k.node_type.name().to_string(), p);
+            }
             if k.policy != Policy::default() {
                 policies.insert(k.node_type.name().to_string(), k.policy.clone());
             }
@@ -183,6 +208,7 @@ impl<M: ObjectModel> Model<M> {
             registry,
             policies,
             presets,
+            themes,
             commands,
         }))
     }
@@ -320,14 +346,4 @@ pub(crate) fn repin(
         tx.set_order(parent, &name, ids)?;
     }
     Ok(())
-}
-
-pub(crate) fn check_id(kind: &str) -> Result<()> {
-    if valid_name(kind) {
-        Ok(())
-    } else {
-        Err(Error::Model(format!(
-            "preset kind id `{kind}` must be a valid node name"
-        )))
-    }
 }

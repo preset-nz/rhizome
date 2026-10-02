@@ -1,4 +1,4 @@
-# Save, follow, rename and delete a user preset
+# Save, apply, rename and delete a layer preset; make a layer from one
 > new
 > edit Realm
   /realms/west  added realm
@@ -9,39 +9,42 @@
 > run layer.add {"name":"hills","to":"/realms/west/north"}
   /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
   /realms/west/north/hills  added layer
-> run map.add {"name":"south","to":"/realms/west"}
-  /realms/west/south  added map
-  /realms/west/south/grid  added grid
-  /realms/west/south/paper  added paper
-> edit Zoom
-  /realms/west/north  map.zoom  unset → 4
-> run preset.save {"at":"/realms/west/north","kind":"style","label":"Close Up"}
-  /presets/style  added preset
-> run preset.save {"at":"/realms/west/north","kind":"style","label":"Close Up"}
-  refused: a preset called “Close Up” already exists here; update it instead
-> names style at /realms/west/south
-  “Close Up”
-> current style at /realms/west/north
-  “Close Up”
-> run preset.apply {"at":"/realms/west/south","kind":"style","preset":{"user":"Close Up"}}
-  /realms/west/south  map.zoom  unset → 4
-> current style at /realms/west/south
-  “Close Up”
-> run preset.follow {"at":"/realms/west/south","kind":"style","preset":{"user":"Close Up"}}
-  /realms/west/south  follow.style  unset → /presets/style
-> run preset.rename {"at":"/realms/west/north","kind":"style","label":"Close Up","to":"Near"}
-  /presets/style  preset.label  "Close Up" → "Near"
-> resolve style at /realms/west/south
-  “Near” from /realms/west/south  {"values":{"map.zoom":4}}
-> run preset.delete {"at":"/realms/west/north","kind":"style","label":"Near"}
-  /presets/style  removed
-  /realms/west/south  follow.style  /presets/style → unset
-> resolve style at /realms/west/south
-  (nothing)
+> run layer.add {"name":"woods","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, hills, grid] → [paper, hills, woods, grid]
+  /realms/west/north/woods  added layer
+> edit Seed
+  /realms/west/north/hills  layer.seed  unset → 123
+> run preset.save {"at":"/realms/west/north/hills","label":"Mountains"}
+  /presets/layer  added preset
+> run preset.save {"at":"/realms/west/north/hills","label":"Mountains"}
+  refused: a preset called “Mountains” already exists here; update it instead
+> presets at /realms/west/north/woods
+  rocky, “Mountains”
+> current preset at /realms/west/north/hills
+  “Mountains”
+> current preset at /realms/west/north/woods
+  (none)
+> run preset.apply {"at":"/realms/west/north/woods","preset":{"user":"Mountains"}}
+  /realms/west/north/woods  layer.seed  unset → 123
+> current preset at /realms/west/north/woods
+  “Mountains”
+> run node.add {"name":"crags","parent":"/realms/west/north","preset":{"user":"Mountains"},"type":"layer"}
+  /realms/west/north/crags  added layer
+> run node.add {"name":"scree","parent":"/realms/west/north","preset":{"catalogue":"rocky"},"type":"layer"}
+  /realms/west/north/scree  added layer
+> run preset.rename {"at":"/realms/west/north/hills","label":"Mountains","to":"Peaks"}
+  /presets/layer  preset.label  "Mountains" → "Peaks"
+> presets at /realms/west/north/woods
+  rocky, “Peaks”
+> run preset.delete {"at":"/realms/west/north/hills","label":"Peaks"}
+  /presets/layer  removed
+> presets at /realms/west/north/woods
+  rocky
 > run edit.undo {}
-  /presets/style  added preset
-  /realms/west/south  follow.style  unset → /presets/style
-> resolve style at /realms/west/south
-  “Near” from /realms/west/south  {"values":{"map.zoom":4}}
+  /presets/layer  added preset
+> presets at /realms/west/north/woods
+  rocky, “Peaks”
+> presets at /realms/west
+  (none)
 > status
   Untitled — Edited, undo: Rename Preset, redo: Delete Preset
