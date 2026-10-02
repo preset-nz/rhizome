@@ -38,6 +38,9 @@ pub struct ValueSpec {
     pub len: Option<usize>,
     /// What a `Shaped` value must look like.
     pub shape: Option<Shape>,
+    /// The range's max is where a control's travel ends, not a limit: a typed value may go
+    /// past it (Blender's soft max). The min still holds.
+    pub soft_max: bool,
 }
 
 /// Why a value doesn't fit its spec.
@@ -64,7 +67,14 @@ impl ValueSpec {
             choices: Vec::new(),
             len: None,
             shape: None,
+            soft_max: false,
         }
+    }
+
+    /// Makes the max soft: past it is allowed, the range stays for a control to span.
+    pub fn soft_max(mut self) -> Self {
+        self.soft_max = true;
+        self
     }
 
     pub fn bool(key: impl KeyName, default: bool) -> Self {
@@ -143,7 +153,9 @@ impl ValueSpec {
             other => other.floats().to_vec(),
         };
         if let Some((min, max)) = self.bounds()
-            && nums.iter().any(|x| *x < min || *x > max)
+            && nums
+                .iter()
+                .any(|x| *x < min || (*x > max && !self.soft_max))
         {
             return Some(Problem::OutOfRange { min, max });
         }
@@ -173,6 +185,7 @@ impl ValueSpec {
         let Some((min, max)) = self.bounds() else {
             return v.clone();
         };
+        let max = if self.soft_max { f64::INFINITY } else { max };
         let c = |x: f64| x.clamp(min, max);
         match v {
             Value::Int(i) => Value::Int((*i as f64).clamp(min, max) as i64),

@@ -130,6 +130,9 @@ pub struct ValueSchema {
     pub len: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub shape: Option<Shape>,
+    /// The range's max is a control's end, not a limit.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub soft_max: bool,
 }
 
 fn value_schema(s: &ValueSpec) -> ValueSchema {
@@ -141,6 +144,7 @@ fn value_schema(s: &ValueSpec) -> ValueSchema {
         choices: s.choices.clone(),
         len: s.len,
         shape: s.shape.clone(),
+        soft_max: s.soft_max,
     }
 }
 

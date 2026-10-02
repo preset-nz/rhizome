@@ -1236,3 +1236,41 @@ fn structured_values_are_checked() {
         Some(Value::Floats(vec![1.0, 0.0, 0.0, 1.0]))
     );
 }
+
+#[test]
+fn a_soft_max_lets_a_typed_value_past_it() {
+    let r = Registry::builder()
+        .category("ops", Origin::Loaded)
+        .node(
+            NodeType::new("halftone")
+                .in_categories(&["ops"])
+                .value(ValueSpec::float("dot_size", 1.0..=32.0, 8.0).soft_max()),
+        )
+        .build()
+        .unwrap();
+    let mut t = Tree::with_ids(r.clone(), IdSource::sequential());
+    let set = |t: &mut Tree, x: f64| {
+        t.edit("Set", |tx| {
+            let id = match tx.at("/ops/h") {
+                Some(n) => n.id(),
+                None => tx.add("/ops", "halftone", "h")?,
+            };
+            tx.set_value(id, "dot_size", Value::Float(x))
+        })
+        .map(|_| ())
+    };
+    assert!(set(&mut t, 120.0).is_ok(), "past the soft max");
+    assert!(set(&mut t, 0.5).is_err(), "the min still holds");
+    let (again, report) = Tree::load(&t.serialise(), r.clone()).unwrap();
+    assert!(report.issues.is_empty(), "{report:?}");
+    assert_eq!(
+        again.at("/ops/h").unwrap().value("dot_size"),
+        Some(Value::Float(120.0))
+    );
+    let schema = serde_json::to_value(r.schema()).unwrap();
+    assert_eq!(schema["types"][0]["values"][0]["soft_max"], true);
+    assert_eq!(
+        schema["types"][0]["values"][0]["range"],
+        serde_json::json!([1.0, 32.0])
+    );
+}
