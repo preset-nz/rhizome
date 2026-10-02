@@ -24,10 +24,10 @@ workflows:
     cargo test -p rhizome-core --test core_workflows
     cargo test -p rhizome-pom --test workflows
 
-# Run POM's tests
+# Run POM's tests, the Tauri transport's included
 [group('quality')]
 pom:
-    cargo test -p rhizome-pom
+    cargo test -p rhizome-pom -p rhizome-pom-tauri
 
 # Run the seeded random-Op invariant loop
 [group('quality')]

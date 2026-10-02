@@ -1,0 +1,17 @@
+[package]
+name = "rhizome-pom-tauri"
+version = "0.1.0"
+description = "POM over Tauri: one open document as app-level commands and events, and the opened-from-Finder hand-off. Commands only; the webview never writes the tree."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+rhizome-pom = { path = "../rhizome-pom" }
+serde_json = "1"
+tauri = { version = "2", default-features = false }
+
+[dev-dependencies]
+rhizome-core = { path = "../rhizome-core" }
+tauri = { version = "2", default-features = false, features = ["test"] }
