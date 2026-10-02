@@ -1,0 +1,393 @@
+use std::collections::BTreeMap;
+use std::marker::PhantomData;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+
+use rhizome_core::{Commit, Edit, GestureId, IdSource, LoadReport, NodeId, Op, Tree};
+use serde_json::Value as Json;
+
+use crate::command::Outcome;
+use crate::error::{Error, Result};
+use crate::model::{Model, ObjectModel, Policy};
+use crate::presets::{PresetRef, Report, Resolved};
+
+/// Where a document's text lives. Single files today; a bundle folder and a database later.
+pub trait Store: Send {
+    fn read(&self, path: &Path) -> std::io::Result<String>;
+    fn write(&mut self, path: &Path, text: &str) -> std::io::Result<()>;
+}
+
+/// Plain files, written atomically: a temporary file beside the target, then a rename.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FileStore;
+
+impl Store for FileStore {
+    fn read(&self, path: &Path) -> std::io::Result<String> {
+        std::fs::read_to_string(path)
+    }
+
+    fn write(&mut self, path: &Path, text: &str) -> std::io::Result<()> {
+        let mut tmp = path.as_os_str().to_owned();
+        tmp.push(".saving");
+        std::fs::write(&tmp, text)?;
+        std::fs::rename(&tmp, path)
+    }
+}
+
+/// Files in memory, shared between clones. For tests and previews.
+#[derive(Clone, Debug, Default)]
+pub struct MemoryStore(Arc<Mutex<BTreeMap<PathBuf, String>>>);
+
+impl MemoryStore {
+    pub fn get(&self, path: impl AsRef<Path>) -> Option<String> {
+        self.0.lock().unwrap().get(path.as_ref()).cloned()
+    }
+
+    pub fn put(&self, path: impl AsRef<Path>, text: &str) {
+        self.0
+            .lock()
+            .unwrap()
+            .insert(path.as_ref().to_path_buf(), text.to_string());
+    }
+}
+
+impl Store for MemoryStore {
+    fn read(&self, path: &Path) -> std::io::Result<String> {
+        self.get(path)
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "no such file"))
+    }
+
+    fn write(&mut self, path: &Path, text: &str) -> std::io::Result<()> {
+        self.put(path, text);
+        Ok(())
+    }
+}
+
+fn io(path: &Path, e: std::io::Error) -> Error {
+    Error::Io {
+        path: path.display().to_string(),
+        message: e.to_string(),
+    }
+}
+
+/// One open document of an app's object model: its tree, where it's stored, and the app's
+/// projection of it. What an app gets from POM without writing it.
+pub struct Document<M: ObjectModel> {
+    model: Arc<Model<M>>,
+    tree: Tree,
+    store: Box<dyn Store>,
+    path: Option<PathBuf>,
+    projection: M::Projection,
+    _m: PhantomData<M>,
+}
+
+impl<M: ObjectModel> Document<M> {
+    /// A new, untitled document.
+    pub fn new(store: impl Store + 'static) -> Result<Self> {
+        Self::new_with_ids(store, IdSource::Ulid)
+    }
+
+    pub fn new_with_ids(store: impl Store + 'static, ids: IdSource) -> Result<Self> {
+        let model = Model::<M>::build()?;
+        let tree = Tree::with_ids(model.registry.clone(), ids);
+        Ok(Self::from_tree(model, tree, Box::new(store), None))
+    }
+
+    /// Opens a document. Fails only when the file can't be read or isn't a rhizome file;
+    /// everything else it couldn't take as written is in the report.
+    pub fn open(store: impl Store + 'static, path: impl AsRef<Path>) -> Result<(Self, LoadReport)> {
+        Self::open_with_ids(store, path, IdSource::Ulid)
+    }
+
+    pub fn open_with_ids(
+        store: impl Store + 'static,
+        path: impl AsRef<Path>,
+        ids: IdSource,
+    ) -> Result<(Self, LoadReport)> {
+        let path = path.as_ref();
+        let model = Model::<M>::build()?;
+        let text = store.read(path).map_err(|e| io(path, e))?;
+        let (tree, report) = Tree::load_with_ids(&text, model.registry.clone(), ids)?;
+        Ok((
+            Self::from_tree(model, tree, Box::new(store), Some(path.to_path_buf())),
+            report,
+        ))
+    }
+
+    fn from_tree(
+        model: Arc<Model<M>>,
+        tree: Tree,
+        store: Box<dyn Store>,
+        path: Option<PathBuf>,
+    ) -> Self {
+        let mut projection = M::Projection::default();
+        M::project(&tree, &mut projection, None);
+        Document {
+            model,
+            tree,
+            store,
+            path,
+            projection,
+            _m: PhantomData,
+        }
+    }
+
+    // ---- reads ----
+
+    pub fn tree(&self) -> &Tree {
+        &self.tree
+    }
+
+    pub fn projection(&self) -> &M::Projection {
+        &self.projection
+    }
+
+    pub fn path(&self) -> Option<&Path> {
+        self.path.as_deref()
+    }
+
+    pub fn is_unsaved(&self) -> bool {
+        self.tree.is_unsaved()
+    }
+
+    /// The window title: the file name, or "Untitled", and "Edited" when unsaved.
+    pub fn title(&self) -> String {
+        let name = self
+            .path
+            .as_ref()
+            .and_then(|p| p.file_name())
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "Untitled".into());
+        if self.is_unsaved() {
+            format!("{name} — Edited")
+        } else {
+            name
+        }
+    }
+
+    pub fn policy(&self, type_name: &str) -> Policy {
+        self.model.policy(type_name)
+    }
+
+    // ---- files ----
+
+    pub fn save(&mut self) -> Result<()> {
+        let path = self.path.clone().ok_or(Error::NoPath)?;
+        self.write(&path)
+    }
+
+    /// Saves to `path` and makes it the document's file. Adds the extension if it's missing.
+    pub fn save_as(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        let mut path = path.as_ref().to_path_buf();
+        if path.extension().is_none() {
+            path.set_extension(M::EXTENSION);
+        }
+        self.write(&path)?;
+        self.path = Some(path);
+        Ok(())
+    }
+
+    fn write(&mut self, path: &Path) -> Result<()> {
+        let text = self.tree.serialise();
+        self.store.write(path, &text).map_err(|e| io(path, e))?;
+        self.tree.mark_saved();
+        Ok(())
+    }
+
+    /// Throws away every change since the last save, and the history with it.
+    pub fn revert(&mut self) -> Result<LoadReport> {
+        let path = self.path.clone().ok_or(Error::NoPath)?;
+        let text = self.store.read(&path).map_err(|e| io(&path, e))?;
+        let (tree, report) = Tree::load(&text, self.model.registry.clone())?;
+        self.tree = tree;
+        self.projection = M::Projection::default();
+        M::project(&self.tree, &mut self.projection, None);
+        Ok(report)
+    }
+
+    // ---- edits, passed through to the tree and re-projected ----
+
+    fn projected(&mut self, commit: Option<Commit>) -> Option<Commit> {
+        if let Some(c) = &commit {
+            M::project(&self.tree, &mut self.projection, Some(&c.changes));
+        }
+        commit
+    }
+
+    pub fn edit<T>(
+        &mut self,
+        label: &str,
+        f: impl FnOnce(&mut Edit<'_>) -> rhizome_core::Result<T>,
+    ) -> Result<(T, Option<Commit>)> {
+        let (v, c) = self.tree.edit(label, f)?;
+        Ok((v, self.projected(c)))
+    }
+
+    pub fn edit_ops(&mut self, label: &str, ops: &[Op]) -> Result<Option<Commit>> {
+        let c = self.tree.edit_ops(label, ops)?;
+        Ok(self.projected(c))
+    }
+
+    pub fn edit_coalesced<T>(
+        &mut self,
+        label: &str,
+        key: &str,
+        f: impl FnOnce(&mut Edit<'_>) -> rhizome_core::Result<T>,
+    ) -> Result<(T, Option<Commit>)> {
+        let (v, c) = self.tree.edit_coalesced(label, key, f)?;
+        Ok((v, self.projected(c)))
+    }
+
+    pub fn begin(&mut self, label: &str) -> Result<GestureId> {
+        Ok(self.tree.begin(label)?)
+    }
+
+    pub fn apply(&mut self, g: GestureId, ops: &[Op]) -> Result<Option<Commit>> {
+        let c = self.tree.apply(g, ops)?;
+        Ok(self.projected(c))
+    }
+
+    pub fn end(&mut self, g: GestureId) -> Result<()> {
+        Ok(self.tree.end(g)?)
+    }
+
+    pub fn cancel(&mut self, g: GestureId) -> Result<Option<Commit>> {
+        let c = self.tree.cancel(g)?;
+        Ok(self.projected(c))
+    }
+
+    pub fn undo(&mut self) -> Result<Option<Commit>> {
+        let c = self.tree.undo()?;
+        Ok(self.projected(c))
+    }
+
+    pub fn redo(&mut self) -> Result<Option<Commit>> {
+        let c = self.tree.redo()?;
+        Ok(self.projected(c))
+    }
+
+    // ---- presets ----
+
+    pub fn preset_names(&self, kind: &str, node: NodeId) -> Result<Vec<PresetRef>> {
+        self.model.presets.names(&self.tree, kind, node)
+    }
+
+    pub fn current_preset(&self, kind: &str, node: NodeId) -> Result<Option<PresetRef>> {
+        self.model.presets.current(&self.tree, kind, node)
+    }
+
+    /// What `node` resolves to through followed presets and the fallback.
+    pub fn resolve_preset(&self, kind: &str, node: NodeId) -> Result<Option<Resolved>> {
+        self.model.presets.resolve(&self.tree, kind, node)
+    }
+
+    pub fn save_preset(&mut self, kind: &str, node: NodeId, label: &str) -> Result<Option<Commit>> {
+        let model = self.model.clone();
+        Ok(self
+            .edit("Save Preset", |tx| {
+                model.presets.save(tx, kind, node, label)
+            })?
+            .1)
+    }
+
+    pub fn update_preset(
+        &mut self,
+        kind: &str,
+        node: NodeId,
+        label: &str,
+    ) -> Result<Option<Commit>> {
+        let model = self.model.clone();
+        Ok(self
+            .edit("Update Preset", |tx| {
+                model.presets.update(tx, kind, node, label)
+            })?
+            .1)
+    }
+
+    pub fn rename_preset(
+        &mut self,
+        kind: &str,
+        node: NodeId,
+        label: &str,
+        to: &str,
+    ) -> Result<Option<Commit>> {
+        let model = self.model.clone();
+        Ok(self
+            .edit("Rename Preset", |tx| {
+                model.presets.rename(tx, kind, node, label, to)
+            })?
+            .1)
+    }
+
+    pub fn delete_preset(
+        &mut self,
+        kind: &str,
+        node: NodeId,
+        label: &str,
+    ) -> Result<Option<Commit>> {
+        let model = self.model.clone();
+        Ok(self
+            .edit("Delete Preset", |tx| {
+                model.presets.delete(tx, kind, node, label)
+            })?
+            .1)
+    }
+
+    /// Applies a preset to a node in one edit, one undo step.
+    pub fn apply_preset(
+        &mut self,
+        kind: &str,
+        node: NodeId,
+        preset: &PresetRef,
+    ) -> Result<(Report, Option<Commit>)> {
+        let model = self.model.clone();
+        self.edit("Apply Preset", |tx| {
+            model.presets.apply(tx, kind, node, preset)
+        })
+    }
+
+    /// Makes `node` follow a preset by reference (`None` to stop). Its descendants resolve
+    /// through it.
+    pub fn follow_preset(
+        &mut self,
+        kind: &str,
+        node: NodeId,
+        preset: Option<&PresetRef>,
+    ) -> Result<Option<Commit>> {
+        let model = self.model.clone();
+        Ok(self
+            .edit("Choose Preset", |tx| {
+                model.presets.follow(tx, kind, node, preset)
+            })?
+            .1)
+    }
+
+    // ---- commands ----
+
+    /// Every command, in registration order, with its label and whether it can run with `payload`.
+    pub fn commands(&self, payload: &Json) -> Vec<(String, String, bool)> {
+        self.model
+            .commands
+            .iter()
+            .map(|c| (c.id.clone(), (c.label)(self), (c.enabled)(self, payload)))
+            .collect()
+    }
+
+    pub fn label(&self, id: &str) -> Result<String> {
+        Ok((self.model.commands.get(id)?.label)(self))
+    }
+
+    pub fn is_enabled(&self, id: &str, payload: &Json) -> Result<bool> {
+        Ok((self.model.commands.get(id)?.enabled)(self, payload))
+    }
+
+    /// Runs a command, if it's enabled for `payload`.
+    pub fn run(&mut self, id: &str, payload: &Json) -> Result<Outcome> {
+        let model = self.model.clone();
+        let c = model.commands.get(id)?;
+        if !(c.enabled)(self, payload) {
+            return Err(Error::Disabled(id.into()));
+        }
+        (c.run)(self, payload)
+    }
+}

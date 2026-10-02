@@ -1,0 +1,14 @@
+[package]
+name = "rhizome-pom"
+version = "0.1.0"
+description = "POM, the Preset Object Model: the app-unaware base every app's object model is built on. Documents, kinds and their policy, presets, commands, projections."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+rhizome-core = { path = "../rhizome-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
