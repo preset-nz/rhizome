@@ -16,6 +16,7 @@ use crate::diff::{ChangeKind, Changeset};
 use crate::id::NodeId;
 use crate::path::Path;
 use crate::registry::{Origin, Registry, ValueSpec};
+use crate::shape::Shape;
 use crate::state::{On, Ref};
 use crate::tree::Tree;
 use crate::value::ValueKind;
@@ -125,6 +126,10 @@ pub struct ValueSchema {
     pub range: Option<(f64, f64)>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub choices: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub len: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shape: Option<Shape>,
 }
 
 fn value_schema(s: &ValueSpec) -> ValueSchema {
@@ -134,6 +139,8 @@ fn value_schema(s: &ValueSpec) -> ValueSchema {
         default: s.default.to_json(),
         range: s.range,
         choices: s.choices.clone(),
+        len: s.len,
+        shape: s.shape.clone(),
     }
 }
 

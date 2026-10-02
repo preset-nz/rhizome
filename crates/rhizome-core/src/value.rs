@@ -15,6 +15,10 @@ pub enum Value {
     Vec3([f64; 3]),
     /// Red, green, blue, alpha, each 0 to 1.
     Colour([f64; 4]),
+    /// A fixed number of floats, such as a 4×4 matrix.
+    Floats(Vec<f64>),
+    /// Plain JSON of a declared [`Shape`](crate::Shape) (decision 51).
+    Shaped(Json),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
@@ -28,6 +32,8 @@ pub enum ValueKind {
     Vec2,
     Vec3,
     Colour,
+    Floats,
+    Shaped,
 }
 
 impl Value {
@@ -41,6 +47,8 @@ impl Value {
             Value::Vec2(_) => ValueKind::Vec2,
             Value::Vec3(_) => ValueKind::Vec3,
             Value::Colour(_) => ValueKind::Colour,
+            Value::Floats(_) => ValueKind::Floats,
+            Value::Shaped(_) => ValueKind::Shaped,
         }
     }
 
@@ -50,6 +58,7 @@ impl Value {
             Value::Vec2(v) => v,
             Value::Vec3(v) => v,
             Value::Colour(v) => v,
+            Value::Floats(v) => v,
             _ => &[],
         }
     }
@@ -66,6 +75,8 @@ impl Value {
             Value::Vec2(v) => nums(v),
             Value::Vec3(v) => nums(v),
             Value::Colour(v) => nums(v),
+            Value::Floats(v) => nums(v),
+            Value::Shaped(j) => j.clone(),
         }
     }
 
@@ -91,6 +102,13 @@ impl Value {
             ValueKind::Vec2 => Value::Vec2(arr(j)?),
             ValueKind::Vec3 => Value::Vec3(arr(j)?),
             ValueKind::Colour => Value::Colour(arr(j)?),
+            ValueKind::Floats => Value::Floats(
+                j.as_array()?
+                    .iter()
+                    .map(|x| x.as_f64())
+                    .collect::<Option<Vec<f64>>>()?,
+            ),
+            ValueKind::Shaped => Value::Shaped(j.clone()),
         })
     }
 }
@@ -113,6 +131,8 @@ impl fmt::Display for Value {
                 f.write_str("rgba")?;
                 list(f, v)
             }
+            Value::Floats(v) => list(f, v),
+            Value::Shaped(j) => write!(f, "{j}"),
         }
     }
 }
@@ -158,6 +178,8 @@ value_type!(Choice, Choice, v => Value::Choice(v.0), Value::Choice(s) => Choice(
 value_type!([f64; 2], Vec2, v => Value::Vec2(v), Value::Vec2(a) => *a);
 value_type!([f64; 3], Vec3, v => Value::Vec3(v), Value::Vec3(a) => *a);
 value_type!(Colour, Colour, v => Value::Colour(v.0), Value::Colour(a) => Colour(*a));
+value_type!(Vec<f64>, Floats, v => Value::Floats(v), Value::Floats(a) => a.clone());
+value_type!(Json, Shaped, v => Value::Shaped(v), Value::Shaped(j) => j.clone());
 
 /// A value key with its type: `const RADIUS: Key<f64> = Key::new("blur.radius");`.
 ///

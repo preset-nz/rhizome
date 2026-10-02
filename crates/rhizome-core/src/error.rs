@@ -25,6 +25,12 @@ pub enum Error {
     UnknownKey { path: String, key: String },
     #[error("{path} has no slot `{slot}`")]
     UnknownSlot { path: String, slot: String },
+    #[error("{path}: `{key}` doesn't fit: {why}")]
+    Misfit {
+        path: String,
+        key: String,
+        why: String,
+    },
     #[error("{path}: `{key}` wants {expected:?}, got {got}")]
     WrongKind {
         path: String,

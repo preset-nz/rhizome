@@ -107,6 +107,7 @@ pub(crate) fn problem_error(p: Problem, path: String, spec: &ValueSpec, v: &Valu
             key,
             value: v.to_string(),
         },
+        Problem::Misfit(why) => Error::Misfit { path, key, why },
     }
 }
 

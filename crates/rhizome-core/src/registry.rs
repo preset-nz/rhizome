@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::diff::Changeset;
 use crate::error::{Error, Result};
 use crate::path::valid_name;
+use crate::shape::Shape;
 use crate::value::{KeyName, Value, ValueKind};
 use crate::view::Node;
 
@@ -33,6 +34,10 @@ pub struct ValueSpec {
     /// Inclusive range for `Int` and `Float`; `Colour` components are always 0 to 1.
     pub range: Option<(f64, f64)>,
     pub choices: Vec<String>,
+    /// How many floats a `Floats` value holds.
+    pub len: Option<usize>,
+    /// What a `Shaped` value must look like.
+    pub shape: Option<Shape>,
 }
 
 /// Why a value doesn't fit its spec.
@@ -40,8 +45,13 @@ pub struct ValueSpec {
 pub(crate) enum Problem {
     WrongKind,
     NotFinite,
-    OutOfRange { min: f64, max: f64 },
+    OutOfRange {
+        min: f64,
+        max: f64,
+    },
     NotAChoice,
+    /// A `Floats` of the wrong length, or a `Shaped` that doesn't fit: why.
+    Misfit(String),
 }
 
 impl ValueSpec {
@@ -52,6 +62,8 @@ impl ValueSpec {
             default,
             range: None,
             choices: Vec::new(),
+            len: None,
+            shape: None,
         }
     }
 
@@ -68,6 +80,25 @@ impl ValueSpec {
     pub fn float(key: impl KeyName, range: RangeInclusive<f64>, default: f64) -> Self {
         let mut s = Self::new(key, ValueKind::Float, Value::Float(default));
         s.range = Some((*range.start(), *range.end()));
+        s
+    }
+
+    /// A float with no natural range, such as a position or a rotation.
+    pub fn float_unbounded(key: impl KeyName, default: f64) -> Self {
+        Self::new(key, ValueKind::Float, Value::Float(default))
+    }
+
+    /// Exactly `default.len()` floats, such as a 4×4 matrix.
+    pub fn floats(key: impl KeyName, default: &[f64]) -> Self {
+        let mut s = Self::new(key, ValueKind::Floats, Value::Floats(default.to_vec()));
+        s.len = Some(default.len());
+        s
+    }
+
+    /// A structured value of `shape`, defaulting to the shape's empty value.
+    pub fn shaped(key: impl KeyName, shape: Shape) -> Self {
+        let mut s = Self::new(key, ValueKind::Shaped, Value::Shaped(shape.empty()));
+        s.shape = Some(shape);
         s
     }
 
@@ -121,6 +152,19 @@ impl ValueSpec {
         {
             return Some(Problem::NotAChoice);
         }
+        if let (Value::Floats(f), Some(n)) = (v, self.len)
+            && f.len() != n
+        {
+            return Some(Problem::Misfit(format!(
+                "should hold {n} numbers, not {}",
+                f.len()
+            )));
+        }
+        if let (Value::Shaped(j), Some(shape)) = (v, &self.shape)
+            && let Err(why) = shape.check(j)
+        {
+            return Some(Problem::Misfit(why));
+        }
         None
     }
 
@@ -136,6 +180,7 @@ impl ValueSpec {
             Value::Vec2(a) => Value::Vec2(a.map(c)),
             Value::Vec3(a) => Value::Vec3(a.map(c)),
             Value::Colour(a) => Value::Colour(a.map(c)),
+            Value::Floats(a) => Value::Floats(a.iter().copied().map(c).collect()),
             other => other.clone(),
         }
     }
@@ -204,6 +249,18 @@ impl NodeType {
 
     pub fn float(self, key: impl KeyName, range: RangeInclusive<f64>, default: f64) -> Self {
         self.value(ValueSpec::float(key, range, default))
+    }
+
+    pub fn float_unbounded(self, key: impl KeyName, default: f64) -> Self {
+        self.value(ValueSpec::float_unbounded(key, default))
+    }
+
+    pub fn floats(self, key: impl KeyName, default: &[f64]) -> Self {
+        self.value(ValueSpec::floats(key, default))
+    }
+
+    pub fn shaped(self, key: impl KeyName, shape: Shape) -> Self {
+        self.value(ValueSpec::shaped(key, shape))
     }
 
     pub fn text(self, key: impl KeyName, default: &str) -> Self {

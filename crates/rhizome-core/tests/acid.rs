@@ -24,6 +24,20 @@ const RADIUS: Key<f64> = Key::new("radius");
 const AXIS: Key<[f64; 3]> = Key::new("axis");
 const RATE: Key<f64> = Key::new("rate");
 
+/// Contours of points with optional handles: a vector path's shape (decision 51).
+fn outline() -> Shape {
+    Shape::list(Shape::record([
+        (
+            "anchors",
+            Shape::list(Shape::record([
+                ("point", Shape::Vec2),
+                ("handle_in", Shape::optional(Shape::Vec2)),
+            ])),
+        ),
+        ("closed", Shape::Bool),
+    ]))
+}
+
 fn registry() -> Arc<Registry> {
     Registry::builder()
         .category("images", Origin::Loaded)
@@ -51,7 +65,10 @@ fn registry() -> Arc<Registry> {
             NodeType::new("blur")
                 .in_categories(&["images"])
                 .float(RADIUS, 0.0..=200.0, 4.0)
-                .vec3(AXIS, [0.0, 0.0, 1.0]),
+                .vec3(AXIS, [0.0, 0.0, 1.0])
+                .float_unbounded("angle", 0.0)
+                .floats("matrix", &[1.0, 0.0, 0.0, 1.0])
+                .shaped("outline", outline()),
         )
         .node(
             NodeType::new("mask")
@@ -98,6 +115,13 @@ fn build(tx: &mut Edit<'_>) -> Result<()> {
     tx.set(sky, LAYER, 3)?;
     tx.set(blur, RADIUS, 18.0)?;
     tx.set(blur, AXIS, [0.0, 1.0, 0.0])?;
+    tx.set_value(blur, "angle", Value::Float(-725.5))?;
+    tx.set_value(blur, "matrix", Value::Floats(vec![0.0, -1.0, 1.0, 0.0]))?;
+    tx.set_value(
+        blur,
+        "outline",
+        Value::Shaped(serde_json::json!([{"anchors": [{"point": [0.0, 0.0]}, {"point": [4.0, 2.0], "handle_in": [3.0, 0.0]}], "closed": true}])),
+    )?;
     tx.set(wobble, RATE, 0.25)?;
     tx.set_value(wobble, "shape", Value::Choice("square".into()))?;
 
@@ -141,6 +165,9 @@ fn build_ops() -> Vec<Op> {
         {"op": "set", "at": "/images/sky", "key": "layer", "value": 3},
         {"op": "set", "at": "/images/sky/blur", "key": "radius", "value": 18.0},
         {"op": "set", "at": "/images/sky/blur", "key": "axis", "value": [0.0, 1.0, 0.0]},
+        {"op": "set", "at": "/images/sky/blur", "key": "angle", "value": -725.5},
+        {"op": "set", "at": "/images/sky/blur", "key": "matrix", "value": [0.0, -1.0, 1.0, 0.0]},
+        {"op": "set", "at": "/images/sky/blur", "key": "outline", "value": [{"anchors": [{"point": [0.0, 0.0]}, {"point": [4.0, 2.0], "handle_in": [3.0, 0.0]}], "closed": true}]},
         {"op": "set", "at": "/modulators/wobble", "key": "rate", "value": 0.25},
         {"op": "set", "at": "/modulators/wobble", "key": "shape", "value": "square"},
         {"op": "set_ref", "at": "/images/sky", "key": "source", "ref": {"file": "sky.png"}},
@@ -1168,4 +1195,44 @@ fn tree_rules_see_the_whole_tree_and_the_changes() {
     assert_eq!(t.snapshot(), before, "refused rules leave no trace");
     t.edit("Remove Box", |tx| tx.remove("/things/b")).unwrap();
     assert!(t.at("/things/b").is_none(), "a lid leaves with its box");
+}
+
+#[test]
+fn structured_values_are_checked() {
+    let mut t = Tree::with_ids(registry(), IdSource::sequential());
+    let ((), _) = t
+        .edit("Build", |tx| {
+            let sky = tx.add("/images", "image", "sky")?;
+            tx.add(sky, "blur", "blur")?;
+            Ok(())
+        })
+        .unwrap();
+    let set = |t: &mut Tree, key: &str, v: Value| {
+        t.edit("Set", |tx| tx.set_value("/images/sky/blur", key, v))
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    };
+    let e = set(&mut t, "matrix", Value::Floats(vec![1.0, 0.0])).unwrap_err();
+    assert!(e.contains("should hold 4 numbers, not 2"), "{e}");
+    let e = set(
+        &mut t,
+        "outline",
+        Value::Shaped(serde_json::json!([{"anchors": [{"point": [0]}], "closed": true}])),
+    )
+    .unwrap_err();
+    assert!(
+        e.contains("[0].anchors[0].point should be two numbers"),
+        "{e}"
+    );
+    assert!(set(&mut t, "angle", Value::Float(1e9)).is_ok(), "unbounded");
+    let blur = t.at("/images/sky/blur").unwrap();
+    assert_eq!(
+        blur.value("outline"),
+        Some(Value::Shaped(serde_json::json!([]))),
+        "empty by default"
+    );
+    assert_eq!(
+        blur.value("matrix"),
+        Some(Value::Floats(vec![1.0, 0.0, 0.0, 1.0]))
+    );
 }

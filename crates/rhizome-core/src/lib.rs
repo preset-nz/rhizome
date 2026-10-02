@@ -16,6 +16,7 @@ mod id;
 mod op;
 mod path;
 mod registry;
+mod shape;
 mod state;
 mod tree;
 mod value;
@@ -35,6 +36,7 @@ pub use registry::{
     CATEGORY, Check, GROUP, NodeType, Origin, ROOT, Registry, RegistryBuilder, Rule, ValueSpec,
     Violation,
 };
+pub use shape::Shape;
 pub use state::{On, Ref};
 pub use tree::{Commit, GestureId, HISTORY, Snapshot, Tree};
 pub use value::{Choice, Colour, Key, KeyName, Value, ValueKind, ValueType};
