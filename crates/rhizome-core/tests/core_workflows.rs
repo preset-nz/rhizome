@@ -376,6 +376,7 @@ fn every_workflow_has_a_test() {
         "10-open-a-newer-file",
         "11-refusals-leave-no-trace",
         "12-knob-nudges-coalesce",
+        "13-every-op",
     ];
     assert_eq!(on_disk, tested);
 }
@@ -555,6 +556,51 @@ fn knob_nudges_coalesce() {
         [
             "seq 6, unsaved, 3 undo steps, undo: Nudge Bits, redo: -",
             "seq 7, unsaved, 2 undo steps, undo: Nudge Bits, redo: Nudge Bits"
+        ]
+    );
+}
+
+#[test]
+fn every_op() {
+    let o = run("13-every-op");
+    assert!(
+        o.iter()
+            .all(|x| !x.lines.iter().any(|l| l.starts_with("refused")))
+    );
+    let text = std::fs::read_to_string(dir().join("13-every-op.json")).unwrap();
+    let mut seen: Vec<String> = text
+        .lines()
+        .filter_map(|l| l.trim().strip_prefix("\"op\": \""))
+        .map(|l| l.trim_end_matches(['"', ',']).to_string())
+        .collect();
+    seen.sort();
+    seen.dedup();
+    let every = [
+        "add",
+        "add_unique",
+        "append_to_order",
+        "bind",
+        "clear_ref",
+        "copy",
+        "join",
+        "leave",
+        "move_to",
+        "remove",
+        "rename",
+        "reset",
+        "set",
+        "set_order",
+        "set_ref",
+        "unbind",
+    ];
+    assert_eq!(
+        seen, every,
+        "every Op but paste, which the clipboard steps carry"
+    );
+    assert_eq!(
+        lines(&o, 4),
+        [
+            "/patches/drone/granular  value grain.size ← /modulators/wobble  bound {depth=0.3} → unbound"
         ]
     );
 }

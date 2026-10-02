@@ -25,7 +25,7 @@ pub use edit::{At, Edit};
 pub use error::{Error, Result};
 pub use file::{FORMAT_VERSION, Fragment, Issue, LoadReport, PasteReport};
 pub use id::{IdSource, NodeId};
-pub use op::{Applied, Op};
+pub use op::{Applied, Op, OpRef};
 pub use path::{Path, valid_name};
 pub use registry::{
     CATEGORY, Check, GROUP, NodeType, Origin, ROOT, Registry, RegistryBuilder, ValueSpec,

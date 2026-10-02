@@ -71,7 +71,7 @@ await rhizome.end(g);        // or rhizome.cancel(g) on Escape
 What this asks for:
 
 - **Two edit forms, one meaning.** `tree.edit(label, |tx| …)` scopes an edit to a closure, for code and tests; `tree.edit_ops(label, &ops)` is the same with `Op`s. `begin` / `apply` (or `within` with a closure) / `end` / `cancel` keeps it open across calls, for gestures. Both make one undo step. `cancel` restores the snapshot taken at `begin`.
-- **Every write verb is also data.** `Op` is a serde enum with one variant per verb, and `tx.apply(op)` runs it. IPC, a CLI, a test fixture and a future script all speak `Op`. Whether Oblique's transport is wasm or Tauri commands (decision 28), it carries `Op`s in and `Commit`s out.
+- **Every write verb is also data.** `Op` is a serde enum with one variant per verb, and `tx.apply(op)` runs it. IPC, a CLI, a test fixture and a future script all speak `Op`. Whether Oblique's transport is wasm or Tauri commands (decision 28), it carries `Op`s in and `Commit`s out. An `Op` names nodes by path or id, references included: `{"op": "set_ref", …, "ref": {"node": "/images/sky"}}`, so a script never depends on how ids were allocated. Workflow 13 holds every variant as JSON.
 - **Writes are visible while the gesture is open.** Each `apply` returns a `Commit` with the entries it made, so the panel updates mid-drag. The undo step is cut at `end`.
 
 ### 3. Load comes back with a report

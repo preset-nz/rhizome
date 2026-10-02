@@ -44,3 +44,16 @@
 /images/sea-2  removed
 /images/sea-2/blur  removed
 /masks/vignette  removed
+== Masks ==
+/images/sea  slot mask ← /masks/frame  unbound → bound
+/masks/border  added mask
+/masks/frame  added mask
+/modulators/drift  added lfo
+== Swap Mask ==
+/images/sea  slot mask ← /masks/frame  bound → unbound
+/images/sea  slot mask ← /masks/border  unbound → bound
+== Two Lfos ==
+/images/dusk  value opacity ← /modulators/wobble  unbound → bound {depth=0.1}
+/images/dusk  value opacity ← /modulators/drift  unbound → bound
+== Clear Order ==
+/images/sea  order modifiers  [blur] → []

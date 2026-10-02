@@ -61,7 +61,7 @@ pub enum Op {
         at: String,
         key: String,
         #[serde(rename = "ref")]
-        reference: Ref,
+        reference: OpRef,
     },
     ClearRef {
         at: String,
@@ -97,6 +97,29 @@ pub enum Op {
         name: String,
         id: String,
     },
+}
+
+/// A reference as an `Op` spells it. `node` is a path or an id: a path must name a node in
+/// this file now; an id may be missing and is stored unresolved.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OpRef {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub node: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<crate::Path>,
+}
+
+impl From<Ref> for OpRef {
+    fn from(r: Ref) -> Self {
+        OpRef {
+            file: r.file,
+            node: r.node.map(|n| n.to_string()),
+            path: r.path,
+        }
+    }
 }
 
 /// What an applied `Op` made, when it made something.
@@ -176,7 +199,19 @@ impl Edit<'_> {
                 done
             }
             Op::SetRef { at, key, reference } => {
-                self.set_ref(at, key.as_str(), reference.clone())?;
+                let node = match &reference.node {
+                    Some(n) if n.starts_with('/') && reference.file.is_none() => {
+                        Some(self.resolve(n)?)
+                    }
+                    Some(n) => Some(n.parse::<NodeId>()?),
+                    None => None,
+                };
+                let r = Ref {
+                    file: reference.file.clone(),
+                    node,
+                    path: reference.path.clone(),
+                };
+                self.set_ref(at, key.as_str(), r)?;
                 done
             }
             Op::ClearRef { at, key } => {

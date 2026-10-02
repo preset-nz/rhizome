@@ -1,0 +1,236 @@
+{
+  "title": "Every Op from JSON",
+  "why": "Op is the wire format between a webview, a CLI and the core. Every variant appears here as JSON at least once, so a change to its shape fails this transcript. Paste travels through the clipboard steps.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "Build",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/sounds",
+            "type": "sample",
+            "name": "kalimba"
+          },
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add_unique",
+            "parent": "/patches",
+            "type": "patch",
+            "base": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "crush",
+            "name": "crush"
+          },
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "group",
+            "name": "set"
+          },
+          {
+            "op": "add",
+            "parent": "/modulators",
+            "type": "lfo",
+            "name": "wobble"
+          },
+          {
+            "op": "add",
+            "parent": "/modulators",
+            "type": "envelope",
+            "name": "swell"
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone",
+            "key": "amp.gain",
+            "value": 0.7
+          },
+          {
+            "op": "set_ref",
+            "at": "/sounds/kalimba",
+            "key": "file",
+            "ref": {
+              "file": "kalimba.wav"
+            }
+          },
+          {
+            "op": "set_ref",
+            "at": "/patches/drone",
+            "key": "material",
+            "ref": {
+              "node": "/sounds/kalimba"
+            }
+          },
+          {
+            "op": "bind",
+            "target": "/patches/drone/granular",
+            "on": {
+              "slot": "env"
+            },
+            "source": "/modulators/swell"
+          },
+          {
+            "op": "bind",
+            "target": "/patches/drone/granular",
+            "on": {
+              "value": "grain.size"
+            },
+            "source": "/modulators/wobble",
+            "values": {
+              "depth": 0.3
+            }
+          },
+          {
+            "op": "join",
+            "group": "/patches/set",
+            "members": [
+              "/patches/drone",
+              "/patches/drone-2"
+            ]
+          },
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone/crush",
+              "/patches/drone/granular"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Reset",
+        "ops": [
+          {
+            "op": "reset",
+            "at": "/patches/drone",
+            "key": "amp.gain"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Clear Ref",
+        "ops": [
+          {
+            "op": "clear_ref",
+            "at": "/patches/drone",
+            "key": "material"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Unbind",
+        "ops": [
+          {
+            "op": "unbind",
+            "target": "/patches/drone/granular",
+            "on": {
+              "value": "grain.size"
+            },
+            "source": "/modulators/wobble"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Leave",
+        "ops": [
+          {
+            "op": "leave",
+            "group": "/patches/set",
+            "members": [
+              "/patches/drone-2"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Rename",
+        "ops": [
+          {
+            "op": "rename",
+            "at": "/patches/drone-2",
+            "name": "pad"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Move",
+        "ops": [
+          {
+            "op": "move_to",
+            "at": "/patches/drone/crush",
+            "parent": "/patches/pad"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Copy",
+        "ops": [
+          {
+            "op": "copy",
+            "at": "/patches/drone",
+            "parent": "/patches"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Append",
+        "ops": [
+          {
+            "op": "append_to_order",
+            "owner": "/patches",
+            "name": "list",
+            "id": "/patches/drone-2"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Remove",
+        "ops": [
+          {
+            "op": "remove",
+            "at": "/patches/pad"
+          }
+        ]
+      }
+    },
+    "file"
+  ]
+}

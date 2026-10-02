@@ -1,0 +1,154 @@
+# Every Op from JSON
+> new a
+> edit Build
+  /modulators/swell  added envelope
+  /modulators/wobble  added lfo
+  /patches/drone  added patch
+  /patches/drone/crush  added crush
+  /patches/drone/granular  added granular
+  /patches/drone-2  added patch
+  /patches/set  added group
+  /sounds/kalimba  added sample
+> edit Reset
+  /patches/drone  amp.gain  0.7 → unset
+> edit Clear Ref
+  /patches/drone  material  /sounds/kalimba → unset
+> edit Unbind
+  /patches/drone/granular  value grain.size ← /modulators/wobble  bound {depth=0.3} → unbound
+> edit Leave
+  /patches/set  members  -/patches/drone-2
+> edit Rename
+  /patches/pad  moved from /patches/drone-2
+> edit Move
+  /patches/drone  order chain  [crush, granular] → [granular]
+  /patches/pad/crush  moved from /patches/drone/crush
+> edit Copy
+  /patches/drone-2  added patch
+  /patches/drone-2/granular  added granular
+  /patches/set  members  +/patches/drone-2
+> edit Append
+  /patches  order list  [] → [drone-2]
+> edit Remove
+  /patches/pad  removed
+  /patches/pad/crush  removed
+> file
+  {
+    "rhizome": 1,
+    "nodes": [
+      {
+        "path": "/",
+        "id": "000000000000000000000000Z8",
+        "type": "root"
+      },
+      {
+        "path": "/images",
+        "id": "000000000000000000000000ZC",
+        "type": "category"
+      },
+      {
+        "path": "/masks",
+        "id": "000000000000000000000000ZD",
+        "type": "category"
+      },
+      {
+        "path": "/modulators",
+        "id": "000000000000000000000000ZB",
+        "type": "category"
+      },
+      {
+        "path": "/modulators/swell",
+        "id": "000000000000000000000000ZP",
+        "type": "envelope"
+      },
+      {
+        "path": "/modulators/wobble",
+        "id": "000000000000000000000000ZN",
+        "type": "lfo"
+      },
+      {
+        "path": "/patches",
+        "id": "000000000000000000000000ZA",
+        "type": "category",
+        "orders": {
+          "list": [
+            "000000000000000000000000ZQ"
+          ]
+        }
+      },
+      {
+        "path": "/patches/drone",
+        "id": "000000000000000000000000ZG",
+        "type": "patch",
+        "orders": {
+          "chain": [
+            "000000000000000000000000ZJ"
+          ]
+        }
+      },
+      {
+        "path": "/patches/drone/granular",
+        "id": "000000000000000000000000ZJ",
+        "type": "granular",
+        "bindings": [
+          {
+            "on": {
+              "slot": "env"
+            },
+            "source": "000000000000000000000000ZP"
+          }
+        ]
+      },
+      {
+        "path": "/patches/drone-2",
+        "id": "000000000000000000000000ZQ",
+        "type": "patch",
+        "orders": {
+          "chain": [
+            "000000000000000000000000ZR"
+          ]
+        }
+      },
+      {
+        "path": "/patches/drone-2/granular",
+        "id": "000000000000000000000000ZR",
+        "type": "granular",
+        "bindings": [
+          {
+            "on": {
+              "slot": "env"
+            },
+            "source": "000000000000000000000000ZP"
+          }
+        ]
+      },
+      {
+        "path": "/patches/set",
+        "id": "000000000000000000000000ZM",
+        "type": "group",
+        "members": [
+          "000000000000000000000000ZG",
+          "000000000000000000000000ZQ"
+        ]
+      },
+      {
+        "path": "/renders",
+        "id": "000000000000000000000000ZE",
+        "type": "category"
+      },
+      {
+        "path": "/sounds",
+        "id": "000000000000000000000000Z9",
+        "type": "category"
+      },
+      {
+        "path": "/sounds/kalimba",
+        "id": "000000000000000000000000ZF",
+        "type": "sample",
+        "refs": {
+          "file": {
+            "file": "kalimba.wav"
+          }
+        }
+      }
+    ]
+  }

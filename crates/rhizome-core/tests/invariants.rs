@@ -99,7 +99,7 @@ fn random_op(rng: &mut Rng, t: &Tree) -> Op {
             Some(n) => Op::SetRef {
                 at: a,
                 key: "r".into(),
-                reference: Ref::here(n.id()),
+                reference: Ref::here(n.id()).into(),
             },
             None => Op::ClearRef {
                 at: a,

@@ -29,7 +29,14 @@
     {
       "path": "/images/sea",
       "id": "00000000000000000000000008",
-      "type": "image"
+      "type": "image",
+      "refs": {
+        "source": {
+          "file": "other.rhizome",
+          "node": "0000000000000000000000003Q",
+          "path": "/images/far"
+        }
+      }
     },
     {
       "path": "/images/sky",

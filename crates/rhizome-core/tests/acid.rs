@@ -103,6 +103,12 @@ fn build(tx: &mut Edit<'_>) -> Result<()> {
 
     tx.set_ref(sky, "source", Ref::file("sky.png"))?;
     tx.set_ref(fin, "input", Ref::here(sky))?;
+    let far = Path::parse("/images/far")?;
+    tx.set_ref(
+        sea,
+        "source",
+        Ref::node_in("other.rhizome", NodeId::from_u128(0x77), far),
+    )?;
     tx.bind(sky, On::slot("mask"), vignette, Vec::<(&str, Value)>::new())?;
     tx.bind(
         sky,
@@ -138,7 +144,8 @@ fn build_ops() -> Vec<Op> {
         {"op": "set", "at": "/modulators/wobble", "key": "rate", "value": 0.25},
         {"op": "set", "at": "/modulators/wobble", "key": "shape", "value": "square"},
         {"op": "set_ref", "at": "/images/sky", "key": "source", "ref": {"file": "sky.png"}},
-        {"op": "set_ref", "at": "/renders/final", "key": "input", "ref": {"node": "00000000000000000000000006"}},
+        {"op": "set_ref", "at": "/renders/final", "key": "input", "ref": {"node": "/images/sky"}},
+        {"op": "set_ref", "at": "/images/sea", "key": "source", "ref": {"file": "other.rhizome", "node": "0000000000000000000000003Q", "path": "/images/far"}},
         {"op": "bind", "target": "/images/sky", "on": {"slot": "mask"}, "source": "/masks/vignette"},
         {"op": "bind", "target": "/images/sky", "on": {"value": "opacity"}, "source": "/modulators/wobble", "values": {"depth": 0.25}},
         {"op": "join", "group": "/images/hero", "members": ["/images/sky", "/images/sea"]},
@@ -642,6 +649,79 @@ fn acid() {
     let (_, report) = Tree::load(&t.serialise(), registry()).unwrap();
     assert_eq!(report.issues.len(), 1, "{:?}", report.issues);
     assert!(report.issues[0].message.contains("missing node"));
+    let sea = t.at("/images/sea").unwrap();
+    assert_eq!(
+        sea.reference("source").unwrap().file.as_deref(),
+        Some("other.rhizome")
+    );
+    assert!(
+        sea.resolve("source").is_none(),
+        "a cross-file ref is stored, not resolved"
+    );
+
+    // rebinding a slot swaps its source; a value key takes many sources; an empty order goes
+    step(&mut t, "Masks", &|tx| {
+        tx.add("/masks", "mask", "frame")?;
+        tx.add("/masks", "mask", "border")?;
+        tx.add("/modulators", "lfo", "drift")?;
+        tx.bind(
+            "/images/sea",
+            On::slot("mask"),
+            "/masks/frame",
+            Vec::<(&str, Value)>::new(),
+        )
+    });
+    let c = step(&mut t, "Swap Mask", &|tx| {
+        tx.bind(
+            "/images/sea",
+            On::slot("mask"),
+            "/masks/border",
+            Vec::<(&str, Value)>::new(),
+        )
+    });
+    let lines = c.to_string();
+    assert_eq!(c.len(), 2, "{lines}");
+    assert!(
+        lines.contains("/images/sea  slot mask ← /masks/frame  bound → unbound"),
+        "{lines}"
+    );
+    assert!(
+        lines.contains("/images/sea  slot mask ← /masks/border  unbound → bound"),
+        "{lines}"
+    );
+    step(&mut t, "Two Lfos", &|tx| {
+        tx.bind(
+            "/images/dusk",
+            On::value(OPACITY),
+            "/modulators/wobble",
+            [("depth", Value::Float(0.1))],
+        )?;
+        tx.bind(
+            "/images/dusk",
+            On::value(OPACITY),
+            "/modulators/drift",
+            Vec::<(&str, Value)>::new(),
+        )
+    });
+    let dusk = t.at("/images/dusk").unwrap();
+    let links: Vec<_> = dusk
+        .bindings()
+        .into_iter()
+        .filter(|b| b.on == &On::value(OPACITY))
+        .collect();
+    assert_eq!(links.len(), 2, "both modulators stay bound to one key");
+    assert_eq!(
+        links.iter().map(|b| b.value("depth")).collect::<Vec<_>>(),
+        [Some(Value::Float(0.1)), Some(Value::Float(0.5))]
+    );
+    step(&mut t, "Clear Order", &|tx| {
+        tx.set_order("/images/sea", "modifiers", Vec::<NodeId>::new())
+    });
+    assert_eq!(
+        t.at("/images/sea").unwrap().order_names().count(),
+        0,
+        "an empty order is removed"
+    );
 
     // ---- gestures ----
     let before = t.snapshot();
@@ -880,6 +960,17 @@ fn paste_into_another_file() {
             Err(Error::Format(_))
         ),
         "a file is not a fragment"
+    );
+    let op = Op::Paste {
+        parent: "/images".into(),
+        fragment: text.clone(),
+    };
+    let json = serde_json::to_string(&op).unwrap();
+    assert!(json.starts_with(r#"{"op":"paste","parent":"/images","fragment":"#));
+    assert_eq!(
+        serde_json::from_str::<Op>(&json).unwrap(),
+        op,
+        "Paste round-trips as JSON"
     );
 
     // the other file has a vignette at the same path but no wobble and no hero group
