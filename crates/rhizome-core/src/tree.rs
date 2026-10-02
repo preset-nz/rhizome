@@ -432,6 +432,16 @@ impl Tree {
         self.redo.last().map(|s| s.label.as_str())
     }
 
+    /// Every step undo can revert, oldest first. The last is `undo_label()`. For a history panel.
+    pub fn undo_labels(&self) -> impl DoubleEndedIterator<Item = &str> {
+        self.undo.iter().map(|s| s.label.as_str())
+    }
+
+    /// Every step redo can replay, next first. The first is `redo_label()`.
+    pub fn redo_labels(&self) -> impl DoubleEndedIterator<Item = &str> {
+        self.redo.iter().rev().map(|s| s.label.as_str())
+    }
+
     pub fn history_len(&self) -> usize {
         self.undo.len()
     }

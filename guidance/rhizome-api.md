@@ -191,6 +191,7 @@ Any write that names an opaque node directly is refused. See "Opaque nodes".
 | `edit(label, f)`; `begin(label)`, `end(g)`, `cancel(g)` | See call site 2 |
 | `undo()` / `redo()` | `Option<Commit>`. The commit's changeset is the inverse, computed by diff |
 | `undo_label()` / `redo_label()` | For the native menu: "Undo Set Opacity" |
+| `undo_labels()` / `redo_labels()` | Every step held, for a history panel. Undo oldest first, redo next first. Read-only |
 | `mark_saved()`, `is_unsaved()` | Unsaved is `diff(saved, current)` non-empty, never a flag |
 | `seq()` | Per-tree commit sequence, monotonic. What a future index consumes |
 | `history_len()` | Undo steps held, at most `HISTORY` (50) |

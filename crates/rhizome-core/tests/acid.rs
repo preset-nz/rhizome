@@ -1274,3 +1274,29 @@ fn a_soft_max_lets_a_typed_value_past_it() {
         serde_json::json!([1.0, 32.0])
     );
 }
+
+#[test]
+fn history_lists_every_step() {
+    let mut t = new_tree();
+    t.edit("Add Sky", |tx| {
+        tx.add("/images", "image", "sky").map(|_| ())
+    })
+    .unwrap();
+    t.edit("Add Sea", |tx| {
+        tx.add("/images", "image", "sea").map(|_| ())
+    })
+    .unwrap();
+    t.edit("Add Hero", |tx| {
+        tx.add("/images", "group", "hero").map(|_| ())
+    })
+    .unwrap();
+    assert!(t.redo_labels().next().is_none());
+
+    t.undo().unwrap();
+    t.undo().unwrap();
+    assert_eq!(t.undo_labels().collect::<Vec<_>>(), ["Add Sky"]);
+    assert_eq!(t.redo_labels().collect::<Vec<_>>(), ["Add Sea", "Add Hero"]);
+    assert_eq!(t.undo_labels().next_back(), t.undo_label());
+    assert_eq!(t.redo_labels().next(), t.redo_label());
+    assert_eq!(t.history_len(), t.undo_labels().count());
+}
