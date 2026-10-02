@@ -121,7 +121,7 @@ for issue in &report.issues { log::warn!("{issue}"); }       // "/images/sky/glo
 | `Path` | Parsed, validated address | `/images/sky/blur`. Sibling names are unique |
 | `Node<'t>` | Read-only view, borrowed from `&Tree` | Can't outlive the next edit; the borrow checker says so |
 | `Edit<'t>` | The only thing with write verbs | Exists inside `edit(…)` or an open gesture |
-| `Value` | `Bool`, `Int(i64)`, `Float(f64)`, `Text`, `Choice(String)`, `Vec2`, `Vec3`, `Colour` (0 to 1 per channel) | `Choice` holds the value, never an index. The vector and colour types are common enough across 2D and 3D tools to be mechanics; add a kind only when two object models need it |
+| `Value` | `Bool`, `Int(i64)`, `Float(f64)`, `Text`, `Choice(String)`, `Vec2`, `Vec3`, `Colour` (0 to 1 per channel). `to_json` / `from_json(kind, json)` convert as the file format does | `Choice` holds the value, never an index. The vector and colour types are common enough across 2D and 3D tools to be mechanics; add a kind only when two object models need it |
 | `Key<T>` / `ValueKey` | Typed and untyped value keys | Both spell `"blur.radius"` |
 | `Ref` | `{ file: Option<RelPath>, id, path }` | As in `node-api.md`. `Ref::here(id)` for this file |
 | `Fragment` | A detached subtree in the file format | What copy, paste and the clipboard carry. `to_text` / `from_text`. See "Copy" |
@@ -132,6 +132,8 @@ for issue in &report.issues { log::warn!("{issue}"); }       // "/images/sky/glo
 **Why ids and views, not live handles.** The sketch's `gran.bind("env", &swell)` needs every handle to hold a shared, mutable pointer to the tree: `Rc<RefCell<…>>` inside, runtime borrow panics outside. Copyable ids plus borrowed views give the same reading with the checker enforcing "no reads of stale state across an edit". The cost is writing `tx.bind(…)` instead of `node.bind(…)`.
 
 **Children iterate by name.** Hierarchy never implies order (decision 7). Anything ordered is asked for by name: `node.order("modifiers")`.
+
+**Tree rules.** A per-node `check` can't say "at most one per parent" or "can't be removed on its own": a kind with no instances is never checked, and a removed node is gone. `RegistryBuilder::rule(|root, changes| …)` adds a rule over the whole tree, run at every commit after the checks, with the root and the commit's `Changeset` (whose `Removed` entries carry the type). It returns a `Violation { path, message }`, which refuses the edit like a check. POM compiles kind policy into one ([`pom.md`](pom.md)).
 
 **No roles in the core.** A role (generator, effect, modulator) and its conventions are business logic. A node type can carry a `check` the object model writes; rhizome runs every `check` at commit and rolls the edit back if one fails. [Shard's object model](../projects/shard/design/object-model.md#roles) puts its roles there.
 
@@ -147,7 +149,7 @@ Each verb lands in one `ChangeKind`, plus the cascades listed. The changeset is 
 |---|---|---|---|
 | `add(parent, type, name) -> NodeId` | `Added` | type undeclared, name taken or invalid, wrong category, parent is `/`, a group or opaque | — |
 | `add_unique(parent, type, base) -> NodeId` | `Added` | as `add` | Names it `sky-2` if `sky` is taken |
-| `remove(at)` | `Removed` per node | the root or a category | Subtree removed; dropped from every group and order; bindings to and from it unbound. Same-file `Ref`s to it stay and turn unresolved. Each cascade is its own entry |
+| `remove(at)` | `Removed { type_name }` per node | the root or a category | Subtree removed; dropped from every group and order; bindings to and from it unbound. Same-file `Ref`s to it stay and turn unresolved. Each cascade is its own entry |
 | `rename(at, name)` / `move_to(at, parent)` | `Moved` | name taken, would cycle, crosses category | — |
 | `copy(at, parent) -> NodeId` | `Added` per node | as `add` | See "Copy" |
 | `paste(parent, &Fragment) -> PasteReport` | `Added` per node | a node's type can't live there | See "Copy" |
