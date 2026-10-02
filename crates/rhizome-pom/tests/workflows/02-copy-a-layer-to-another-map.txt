@@ -1,0 +1,28 @@
+# Copy a layer to another map
+> new
+> edit Realm
+  /realms/west  added realm
+> run map.add {"name":"north","to":"/realms/west"}
+  /realms/west/north  added map
+  /realms/west/north/grid  added grid
+  /realms/west/north/paper  added paper
+> run layer.add {"name":"hills","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
+  /realms/west/north/hills  added layer
+> run map.add {"name":"south","to":"/realms/west"}
+  /realms/west/south  added map
+  /realms/west/south/grid  added grid
+  /realms/west/south/paper  added paper
+> run edit.copy {"at":"/realms/west/north/hills"}
+  1 nodes on the clipboard
+> run edit.paste {"parent":"/realms/west/south"}
+  /realms/west/south  order draw  [paper, grid] → [paper, hills, grid]
+  /realms/west/south/hills  added layer
+> run edit.duplicate {"at":"/realms/west/south/hills"}
+  /realms/west/south  order draw  [paper, hills, grid] → [paper, hills, hills-2, grid]
+  /realms/west/south/hills-2  added layer
+> run edit.undo {}
+  /realms/west/south  order draw  [paper, hills, hills-2, grid] → [paper, hills, grid]
+  /realms/west/south/hills-2  removed
+> status
+  Untitled — Edited, undo: Paste, redo: Duplicate

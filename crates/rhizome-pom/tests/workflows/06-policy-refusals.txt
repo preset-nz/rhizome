@@ -1,0 +1,25 @@
+# Anchors hold however the map is edited
+> new
+> edit Realm
+  /realms/west  added realm
+> run map.add {"name":"north","to":"/realms/west"}
+  /realms/west/north  added map
+  /realms/west/north/grid  added grid
+  /realms/west/north/paper  added paper
+> run layer.add {"name":"hills","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
+  /realms/west/north/hills  added layer
+> status
+  Untitled — Edited, undo: New Layer, redo: -
+> edit Bad Remove
+  refused: /realms/west/north/paper: a paper can't be removed on its own
+> edit Bad Second Grid
+  refused: /realms/west/north: at most 1 grid here
+> edit Bad Order
+  refused: /realms/west/north/grid: must stay last in `draw`
+> edit Bad Copy
+  refused: /realms/west/north: at most 1 paper here
+> run edit.delete {"at":"/realms/west/north/grid"}
+  refused: `edit.delete` isn't available right now
+> status
+  Untitled — Edited, undo: New Layer, redo: -

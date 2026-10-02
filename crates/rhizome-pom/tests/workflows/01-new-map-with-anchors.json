@@ -1,0 +1,81 @@
+{
+  "title": "A new map comes with its anchors",
+  "why": "An app's own commands build a map with paper and grid pinned at the ends of the draw order. The menu knows which layers can be deleted or duplicated.",
+  "steps": [
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "west"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "north"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "hills"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "river"
+        }
+      }
+    },
+    {
+      "menu": {
+        "payload": {
+          "at": "/realms/west/north/paper"
+        },
+        "ids": [
+          "edit.delete",
+          "edit.duplicate",
+          "edit.copy"
+        ]
+      }
+    },
+    {
+      "menu": {
+        "payload": {
+          "at": "/realms/west/north/hills"
+        },
+        "ids": [
+          "edit.delete",
+          "edit.duplicate"
+        ]
+      }
+    },
+    {
+      "menu": {
+        "payload": {},
+        "ids": [
+          "edit.undo",
+          "edit.redo",
+          "file.revert"
+        ]
+      }
+    },
+    "status"
+  ]
+}

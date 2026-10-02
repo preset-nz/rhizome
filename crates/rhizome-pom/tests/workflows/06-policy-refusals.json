@@ -1,0 +1,101 @@
+{
+  "title": "Anchors hold however the map is edited",
+  "why": "Policy is enforced at commit, so raw ops are refused as surely as commands are disabled.",
+  "steps": [
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "west"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "north"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "hills"
+        }
+      }
+    },
+    "status",
+    {
+      "edit": {
+        "label": "Bad Remove",
+        "ops": [
+          {
+            "op": "remove",
+            "at": "/realms/west/north/paper"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Second Grid",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms/west/north",
+            "type": "grid",
+            "name": "grid2"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Order",
+        "ops": [
+          {
+            "op": "set_order",
+            "owner": "/realms/west/north",
+            "name": "draw",
+            "ids": [
+              "/realms/west/north/grid",
+              "/realms/west/north/hills",
+              "/realms/west/north/paper"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Copy",
+        "ops": [
+          {
+            "op": "copy",
+            "at": "/realms/west/north/paper",
+            "parent": "/realms/west/north"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "edit.delete",
+        "payload": {
+          "at": "/realms/west/north/grid"
+        }
+      }
+    },
+    "status"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "title": "Copy a layer to another map",
+  "why": "A pasted layer lands under the grid, not on top of it, in a map that isn't its own.",
+  "steps": [
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "west"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "north"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "hills"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "south"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "edit.copy",
+        "payload": {
+          "at": "/realms/west/north/hills"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "edit.paste",
+        "payload": {
+          "parent": "/realms/west/south"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "edit.duplicate",
+        "payload": {
+          "at": "/realms/west/south/hills"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "edit.undo",
+        "payload": {}
+      }
+    },
+    "status"
+  ]
+}

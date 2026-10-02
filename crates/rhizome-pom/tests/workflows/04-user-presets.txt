@@ -1,0 +1,47 @@
+# Save, follow, rename and delete a user preset
+> new
+> edit Realm
+  /realms/west  added realm
+> run map.add {"name":"north","to":"/realms/west"}
+  /realms/west/north  added map
+  /realms/west/north/grid  added grid
+  /realms/west/north/paper  added paper
+> run layer.add {"name":"hills","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
+  /realms/west/north/hills  added layer
+> run map.add {"name":"south","to":"/realms/west"}
+  /realms/west/south  added map
+  /realms/west/south/grid  added grid
+  /realms/west/south/paper  added paper
+> edit Zoom
+  /realms/west/north  map.zoom  unset → 4
+> run preset.save {"at":"/realms/west/north","kind":"style","label":"Close Up"}
+  /presets/style  added preset
+> run preset.save {"at":"/realms/west/north","kind":"style","label":"Close Up"}
+  refused: a preset called “Close Up” already exists here; update it instead
+> names style at /realms/west/south
+  “Close Up”
+> current style at /realms/west/north
+  “Close Up”
+> run preset.apply {"at":"/realms/west/south","kind":"style","preset":{"user":"Close Up"}}
+  /realms/west/south  map.zoom  unset → 4
+> current style at /realms/west/south
+  “Close Up”
+> run preset.follow {"at":"/realms/west/south","kind":"style","preset":{"user":"Close Up"}}
+  /realms/west/south  follow.style  unset → /presets/style
+> run preset.rename {"at":"/realms/west/north","kind":"style","label":"Close Up","to":"Near"}
+  /presets/style  preset.label  "Close Up" → "Near"
+> resolve style at /realms/west/south
+  “Near” from /realms/west/south  {"values":{"map.zoom":4}}
+> run preset.delete {"at":"/realms/west/north","kind":"style","label":"Near"}
+  /presets/style  removed
+  /realms/west/south  follow.style  /presets/style → unset
+> resolve style at /realms/west/south
+  (nothing)
+> run edit.undo {}
+  /presets/style  added preset
+  /realms/west/south  follow.style  unset → /presets/style
+> resolve style at /realms/west/south
+  “Near” from /realms/west/south  {"values":{"map.zoom":4}}
+> status
+  Untitled — Edited, undo: Rename Preset, redo: Delete Preset

@@ -1,0 +1,168 @@
+{
+  "title": "Save, follow, rename and delete a user preset",
+  "why": "A user preset is document data: saved from one map, followed by another by id, so a rename keeps it and a delete unfollows.",
+  "steps": [
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "west"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "north"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "hills"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "south"
+        }
+      }
+    },
+    {
+      "edit": {
+        "label": "Zoom",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/realms/west/north",
+            "key": "map.zoom",
+            "value": 4
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "preset.save",
+        "payload": {
+          "kind": "style",
+          "at": "/realms/west/north",
+          "label": "Close Up"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "preset.save",
+        "payload": {
+          "kind": "style",
+          "at": "/realms/west/north",
+          "label": "Close Up"
+        }
+      }
+    },
+    {
+      "names": {
+        "kind": "style",
+        "at": "/realms/west/south"
+      }
+    },
+    {
+      "current": {
+        "kind": "style",
+        "at": "/realms/west/north"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.apply",
+        "payload": {
+          "kind": "style",
+          "at": "/realms/west/south",
+          "preset": {
+            "user": "Close Up"
+          }
+        }
+      }
+    },
+    {
+      "current": {
+        "kind": "style",
+        "at": "/realms/west/south"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.follow",
+        "payload": {
+          "kind": "style",
+          "at": "/realms/west/south",
+          "preset": {
+            "user": "Close Up"
+          }
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "preset.rename",
+        "payload": {
+          "kind": "style",
+          "at": "/realms/west/north",
+          "label": "Close Up",
+          "to": "Near"
+        }
+      }
+    },
+    {
+      "resolve": {
+        "kind": "style",
+        "at": "/realms/west/south"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.delete",
+        "payload": {
+          "kind": "style",
+          "at": "/realms/west/north",
+          "label": "Near"
+        }
+      }
+    },
+    {
+      "resolve": {
+        "kind": "style",
+        "at": "/realms/west/south"
+      }
+    },
+    {
+      "run": {
+        "id": "edit.undo",
+        "payload": {}
+      }
+    },
+    {
+      "resolve": {
+        "kind": "style",
+        "at": "/realms/west/south"
+      }
+    },
+    "status"
+  ]
+}

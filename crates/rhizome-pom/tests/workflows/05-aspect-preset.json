@@ -1,0 +1,126 @@
+{
+  "title": "Pick a map's aspect",
+  "why": "A computed preset: the state is a ratio, the setter keeps the long edge, and a near match still counts as current.",
+  "steps": [
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "west"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "north"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "hills"
+        }
+      }
+    },
+    {
+      "names": {
+        "kind": "aspect",
+        "at": "/realms/west/north"
+      }
+    },
+    {
+      "names": {
+        "kind": "aspect",
+        "at": "/realms/west/north/hills"
+      }
+    },
+    {
+      "current": {
+        "kind": "aspect",
+        "at": "/realms/west/north"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.apply",
+        "payload": {
+          "kind": "aspect",
+          "at": "/realms/west/north",
+          "preset": {
+            "catalogue": "16x9"
+          }
+        }
+      }
+    },
+    {
+      "current": {
+        "kind": "aspect",
+        "at": "/realms/west/north"
+      }
+    },
+    {
+      "edit": {
+        "label": "Nudge",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/realms/west/north",
+            "key": "map.size",
+            "value": [
+              800.0,
+              452.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "current": {
+        "kind": "aspect",
+        "at": "/realms/west/north"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.apply",
+        "payload": {
+          "kind": "aspect",
+          "at": "/realms/west/north/hills",
+          "preset": {
+            "catalogue": "square"
+          }
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "edit.undo",
+        "payload": {}
+      }
+    },
+    {
+      "run": {
+        "id": "edit.undo",
+        "payload": {}
+      }
+    },
+    {
+      "current": {
+        "kind": "aspect",
+        "at": "/realms/west/north"
+      }
+    }
+  ]
+}

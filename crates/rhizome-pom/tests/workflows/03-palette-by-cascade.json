@@ -1,0 +1,117 @@
+{
+  "title": "Choose a palette for a realm and a map",
+  "why": "A layer resolves its palette from its map, else its realm, else the built-in fallback. The choice is saved.",
+  "steps": [
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "west"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "north"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "hills"
+        }
+      }
+    },
+    {
+      "resolve": {
+        "kind": "palette",
+        "at": "/realms/west/north/hills"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.follow",
+        "payload": {
+          "kind": "palette",
+          "at": "/realms/west",
+          "preset": {
+            "catalogue": "night"
+          }
+        }
+      }
+    },
+    {
+      "resolve": {
+        "kind": "palette",
+        "at": "/realms/west/north/hills"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.follow",
+        "payload": {
+          "kind": "palette",
+          "at": "/realms/west/north",
+          "preset": {
+            "catalogue": "tide"
+          }
+        }
+      }
+    },
+    {
+      "resolve": {
+        "kind": "palette",
+        "at": "/realms/west/north/hills"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.follow",
+        "payload": {
+          "kind": "palette",
+          "at": "/realms/west/north"
+        }
+      }
+    },
+    {
+      "resolve": {
+        "kind": "palette",
+        "at": "/realms/west/north/hills"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.follow",
+        "payload": {
+          "kind": "palette",
+          "at": "/realms/west/north/hills",
+          "preset": {
+            "catalogue": "night"
+          }
+        }
+      }
+    },
+    {
+      "save_as": "/atlas/west"
+    },
+    "reopen",
+    {
+      "resolve": {
+        "kind": "palette",
+        "at": "/realms/west/north/hills"
+      }
+    }
+  ]
+}

@@ -16,23 +16,30 @@ test *args:
 # Run the acid test
 [group('quality')]
 acid:
-    cargo test --test acid
+    cargo test -p rhizome-core --test acid
 
-# Run the core-workflow suite
+# Run both core-workflow suites: rhizome's and POM's
 [group('quality')]
 workflows:
-    cargo test --test core_workflows
+    cargo test -p rhizome-core --test core_workflows
+    cargo test -p rhizome-pom --test workflows
+
+# Run POM's tests
+[group('quality')]
+pom:
+    cargo test -p rhizome-pom
 
 # Run the seeded random-Op invariant loop
 [group('quality')]
 invariants:
-    cargo test --test invariants -- --nocapture
+    cargo test -p rhizome-core --test invariants -- --nocapture
 
 # Regenerate golden files. Read every changed golden before committing
 [group('quality')]
 bless:
-    RHIZOME_BLESS=1 cargo test --test acid --test core_workflows
-    git status --short crates/rhizome-core/tests
+    RHIZOME_BLESS=1 cargo test -p rhizome-core --test acid --test core_workflows
+    RHIZOME_BLESS=1 cargo test -p rhizome-pom --test workflows
+    git status --short crates/*/tests
 
 # Format the code
 [group('dev')]

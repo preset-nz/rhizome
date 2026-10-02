@@ -1,0 +1,31 @@
+# Choose a palette for a realm and a map
+> new
+> edit Realm
+  /realms/west  added realm
+> run map.add {"name":"north","to":"/realms/west"}
+  /realms/west/north  added map
+  /realms/west/north/grid  added grid
+  /realms/west/north/paper  added paper
+> run layer.add {"name":"hills","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
+  /realms/west/north/hills  added layer
+> resolve palette at /realms/west/north/hills
+  ember from the fallback  {"fill":"#3a1c12"}
+> run preset.follow {"at":"/realms/west","kind":"palette","preset":{"catalogue":"night"}}
+  /realms/west  follow.palette  unset → file:catalogue:palette/night
+> resolve palette at /realms/west/north/hills
+  night from /realms/west  {"fill":"#0b1030"}
+> run preset.follow {"at":"/realms/west/north","kind":"palette","preset":{"catalogue":"tide"}}
+  /realms/west/north  follow.palette  unset → file:catalogue:palette/tide
+> resolve palette at /realms/west/north/hills
+  tide from /realms/west/north  {"fill":"#0a2a30"}
+> run preset.follow {"at":"/realms/west/north","kind":"palette"}
+  /realms/west/north  follow.palette  file:catalogue:palette/tide → unset
+> resolve palette at /realms/west/north/hills
+  night from /realms/west  {"fill":"#0b1030"}
+> run preset.follow {"at":"/realms/west/north/hills","kind":"palette","preset":{"catalogue":"night"}}
+  refused: /realms/west/north/hills has no key `follow.palette`
+> save as /atlas/west
+> reopen
+> resolve palette at /realms/west/north/hills
+  night from /realms/west  {"fill":"#0b1030"}

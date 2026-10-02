@@ -1,0 +1,27 @@
+# A new map comes with its anchors
+> new
+> edit Realm
+  /realms/west  added realm
+> run map.add {"name":"north","to":"/realms/west"}
+  /realms/west/north  added map
+  /realms/west/north/grid  added grid
+  /realms/west/north/paper  added paper
+> run layer.add {"name":"hills","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
+  /realms/west/north/hills  added layer
+> run layer.add {"name":"river","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, hills, grid] → [paper, hills, river, grid]
+  /realms/west/north/river  added layer
+> menu for {"at":"/realms/west/north/paper"}
+  edit.delete  “Delete”  off
+  edit.duplicate  “Duplicate”  off
+  edit.copy  “Copy”  on
+> menu for {"at":"/realms/west/north/hills"}
+  edit.delete  “Delete”  on
+  edit.duplicate  “Duplicate”  on
+> menu for {}
+  edit.undo  “Undo New Layer”  on
+  edit.redo  “Redo”  off
+  file.revert  “Revert to Saved”  off
+> status
+  Untitled — Edited, undo: New Layer, redo: -
