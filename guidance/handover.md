@@ -13,7 +13,7 @@ updated: 2026-10-02
 
 ## Current status
 
-- **Everything pushed** (2026-10-02, both repos). Georg: push without asking (memory `push-without-asking`); still ask before publishing or going public.
+- **Everything pushed** (2026-10-02, both repos). Tags `v0.1.0`–`v0.1.3` (`v0.1.3`: `ObjectModel::seed` / `Tree::seeded`, a new document's content outside history). Oblique depends on `v0.1.3` by private git. Georg: push without asking (memory `push-without-asking`); still ask before publishing or going public.
 - **rhizome-core: shipped** (epic 01). Registry, tree, edits/gestures/coalescing, undo, diff, file format, opaque nodes, copy/paste, `Op` as data, tree rules. `5d86ea8`: `Commit`/`Changeset`/`Value` serialise; shape pinned in `tests/golden/commit.json` (`tests/wire.rs`).
 - **rhizome-pom phase 1: shipped.** Kinds and policy, presets on the kind (catalogue, user presets, apply, current, `add_from_preset`), preset files (`0f9edc2`: flat JSON, one kind, bindings stripped), built-in commands. Themes removed (`0d54204`, decision 39).
 - **POM phase 2: shipped** (`4c750a1`, `bed6ae2`). `Pom<M>` / `Host` in `rhizome-pom/src/host.rs` (no Tauri): commands only, coalesce key, gestures by token, `Status` with a monotonic `generation`, events returned not emitted, `on_change` hook. `value.set` built in. `crates/rhizome-pom-tauri`: app-level commands `commands::pom_*`, events `pom://commit|status|open-document`, `opened.rs` lifted from Shard.
@@ -39,14 +39,16 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. **Oblique Epic 21** (`projects/oblique/features/21-rhizome/README.md`) is the adoption plan. Three open decisions for Georg first: how Oblique depends on rhizome (path / private git / publish), the file (keep `.oblique` with rhizome inside vs new extension), undo across the hand-over. Then story 1 (foundation) from the spike's `rhizome_spike.rs` and `src/pom/`.
-2. The spike (`spike/rhizome`, `~/rhizomatic-preset/initiatives/oblique-spike`, last `1bef1bd`) is the working reference: 16/16 real projects round-trip (Rust and TS), drag 4–6 ms median full screen. Never merge it as is.
-3. `@preset.nz/pom` (phase 3) is Epic 21's story 8: extract from Oblique, not ahead of it.
-4. Cross-file `Ref` resolution (decision 40) before any app loads a library rhizome.
-5. Ops (decisions 43–44): direction only.
-6. After any doc change: recopy into `packages/rhizome/guidance/`, commit and push both repos.
+1. **Oblique Epic 21 story 1 is in flight** in the Oblique repo (branch `epic21/story-1`); its state lives in `handovers/oblique/handover.md`. rhizome changes it needs: tag a new version, bump Oblique's tag.
+2. `@preset.nz/pom` (phase 3) is Epic 21's story 8: extract from Oblique.
+3. Cross-file `Ref` resolution (decision 40) before any app loads a library rhizome.
+4. Ops (decisions 43–44): direction only.
+5. After any doc change: recopy into `packages/rhizome/guidance/`, commit and push both repos.
 
 ## Gotchas
+
+- **rhizome's names are rhizome's** (memory `rhizome-is-fundamental`): never rename a rhizome verb around an app's vocabulary; apps namespace their own (Oblique `params.<name>`).
+- **No existing files matter** (Georg): no compatibility code or converters in Oblique.
 
 - **Tauri `#[tauri::command] pub fn` can't sit at a lib crate's root** (macro name clash); they live in `commands`.
 - **Mock-runtime IPC must use the webview's own URL** as the request URL, else "not allowed. Plugin not found" (non-local origin).
