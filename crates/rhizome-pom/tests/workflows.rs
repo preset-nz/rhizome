@@ -251,9 +251,13 @@ impl Session {
                     }
                     Ok(Outcome::Nothing) => vec!["(no change)".into()],
                     Ok(Outcome::Text(t)) => {
-                        let n = Fragment::from_text(&t).map(|f| f.len()).unwrap_or(0);
+                        // a fragment is summed up; anything else (a preset file) is shown
+                        let lines = match Fragment::from_text(&t) {
+                            Ok(f) => vec![format!("{} nodes on the clipboard", f.len())],
+                            Err(_) => t.lines().map(String::from).collect(),
+                        };
                         self.clipboard = Some(t);
-                        vec![format!("{n} nodes on the clipboard")]
+                        lines
                     }
                     Err(e) => vec![format!("refused: {e}")],
                 };

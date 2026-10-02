@@ -1,6 +1,6 @@
 {
   "title": "Export a layer preset and import it into another document",
-  "why": "A user preset is stored against its kind in one document. Exported, it is that preset node as a fragment; imported into another document of the same model, it is offered on every layer there. A taken name is refused, and the import is one undo step.",
+  "why": "User presets are stored against their kind in one document. Exported, they are a preset file: plain JSON for one kind. Imported into another document of the same model, they are offered on every layer there. A taken name refuses the whole file, and the import is one undo step.",
   "steps": [
     "new",
     {
@@ -61,7 +61,9 @@
         "id": "preset.export",
         "payload": {
           "at": "/realms/west/north/hills",
-          "label": "Nope"
+          "labels": [
+            "Nope"
+          ]
         }
       }
     },
@@ -70,7 +72,9 @@
         "id": "preset.export",
         "payload": {
           "at": "/realms/west/north/hills",
-          "label": "Mountains"
+          "labels": [
+            "Mountains"
+          ]
         }
       }
     },

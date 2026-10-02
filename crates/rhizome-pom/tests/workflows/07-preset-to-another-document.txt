@@ -13,10 +13,23 @@
   /realms/west/north/hills  layer.seed  unset → 123
 > run preset.save {"at":"/realms/west/north/hills","label":"Mountains"}
   /presets/layer  added preset
-> run preset.export {"at":"/realms/west/north/hills","label":"Nope"}
+> run preset.export {"at":"/realms/west/north/hills","labels":["Nope"]}
   refused: no preset called “Nope” here
-> run preset.export {"at":"/realms/west/north/hills","label":"Mountains"}
-  1 nodes on the clipboard
+> run preset.export {"at":"/realms/west/north/hills","labels":["Mountains"]}
+  {
+    "preset": 1,
+    "for": "layer",
+    "presets": [
+      {
+        "label": "Mountains",
+        "state": {
+          "values": {
+            "layer.seed": 123
+          }
+        }
+      }
+    ]
+  }
 > new
 > edit Realm
   /realms/east  added realm

@@ -3,8 +3,8 @@
 //! The app's object model gives a kind an [`Aggregate`]: what state a preset holds, how to
 //! read it off a node and how to write it back. POM supplies the rest: built-in presets in
 //! code, user presets saved in the document (they travel with the file), "which preset is
-//! current", applying one, making a new node from one, and moving a user preset between
-//! documents as text.
+//! current", applying one, making a new node from one, and moving user presets between
+//! documents as a preset file.
 //!
 //! Presets are copied into a node, never followed. A shared choice that nodes follow (a
 //! theme) is the app's to build from rhizome's primitives, not POM's.
@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use rhizome_core::{Edit, Fragment, Node, NodeId, NodeType, On, Tree, Value};
+use rhizome_core::{Edit, Node, NodeId, NodeType, On, Tree, Value};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
@@ -44,6 +44,25 @@ pub struct Report {
     pub skipped: Vec<String>,
 }
 
+/// An exported preset file: user presets of one kind, as plain JSON.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct PresetFile {
+    preset: u32,
+    #[serde(rename = "for")]
+    for_type: String,
+    presets: Vec<PresetEntry>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PresetEntry {
+    label: String,
+    state: Json,
+}
+
+const FILE_VERSION: u32 = 1;
+
 /// A preset by name: built into the kind, or saved by the user in this document.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -71,6 +90,12 @@ pub trait Aggregate: Send + Sync + 'static {
     fn matches(&self, current: &Self::State, preset: &Self::State) -> bool {
         current == preset
     }
+
+    /// The state as it leaves the document in an export: without anything that only means
+    /// something in this file, such as node ids. Unchanged by default.
+    fn portable(&self, state: Self::State) -> Self::State {
+        state
+    }
 }
 
 /// An [`Aggregate`] with its state as JSON, so kinds of different state types sit together.
@@ -79,6 +104,7 @@ pub(crate) trait Erased: Send + Sync {
     fn set(&self, tx: &mut Edit<'_>, node: NodeId, state: &Json) -> rhizome_core::Result<Report>;
     fn matches(&self, current: &Json, preset: &Json) -> bool;
     fn fits(&self, state: &Json) -> bool;
+    fn portable(&self, state: &Json) -> Json;
 }
 
 impl<A: Aggregate> Erased for A {
@@ -105,6 +131,15 @@ impl<A: Aggregate> Erased for A {
 
     fn fits(&self, state: &Json) -> bool {
         serde_json::from_value::<A::State>(state.clone()).is_ok()
+    }
+
+    fn portable(&self, state: &Json) -> Json {
+        match serde_json::from_value::<A::State>(state.clone()) {
+            Ok(s) => {
+                serde_json::to_value(Aggregate::portable(self, s)).expect("preset state serialises")
+            }
+            Err(_) => state.clone(),
+        }
     }
 }
 
@@ -254,9 +289,18 @@ impl Presets {
                 "a preset called “{label}” already exists here; update it instead"
             )));
         }
-        let id = tx.add_unique(format!("/{PRESETS}").as_str(), PRESET, &for_type)?;
-        tx.set_value(id, FOR, Value::Text(for_type))?;
-        tx.set_value(id, LABEL, Value::Text(label))?;
+        Self::insert(tx, &for_type, &label, &state)
+    }
+
+    fn insert(
+        tx: &mut Edit<'_>,
+        for_type: &str,
+        label: &str,
+        state: &Json,
+    ) -> rhizome_core::Result<()> {
+        let id = tx.add_unique(format!("/{PRESETS}").as_str(), PRESET, for_type)?;
+        tx.set_value(id, FOR, Value::Text(for_type.into()))?;
+        tx.set_value(id, LABEL, Value::Text(label.into()))?;
         tx.set_value(id, STATE, Value::Text(state.to_string()))
     }
 
@@ -321,63 +365,68 @@ impl Presets {
         kp.aggregate.set(tx, node, &state)
     }
 
-    /// A user preset as text: its node as a rhizome fragment, so an export, a user preset in
-    /// a document and an entry in a library rhizome are one shape.
-    pub(crate) fn export(&self, tree: &Tree, node: NodeId, label: &str) -> Result<String> {
+    /// User presets of the node's kind as a preset file: plain JSON, one kind, one or more
+    /// presets, each state made [portable](Aggregate::portable).
+    pub(crate) fn export(&self, tree: &Tree, node: NodeId, labels: &[String]) -> Result<String> {
         let for_type = live(tree, node)?.type_name().to_string();
-        self.of(&for_type)?;
-        let (_, p) = Self::user_presets(tree, &for_type)
-            .into_iter()
-            .find(|(l, _)| l == label)
-            .ok_or_else(|| structural_msg(format!("no preset called “{label}” here")))?;
-        Ok(tree.extract([p.id()])?.to_text())
+        let kp = self.of(&for_type)?;
+        if labels.is_empty() {
+            return Err(Error::Preset("choose at least one preset to export".into()));
+        }
+        let mine = Self::user_presets(tree, &for_type);
+        let presets = labels
+            .iter()
+            .map(|label| {
+                let (_, p) = mine
+                    .iter()
+                    .find(|(l, _)| l == label)
+                    .ok_or_else(|| Error::Preset(format!("no preset called “{label}” here")))?;
+                Ok(PresetEntry {
+                    label: label.clone(),
+                    state: kp.aggregate.portable(&Self::user_state(p)),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let file = PresetFile {
+            preset: FILE_VERSION,
+            for_type,
+            presets,
+        };
+        Ok(serde_json::to_string_pretty(&file).expect("a preset file serialises") + "\n")
     }
 
-    /// Takes in an exported user preset. Refused, and nothing changes, unless it's one preset
-    /// for a kind of this model, its state fits that kind, and its name is free.
-    pub(crate) fn import(&self, tx: &mut Edit<'_>, exported: &str) -> rhizome_core::Result<String> {
-        let fragment = Fragment::from_text(exported)?;
-        if fragment.len() != 1 {
-            return Err(structural_msg(format!(
-                "a preset export holds one preset, not {} nodes",
-                fragment.len()
-            )));
+    /// Takes in a preset file. Refused, and nothing changes, unless it's for a kind of this
+    /// model, every state fits that kind, and every name is valid and free.
+    pub(crate) fn import(
+        &self,
+        tx: &mut Edit<'_>,
+        text: &str,
+    ) -> rhizome_core::Result<Vec<String>> {
+        let file = read_file(text)?;
+        let kp = self.by_type.get(&file.for_type).ok_or_else(|| {
+            structural_msg(format!("this document has no {} presets", file.for_type))
+        })?;
+        let mut labels = Vec::new();
+        for e in &file.presets {
+            let label = valid_label(&e.label)?;
+            if !kp.aggregate.fits(&e.state) {
+                return Err(structural_msg(format!(
+                    "“{label}” doesn't fit a {}",
+                    file.for_type
+                )));
+            }
+            if labels.contains(&label) || Self::user_id(tx, &file.for_type, &label).is_some() {
+                return Err(structural_msg(format!(
+                    "a {} preset called “{label}” already exists here",
+                    file.for_type
+                )));
+            }
+            labels.push(label);
         }
-        let pasted = tx.paste(format!("/{PRESETS}").as_str(), &fragment)?;
-        let id = pasted.nodes[0];
-        let n = tx.at(id).expect("just pasted");
-        if n.type_name() != PRESET {
-            return Err(structural_msg(format!(
-                "this is a {}, not a preset",
-                n.type_name()
-            )));
+        for (label, e) in labels.iter().zip(&file.presets) {
+            Self::insert(tx, &file.for_type, label, &e.state)?;
         }
-        let (for_type, label, state) = (text(&n, FOR), text(&n, LABEL), Self::user_state(&n));
-        let kp = self
-            .by_type
-            .get(&for_type)
-            .ok_or_else(|| structural_msg(format!("this document has no {for_type} presets")))?;
-        if !kp.aggregate.fits(&state) {
-            return Err(structural_msg(format!(
-                "this preset doesn't fit a {for_type}"
-            )));
-        }
-        let label = valid_label(&label)?;
-        let cat = tx
-            .at(format!("/{PRESETS}").as_str())
-            .expect("POM's category");
-        let taken = cat.children().any(|p| {
-            p.id() != id
-                && p.type_name() == PRESET
-                && text(&p, FOR) == for_type
-                && text(&p, LABEL) == label
-        });
-        if taken {
-            return Err(structural_msg(format!(
-                "a {for_type} preset called “{label}” already exists here"
-            )));
-        }
-        Ok(label)
+        Ok(labels)
     }
 
     /// Instantiates a kind's template filled from a preset: add, then apply, in one edit.
@@ -395,6 +444,22 @@ impl Presets {
         let report = kp.aggregate.set(tx, id, &state)?;
         Ok((id, report))
     }
+}
+
+/// Reads a preset file. Anything else is refused with what's wrong.
+pub(crate) fn read_file(text: &str) -> rhizome_core::Result<PresetFile> {
+    let file: PresetFile = serde_json::from_str(text)
+        .map_err(|e| structural_msg(format!("not a preset file: {e}")))?;
+    if file.preset != FILE_VERSION {
+        return Err(structural_msg(format!(
+            "a version {} preset file; this reads version {FILE_VERSION}",
+            file.preset
+        )));
+    }
+    if file.presets.is_empty() {
+        return Err(structural_msg("the preset file holds no presets".into()));
+    }
+    Ok(file)
 }
 
 fn text(n: &Node<'_>, key: &str) -> String {
@@ -490,6 +555,14 @@ pub struct BindingState {
 
 impl Aggregate for NodeValues {
     type State = NodeValuesState;
+
+    /// Bindings name nodes of this file, so they stay behind.
+    fn portable(&self, state: NodeValuesState) -> NodeValuesState {
+        NodeValuesState {
+            bindings: vec![],
+            ..state
+        }
+    }
 
     fn get(&self, node: Node<'_>) -> NodeValuesState {
         let mut state = NodeValuesState::default();

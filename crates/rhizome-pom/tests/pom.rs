@@ -188,7 +188,7 @@ fn other_synth() -> (Document<Synth>, NodeId) {
 }
 
 #[test]
-fn a_user_preset_travels_to_another_document() {
+fn user_presets_travel_to_another_document() {
     let (mut d, _, osc, lfo) = synth();
     d.edit("Shape", |tx| {
         tx.set(osc, PITCH, 7.0)?;
@@ -197,74 +197,114 @@ fn a_user_preset_travels_to_another_document() {
     })
     .unwrap();
     d.save_preset(osc, "Warm").unwrap();
-    let text = d.export_preset(osc, "Warm").unwrap();
-    assert!(text.contains("\"preset.for\""), "the preset node: {text}");
-    assert!(d.export_preset(osc, "Cold").is_err());
+    d.edit("Shape", |tx| tx.set(osc, PITCH, -5.0)).unwrap();
+    d.save_preset(osc, "Low").unwrap();
+    let names = |l: &[&str]| l.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+
+    // a preset file: plain JSON, one kind, its presets; bindings stay behind
+    let text = d.export_presets(osc, &names(&["Warm", "Low"])).unwrap();
+    let file: serde_json::Value = serde_json::from_str(&text).unwrap();
+    assert_eq!(
+        file,
+        json!({
+            "preset": 1,
+            "for": "osc",
+            "presets": [
+                {"label": "Warm", "state": {"values": {"osc.mix": 0.5, "osc.pitch": 7.0}}},
+                {"label": "Low", "state": {"values": {"osc.mix": 0.5, "osc.pitch": -5.0}}},
+            ]
+        })
+    );
+    assert!(d.export_presets(osc, &names(&["Cold"])).is_err());
+    assert!(d.export_presets(osc, &[]).is_err());
 
     let (mut e, b) = other_synth();
     let steps = e.tree().history_len();
-    let (label, commit) = e.import_preset(&text).unwrap();
-    assert_eq!(label, "Warm");
+    let (labels, commit) = e.import_presets(&text).unwrap();
+    assert_eq!(labels, ["Warm", "Low"]);
     assert!(commit.is_some());
     assert_eq!(
         e.tree().history_len(),
         steps + 1,
         "an import is one undo step"
     );
-    assert_eq!(e.preset_names(b).unwrap(), [PresetRef::User("Warm".into())]);
-
-    // values come across; the binding pointed at a node in the other file, so it's reported
+    assert_eq!(
+        e.preset_names(b).unwrap(),
+        [
+            PresetRef::User("Low".into()),
+            PresetRef::User("Warm".into())
+        ]
+    );
     let (report, _) = e.apply_preset(b, &PresetRef::User("Warm".into())).unwrap();
     assert_eq!(report.applied, 2, "pitch and mix: {report:?}");
-    assert_eq!(report.skipped.len(), 1, "{report:?}");
-    assert!(report.skipped[0].contains('←'), "{report:?}");
+    assert!(report.skipped.is_empty(), "{report:?}");
+    assert!(e.tree().get(b).unwrap().bindings().is_empty());
     assert_eq!(e.tree().get(b).unwrap().get(PITCH), Some(7.0));
 
-    // a taken name is refused, and nothing changes
+    // all or nothing: one taken name refuses the whole file
     let before = e.tree().serialise();
-    let err = e.import_preset(&text).unwrap_err().to_string();
+    let err = e.import_presets(&text).unwrap_err().to_string();
     assert!(err.contains("already exists"), "{err}");
     assert_eq!(e.tree().serialise(), before);
     e.undo().unwrap();
     e.undo().unwrap();
     assert!(
         e.preset_names(b).unwrap().is_empty(),
-        "undo takes it out again"
+        "undo takes them out again"
     );
 
-    // only a preset, one of them, for a kind this model has, with state that fits
-    assert!(e.import_preset("not json").is_err());
-    let osc_alone = d.tree().extract([osc]).unwrap().to_text();
-    let err = e.import_preset(&osc_alone).unwrap_err().to_string();
-    assert!(err.contains("can't live in category `presets`"), "{err}");
-    d.save_preset(osc, "Cold").unwrap();
-    let both = d
-        .tree()
-        .extract(["/presets/osc", "/presets/osc-2"])
-        .unwrap()
-        .to_text();
-    let err = e.import_preset(&both).unwrap_err().to_string();
-    assert!(err.contains("one preset"), "{err}");
-    let (mut atlas, _, map) = atlas();
-    atlas.save_preset(map, "Wide").unwrap();
-    let wide = atlas.export_preset(map, "Wide").unwrap();
-    let err = e.import_preset(&wide).unwrap_err().to_string();
-    assert!(err.contains("no map presets"), "{err}");
-    let cold = d.tree().at("/presets/osc-2").unwrap().id();
-    d.edit("Spoil", |tx| {
-        tx.set_value(cold, "preset.state", Value::Text("\"nope\"".into()))
-    })
-    .unwrap();
-    let spoilt = d.export_preset(osc, "Cold").unwrap();
-    let err = e.import_preset(&spoilt).unwrap_err().to_string();
-    assert!(err.contains("doesn't fit"), "{err}");
+    // refused: not a preset file, another version, no presets, a kind this model lacks,
+    // a state that doesn't fit, a bad or repeated name
+    let refuse = |e: &mut Document<Synth>, file: serde_json::Value, says: &str| {
+        let err = e.import_presets(&file.to_string()).unwrap_err().to_string();
+        assert!(err.contains(says), "{says}: {err}");
+    };
+    let ok = json!({"values": {"osc.pitch": 1.0}});
+    assert!(e.import_presets("not json").is_err());
+    let fragment = d.tree().extract([osc]).unwrap().to_text();
+    assert!(e.import_presets(&fragment).is_err());
+    refuse(
+        &mut e,
+        json!({"preset": 2, "for": "osc", "presets": [{"label": "A", "state": ok}]}),
+        "version 2",
+    );
+    refuse(
+        &mut e,
+        json!({"preset": 1, "for": "osc", "presets": []}),
+        "no presets",
+    );
+    refuse(
+        &mut e,
+        json!({"preset": 1, "for": "map", "presets": [{"label": "A", "state": ok}]}),
+        "no map presets",
+    );
+    refuse(
+        &mut e,
+        json!({"preset": 1, "for": "lfo", "presets": [{"label": "A", "state": ok}]}),
+        "no lfo presets",
+    );
+    refuse(
+        &mut e,
+        json!({"preset": 1, "for": "osc", "presets": [{"label": "A", "state": "nope"}]}),
+        "doesn't fit",
+    );
+    refuse(
+        &mut e,
+        json!({"preset": 1, "for": "osc", "presets": [{"label": " ", "state": ok}]}),
+        "1 to 60",
+    );
+    refuse(
+        &mut e,
+        json!({"preset": 1, "for": "osc", "presets": [{"label": "A", "state": ok}, {"label": "A", "state": ok}]}),
+        "already exists",
+    );
     assert!(e.preset_names(b).unwrap().is_empty());
 
     // and as commands
     let Outcome::Text(t) = d
         .run(
             "preset.export",
-            &json!({"at": "/voices/pad/a", "label": "Warm"}),
+            &json!({"at": "/voices/pad/a", "labels": ["Warm"]}),
         )
         .unwrap()
     else {

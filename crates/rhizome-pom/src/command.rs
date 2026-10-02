@@ -16,7 +16,7 @@ use crate::presets::PresetRef;
 pub enum Outcome {
     Nothing,
     Committed(Commit),
-    /// Text for the caller: a copied fragment for the clipboard.
+    /// Text for the caller: a copied fragment for the clipboard, an exported preset file.
     Text(String),
 }
 
@@ -76,6 +76,12 @@ struct AddArgs {
     name: String,
     #[serde(default)]
     preset: Option<PresetRef>,
+}
+
+#[derive(serde::Deserialize)]
+struct ExportArgs {
+    at: String,
+    labels: Vec<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -328,23 +334,23 @@ impl<M: ObjectModel> Commands<M> {
         );
         c.add(
             "preset.export",
-            fixed("Export Preset…"),
+            fixed("Export Presets…"),
             preset_enabled,
             |d, p| {
-                let a: PresetArgs = payload(p)?;
+                let a: ExportArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
-                Ok(Outcome::Text(
-                    d.export_preset(node, &need(a.label, "label")?)?,
-                ))
+                Ok(Outcome::Text(d.export_presets(node, &a.labels)?))
             },
         );
         c.add(
             "preset.import",
-            fixed("Import Preset…"),
-            |_, p| payload::<ImportArgs>(p).is_ok_and(|a| Fragment::from_text(&a.text).is_ok()),
+            fixed("Import Presets…"),
+            |_, p| {
+                payload::<ImportArgs>(p).is_ok_and(|a| crate::presets::read_file(&a.text).is_ok())
+            },
             |d, p| {
                 let a: ImportArgs = payload(p)?;
-                Ok(d.import_preset(&a.text)?.1.into())
+                Ok(d.import_presets(&a.text)?.1.into())
             },
         );
         c
