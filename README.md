@@ -20,6 +20,7 @@ The shared node API and per-app object models for the preset.nz desktop suite. A
 
 - [`guidance/node-api.md`](guidance/node-api.md): the design (draft, 2026-09-17).
 - [`guidance/rhizome-api.md`](guidance/rhizome-api.md): the API layout — verbs, shape, guarantees (draft, 2026-10-02).
+- [`guidance/handover.md`](guidance/handover.md): code state and next steps.
 - [`guidance/handover-node-api.md`](guidance/handover-node-api.md): session state and next steps.
 
 ## Licence

@@ -74,6 +74,12 @@ The object-model name is Georg's choice, after Houdini's HOM. In Houdini, HOM al
 
 29. **Unknown node types pass through.** *"Unsupported nodes, yes, keep, don't change. Treat as pass-through noop."* Loaded as opaque nodes: reported, refused by every write verb, carried along when an ancestor is removed, moved or copied, and saved back byte for byte.
 30. **Don't overfit to Shard.** Shard is the first consumer, not the shape. A core feature needs a second app that wants it.
+31. **Out-of-range writes are refused.** The caller clamps; the schema exposes the range.
+32. **One binding mechanism.** A bindable source type declares the values a binding carries (a depth, or none). A target is a slot or a value key.
+33. **A write from another source during an open gesture joins it.** Same undo step; `cancel` reverts it too.
+34. **A copy in the same file joins the original's groups.**
+
+Decisions 31 to 34 were Claude's leans, taken by Georg on 2026-10-02 (*"go with your leans, unless they are a one-way door"*). None is: there are no files people keep yet. The near-one-way doors are the file format and the id encoding, so the file carries a format version from day one.
 
 ---
 

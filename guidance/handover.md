@@ -1,0 +1,37 @@
+---
+title: Handover — rhizome
+type: handover
+status: current
+repo: /Users/georg/rhizomatic-preset/packages/rhizome
+branch: main
+project: rhizome
+topic: rhizome-core first slice shipped; next is Shard adopting it.
+updated: 2026-10-02
+---
+
+# Handover — rhizome
+
+Continues `handovers/shard/handover-node-api.md`, which covered the planning. This file covers the code.
+
+## Current status
+
+- **Repo:** `packages/rhizome`, private remote `preset-nz/rhizome`. One crate, `crates/rhizome-core`. Not consumed by any app yet.
+- **First slice shipped** (epic 01): registry, tree, read views, `Edit` with every write verb, `Op` as data, scoped edits, gestures, coalesced edits, snapshot undo (cap 50), diff, canonical JSON file format with a load report, opaque nodes, extract/paste/copy.
+- **Design:** `design/rhizome-api.md` describes the shipped API (status current). `design/node-api.md` holds decisions 1 to 34; 29 to 34 were made 2026-10-02.
+- **Tests:** `just check`. Acid (`tests/acid.rs`), core workflows (`tests/core_workflows.rs` + `tests/workflows/*.json` with `*.txt` transcripts), invariants (`tests/invariants.rs`). `just bless` rewrites goldens; read every changed line.
+- **Copies:** `packages/rhizome/guidance/` holds copies of the two design docs and this handover's predecessor. Canonical versions are here.
+- **Not pushed** as of 2026-10-02 unless Georg said so after this was written; check `git status -sb`.
+
+## Next steps
+
+1. **Shard adopts** (epic 02, not written yet): `ShardObjectModel` in Shard's `src-tauri` declaring patch, granular, crush, ring, envelope, lfo, material; the tree as source of truth; `ParamBank::for_plan` compiled from it; undo in Rust. Path dependency on `packages/rhizome/crates/rhizome-core`.
+2. **Root file value:** `node-api.md` has the root carry its file path as a value; the first slice doesn't. Add when a consumer needs it.
+3. **Reserved, no API yet:** presets, `find`/search, smart groups, calculated results and staleness, time.
+4. Wasm and the TypeScript package wait for a second consumer (decision 19).
+
+## Gotchas
+
+- Sequential ids (`IdSource::sequential()`) are for tests; apps use ULIDs. Goldens depend on sequential ids, so adding a category to a test registry shifts every id in its goldens.
+- The workflow registry in `tests/core_workflows.rs` is frozen on purpose. Change it and every transcript changes.
+- `serde_json` must not get the `preserve_order` feature; canonical output relies on sorted keys inside values.
+- Georg's vocabulary: rhizome, node API, object model, category, group, smart group, loaded, calculated, kind.
