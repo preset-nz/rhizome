@@ -37,12 +37,7 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. **The Oblique spike** (decision 49; plan and coverage map in `projects/oblique/design/object-model.md`). With 50–52 in, the spike's Rust object model can hold the whole scene (document node, layers with modifiers as op kinds from `list_ops`, vector paths as `shaped`, masks as bindings); the adapter reads the whole scene; writes rewired for the three interactions only. Worktree of `initiatives/oblique` on `spike/rhizome`, path deps on `packages/rhizome/crates/{rhizome-pom,rhizome-pom-tauri}`. Slice: pixel layers. Rewire canvas move drag, opacity slider, save/open; an adapter rebuilds Oblique's `Scene` from the mirror. Before writing: read `src/scene/types.ts`, `store.ts`, `history.ts`, the dependency-cruiser config, project io.
-   - Protect real projects: spike documents use their own extension or a scratch folder; no opening existing `.oblique` files.
-   - Cmd+Z for the slice routes to `edit.undo`; adapter writes stay out of Oblique's `history.ts`.
-   - The adapter keeps object identity for untouched nodes (or `sceneDiff`/prefix cache invalidate everything and the latency number lies).
-   - A position as one `Vec2` key makes a canvas drag one `value.set` with a coalesce key.
-   - Measure: canvas drag feel and round-trip time, slider, undo of a drag as one step, save/reopen. Findings into Oblique's object-model doc; that decides the transport (decision 28).
+1. **The Oblique spike is built** (`spike/rhizome` in `~/rhizomatic-preset/initiatives/oblique-spike`, `83292cd` + `fd8e6fe`; findings in `projects/oblique/design/object-model.md`). Waiting on Georg to run it (`just run` in the worktree) and judge: open a real `.oblique` (imported, read-only), drag a layer (toast: latency), opacity slider, Cmd+Z/Cmd+Shift+Z, save as `.obliquerz`, reopen. Then: the narrowed-range decision (clamp vs widen); transport decision (28) from the feel; next slice or migration plan.
 2. The spike's mirror is the first draft of `@preset.nz/pom` (phase 3); lift it after, shaped by Oblique.
 3. Cross-file `Ref` resolution (decision 40) before any app loads a library rhizome.
 4. Ops (decisions 43–44): direction only, don't build unasked.
