@@ -32,6 +32,12 @@ pub trait ObjectModel: Sized + 'static {
     /// The app's categories and kinds: node types plus their policy and presets.
     fn kinds(k: &mut Kinds, cx: &Self::Context);
 
+    /// What every new document starts with, such as a document-settings node. Runs once in
+    /// `Document::new`, outside history: it can't be undone, and a new document isn't unsaved.
+    fn seed(_tx: &mut Edit<'_>, _cx: &Self::Context) -> rhizome_core::Result<()> {
+        Ok(())
+    }
+
     /// The app's own commands, next to the built-in ones.
     fn commands(_c: &mut Commands<Self>) {}
 
