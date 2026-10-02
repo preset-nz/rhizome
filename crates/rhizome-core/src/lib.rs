@@ -8,6 +8,7 @@
 //! The design is `design/node-api.md` and `design/rhizome-api.md` in the guidance repo.
 
 mod diff;
+mod dto;
 mod edit;
 mod error;
 mod file;
@@ -21,6 +22,9 @@ mod value;
 mod view;
 
 pub use diff::{Change, ChangeKind, Changeset};
+pub use dto::{
+    BindingRow, CategorySchema, Patch, RefRow, Role, Row, Schema, TypeSchema, ValueSchema, row,
+};
 pub use edit::{At, Edit};
 pub use error::{Error, Result};
 pub use file::{FORMAT_VERSION, Fragment, Issue, LoadReport, PasteReport};

@@ -1,7 +1,9 @@
 //! Seeded random `Op`s, checking the guarantees after every step:
 //! no panic; a refused edit leaves no trace; nothing dangles; every stored value fits its
-//! schema; `load(serialise(t))` is identical; and undo walks back through every state.
+//! schema; `load(serialise(t))` is identical; undo walks back through every state; and a
+//! mirror fed one snapshot and then only patches always equals a fresh view (decision 48).
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use rhizome_core::*;
@@ -193,6 +195,7 @@ fn random_ops_keep_every_guarantee() {
         let mut rng = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15));
         let mut t = Tree::with_ids(registry(), IdSource::sequential());
         let mut states = vec![t.snapshot()];
+        let mut mirror = Mirror::of(&t);
         for step in 0..150 {
             let ops: Vec<Op> = (0..1 + rng.below(4) / 3)
                 .map(|_| random_op(&mut rng, &t))
@@ -202,6 +205,7 @@ fn random_ops_keep_every_guarantee() {
             match t.edit_ops("Random", &ops) {
                 Ok(Some(c)) => {
                     assert_eq!(c.seq, seq + 1);
+                    mirror.apply(&t, &c, seed, step);
                     assert_eq!(
                         c.changes,
                         rhizome_core_diff(&before, &t),
@@ -227,7 +231,8 @@ fn random_ops_keep_every_guarantee() {
         let kept = t.history_len();
         assert_eq!(kept, (states.len() - 1).min(HISTORY), "seed {seed}");
         for back in 1..=kept {
-            t.undo().unwrap().unwrap();
+            let c = t.undo().unwrap().unwrap();
+            mirror.apply(&t, &c, seed, 1000 + back);
             assert_eq!(
                 t.snapshot(),
                 states[states.len() - 1 - back],
@@ -235,8 +240,9 @@ fn random_ops_keep_every_guarantee() {
             );
         }
         assert!(t.undo().unwrap().is_none());
-        for _ in 0..kept {
-            t.redo().unwrap().unwrap();
+        for again in 0..kept {
+            let c = t.redo().unwrap().unwrap();
+            mirror.apply(&t, &c, seed, 2000 + again);
         }
         assert_eq!(
             &t.snapshot(),
@@ -249,6 +255,43 @@ fn random_ops_keep_every_guarantee() {
         committed > 1000 && refused > 1000 && nodes > 30,
         "the loop should exercise both paths"
     );
+}
+
+/// A mirror as a webview keeps one: rows by id, fed one snapshot and then only patches.
+struct Mirror(BTreeMap<NodeId, Row>);
+
+impl Mirror {
+    fn of(t: &Tree) -> Mirror {
+        Mirror(t.rows().into_iter().map(|r| (r.id, r)).collect())
+    }
+
+    fn apply(&mut self, t: &Tree, c: &Commit, seed: u64, step: usize) {
+        let patch = t.patch(&c.changes);
+        for id in &patch.removed {
+            self.0.remove(id);
+        }
+        for r in patch.rows {
+            self.0.insert(r.id, r);
+        }
+        let fresh = Mirror::of(t).0;
+        if self.0 != fresh {
+            let stale: Vec<String> = fresh
+                .iter()
+                .filter(|(id, r)| self.0.get(id) != Some(r))
+                .map(|(_, r)| r.path.to_string())
+                .chain(
+                    self.0
+                        .keys()
+                        .filter(|id| !fresh.contains_key(id))
+                        .map(|id| format!("{id} (should be gone)")),
+                )
+                .collect();
+            panic!(
+                "seed {seed}, step {step}: the mirror missed {stale:?} after {}",
+                c.changes
+            );
+        }
+    }
 }
 
 /// What a commit should say: the diff from the state before it.

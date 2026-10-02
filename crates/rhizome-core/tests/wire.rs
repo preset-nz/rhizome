@@ -1,6 +1,7 @@
 //! The wire shape of a commit: what a transport (Tauri events, later wasm) carries and the
 //! TypeScript half mirrors by hand. Every kind of change once, pinned in
-//! `tests/golden/commit.json`.
+//! `tests/golden/commit.json`, and the mirror's view of the same tree in
+//! `tests/golden/view.json`.
 
 mod golden;
 
@@ -57,6 +58,18 @@ fn every_change_kind_on_the_wire() {
             tx.remove("/images/old")
         })
         .unwrap();
-    let json = serde_json::to_string_pretty(&commit.unwrap()).unwrap() + "\n";
+    let commit = commit.unwrap();
+    let json = serde_json::to_string_pretty(&commit).unwrap() + "\n";
     golden::check("commit.json", &json);
+
+    // the mirror's side (decision 48): the schema, every row, and this commit's patch
+    let view = serde_json::json!({
+        "schema": tree.registry().schema(),
+        "rows": tree.rows(),
+        "patch": tree.patch(&commit.changes),
+    });
+    golden::check(
+        "view.json",
+        &(serde_json::to_string_pretty(&view).unwrap() + "\n"),
+    );
 }

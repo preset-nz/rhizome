@@ -1,0 +1,294 @@
+{
+  "patch": {
+    "removed": [
+      "00000000000000000000000008"
+    ],
+    "rows": [
+      {
+        "id": "00000000000000000000000002",
+        "name": "images",
+        "orders": {
+          "draw": [
+            "00000000000000000000000005",
+            "00000000000000000000000004"
+          ]
+        },
+        "parent": "00000000000000000000000001",
+        "path": "/images",
+        "role": "category",
+        "type": "category"
+      },
+      {
+        "id": "00000000000000000000000007",
+        "members": [
+          "00000000000000000000000004"
+        ],
+        "name": "favourites",
+        "parent": "00000000000000000000000002",
+        "path": "/images/favourites",
+        "role": "group",
+        "type": "group"
+      },
+      {
+        "id": "00000000000000000000000009",
+        "name": "new",
+        "parent": "00000000000000000000000002",
+        "path": "/images/new",
+        "role": "node",
+        "type": "image",
+        "values": {
+          "layer": 0,
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "opacity": 1.0
+        }
+      },
+      {
+        "id": "00000000000000000000000005",
+        "name": "ocean",
+        "parent": "00000000000000000000000002",
+        "path": "/images/ocean",
+        "role": "node",
+        "type": "image",
+        "values": {
+          "layer": 0,
+          "offset": [
+            0.0,
+            0.0
+          ],
+          "opacity": 1.0
+        }
+      },
+      {
+        "bindings": [
+          {
+            "on": {
+              "value": "opacity"
+            },
+            "source": "00000000000000000000000006",
+            "values": {
+              "depth": 0.3
+            }
+          }
+        ],
+        "id": "00000000000000000000000004",
+        "name": "sky",
+        "parent": "00000000000000000000000002",
+        "path": "/images/sky",
+        "refs": {
+          "source": {
+            "node": "00000000000000000000000005"
+          }
+        },
+        "role": "node",
+        "set": [
+          "opacity",
+          "layer",
+          "offset"
+        ],
+        "type": "image",
+        "values": {
+          "layer": 3,
+          "offset": [
+            1.0,
+            -2.5
+          ],
+          "opacity": 0.5
+        }
+      }
+    ]
+  },
+  "rows": [
+    {
+      "id": "00000000000000000000000001",
+      "name": "",
+      "parent": null,
+      "path": "/",
+      "role": "root",
+      "type": "root"
+    },
+    {
+      "id": "00000000000000000000000002",
+      "name": "images",
+      "orders": {
+        "draw": [
+          "00000000000000000000000005",
+          "00000000000000000000000004"
+        ]
+      },
+      "parent": "00000000000000000000000001",
+      "path": "/images",
+      "role": "category",
+      "type": "category"
+    },
+    {
+      "id": "00000000000000000000000007",
+      "members": [
+        "00000000000000000000000004"
+      ],
+      "name": "favourites",
+      "parent": "00000000000000000000000002",
+      "path": "/images/favourites",
+      "role": "group",
+      "type": "group"
+    },
+    {
+      "id": "00000000000000000000000009",
+      "name": "new",
+      "parent": "00000000000000000000000002",
+      "path": "/images/new",
+      "role": "node",
+      "type": "image",
+      "values": {
+        "layer": 0,
+        "offset": [
+          0.0,
+          0.0
+        ],
+        "opacity": 1.0
+      }
+    },
+    {
+      "id": "00000000000000000000000005",
+      "name": "ocean",
+      "parent": "00000000000000000000000002",
+      "path": "/images/ocean",
+      "role": "node",
+      "type": "image",
+      "values": {
+        "layer": 0,
+        "offset": [
+          0.0,
+          0.0
+        ],
+        "opacity": 1.0
+      }
+    },
+    {
+      "bindings": [
+        {
+          "on": {
+            "value": "opacity"
+          },
+          "source": "00000000000000000000000006",
+          "values": {
+            "depth": 0.3
+          }
+        }
+      ],
+      "id": "00000000000000000000000004",
+      "name": "sky",
+      "parent": "00000000000000000000000002",
+      "path": "/images/sky",
+      "refs": {
+        "source": {
+          "node": "00000000000000000000000005"
+        }
+      },
+      "role": "node",
+      "set": [
+        "opacity",
+        "layer",
+        "offset"
+      ],
+      "type": "image",
+      "values": {
+        "layer": 3,
+        "offset": [
+          1.0,
+          -2.5
+        ],
+        "opacity": 0.5
+      }
+    },
+    {
+      "id": "00000000000000000000000003",
+      "name": "mods",
+      "parent": "00000000000000000000000001",
+      "path": "/mods",
+      "role": "category",
+      "type": "category"
+    },
+    {
+      "id": "00000000000000000000000006",
+      "name": "wobble",
+      "parent": "00000000000000000000000003",
+      "path": "/mods/wobble",
+      "role": "node",
+      "type": "lfo"
+    }
+  ],
+  "schema": {
+    "categories": [
+      {
+        "name": "images",
+        "origin": "loaded"
+      },
+      {
+        "name": "mods",
+        "origin": "loaded"
+      }
+    ],
+    "types": [
+      {
+        "categories": [
+          "images"
+        ],
+        "name": "image",
+        "refs": [
+          "source"
+        ],
+        "slots": [
+          "mask"
+        ],
+        "values": [
+          {
+            "default": 1.0,
+            "key": "opacity",
+            "kind": "float",
+            "range": [
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "default": 0,
+            "key": "layer",
+            "kind": "int",
+            "range": [
+              0.0,
+              9.0
+            ]
+          },
+          {
+            "default": [
+              0.0,
+              0.0
+            ],
+            "key": "offset",
+            "kind": "vec2"
+          }
+        ]
+      },
+      {
+        "bindable": [
+          {
+            "default": 0.5,
+            "key": "depth",
+            "kind": "float",
+            "range": [
+              -1.0,
+              1.0
+            ]
+          }
+        ],
+        "categories": [
+          "mods"
+        ],
+        "name": "lfo"
+      }
+    ]
+  }
+}
