@@ -1,0 +1,94 @@
+{
+  "seq": 2,
+  "label": "Everything",
+  "changes": [
+    {
+      "path": "/images",
+      "id": "00000000000000000000000002",
+      "change": "reordered",
+      "order": "draw",
+      "from": [],
+      "to": [
+        "00000000000000000000000005",
+        "00000000000000000000000004"
+      ]
+    },
+    {
+      "path": "/images/favourites",
+      "id": "00000000000000000000000007",
+      "change": "membership",
+      "added": [
+        "00000000000000000000000004"
+      ],
+      "removed": []
+    },
+    {
+      "path": "/images/new",
+      "id": "00000000000000000000000009",
+      "change": "added",
+      "type": "image"
+    },
+    {
+      "path": "/images/ocean",
+      "id": "00000000000000000000000005",
+      "change": "moved",
+      "from": "/images/sea"
+    },
+    {
+      "path": "/images/old",
+      "id": "00000000000000000000000008",
+      "change": "removed",
+      "type": "image"
+    },
+    {
+      "path": "/images/sky",
+      "id": "00000000000000000000000004",
+      "change": "value",
+      "key": "layer",
+      "from": null,
+      "to": 3
+    },
+    {
+      "path": "/images/sky",
+      "id": "00000000000000000000000004",
+      "change": "value",
+      "key": "offset",
+      "from": null,
+      "to": [
+        1.0,
+        -2.5
+      ]
+    },
+    {
+      "path": "/images/sky",
+      "id": "00000000000000000000000004",
+      "change": "value",
+      "key": "opacity",
+      "from": null,
+      "to": 0.5
+    },
+    {
+      "path": "/images/sky",
+      "id": "00000000000000000000000004",
+      "change": "ref",
+      "key": "source",
+      "from": null,
+      "to": {
+        "node": "00000000000000000000000005"
+      }
+    },
+    {
+      "path": "/images/sky",
+      "id": "00000000000000000000000004",
+      "change": "bound",
+      "on": {
+        "value": "opacity"
+      },
+      "source": "00000000000000000000000006",
+      "from": null,
+      "to": {
+        "depth": 0.3
+      }
+    }
+  ]
+}

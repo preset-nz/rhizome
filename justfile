@@ -37,7 +37,7 @@ invariants:
 # Regenerate golden files. Read every changed golden before committing
 [group('quality')]
 bless:
-    RHIZOME_BLESS=1 cargo test -p rhizome-core --test acid --test core_workflows
+    RHIZOME_BLESS=1 cargo test -p rhizome-core --test acid --test core_workflows --test wire
     RHIZOME_BLESS=1 cargo test -p rhizome-pom --test workflows
     git status --short crates/*/tests
 

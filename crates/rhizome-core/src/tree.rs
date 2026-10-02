@@ -14,8 +14,9 @@ use crate::view::Node;
 /// How many undo steps a tree keeps.
 pub const HISTORY: usize = 50;
 
-/// What every write returns: a sequence number, a label and what changed.
-#[derive(Clone, Debug, PartialEq)]
+/// What every write returns: a sequence number, a label and what changed. Serialises for a
+/// transport: `{"seq", "label", "changes": [...]}`.
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
 pub struct Commit {
     pub seq: u64,
     pub label: String,

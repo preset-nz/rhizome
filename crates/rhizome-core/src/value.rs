@@ -216,3 +216,10 @@ impl<T> KeyName for Key<T> {
         self.name
     }
 }
+
+/// A value serialises as [`Value::to_json`]: plain JSON, read back by its schema's kind.
+impl serde::Serialize for Value {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.to_json().serialize(s)
+    }
+}

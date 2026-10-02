@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+use serde::Serialize;
+
 use crate::id::NodeId;
 use crate::path::Path;
 use crate::state::{BindingData, On, Ref, State};
@@ -14,25 +16,28 @@ pub struct Changeset {
     paths: BTreeMap<NodeId, Path>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Change {
     pub path: Path,
     pub id: NodeId,
+    #[serde(flatten)]
     pub kind: ChangeKind,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+/// On the wire, tagged by `"change"`, as an `Op` is by `"op"`.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(tag = "change", rename_all = "snake_case")]
 pub enum ChangeKind {
     Added {
+        #[serde(rename = "type")]
         type_name: String,
     },
     Removed {
+        #[serde(rename = "type")]
         type_name: String,
     },
     /// A rename or a reparent. Identity is the id, so this is never a remove plus an add.
-    Moved {
-        from: Path,
-    },
+    Moved { from: Path },
     Value {
         key: String,
         from: Option<Value>,
@@ -60,6 +65,13 @@ pub enum ChangeKind {
         added: Vec<NodeId>,
         removed: Vec<NodeId>,
     },
+}
+
+/// A changeset is its entries on the wire; the display paths are already in them.
+impl Serialize for Changeset {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.entries.serialize(s)
+    }
 }
 
 impl ChangeKind {
