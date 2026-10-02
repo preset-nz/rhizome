@@ -259,6 +259,7 @@ This replaces "refuses a file naming a type the running app never declared" in `
 - **One open edit per tree.** A write from another source while a gesture is open (a controller knob during a mouse drag, a file watcher during a scrub) joins the gesture. It lands in the same undo step, and `cancel` reverts it too (decision 33): queueing would add latency and refusing would drop input.
 - **Continuous input coalesces.** `tree.edit_coalesced(label, key, f)`: consecutive edits with the same coalesce key (say `"opacity nudge"`), each within 1 s of the last (`set_coalesce_window`), share one undo step. Each still returns its own `Commit`, so the UI follows. Any other edit, undo, redo or gesture breaks the run. This is for input with no begin and end: a MIDI knob, a scroll wheel on a value, arrow-key nudges. Without it, a nudge fills the 50-step history. The clock is injectable (`set_clock`) so tests don't sleep.
 - **Empty edits vanish.** An edit with no entries makes no commit and no undo step.
+- **A `Commit` serialises** (`Serialize` on `Commit`, `Changeset`, `Value`, 2026-10-02) for a transport to emit; the shape is pinned in `tests/golden/commit.json`.
 - **Notification is pull, not push.** The core has no callbacks or observers. Every write returns a `Commit`, and the host forwards it (a Tauri event, a return value over wasm). The webview's mirror applies changesets in `seq` order and refetches if it sees a gap.
 
 ---
@@ -288,6 +289,8 @@ Each one is held by a test. If a guarantee has no test, it is a hope. Three suit
 ---
 
 ## TypeScript
+
+> **For apps on POM, writes are commands, not `Op[]`** (decision 46, 2026-10-02): over a transport the webview runs commands by id; raw `Op`s stay inside Rust. The mirror below still applies. See `pom.md`, "Over a transport".
 
 Generated, never hand-written (`node-api.md`, "Languages"). The same nouns and verbs in camelCase. Reads come from a **mirror**: a plain object tree the bindings keep current from `Commit`s, so React reads synchronously whichever transport carries the writes. Writes are `Op[]` through `edit` or a gesture, and return `Promise<Commit>` over Tauri, or plain `Commit` over wasm. The mirror is read-only by type. Clipboard copy is `extract` to text on the system clipboard; paste reads it back.
 

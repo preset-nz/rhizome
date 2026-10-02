@@ -7,7 +7,7 @@ updated: 2026-10-02
 
 # POM — Preset Object Model
 
-**Phase 1 shipped 2026-10-02:** `rhizome-pom`, headless, in `packages/rhizome/crates/rhizome-pom`. This doc describes the code as built. POM is the shared base for every app's object model, between [rhizome](node-api.md) and the apps, named after Houdini's HOM (decision 36). It lives in the rhizome repo; `rhizome-pom-tauri` and `@preset.nz/pom` are phases 2 and 3.
+**Phases 1 and 2 shipped 2026-10-02** (phase 2: `rhizome-pom-tauri`, see "Over a transport"). **Phase 1:** `rhizome-pom`, headless, in `packages/rhizome/crates/rhizome-pom`. This doc describes the code as built. POM is the shared base for every app's object model, between [rhizome](node-api.md) and the apps, named after Houdini's HOM (decision 36). It lives in the rhizome repo; `rhizome-pom-tauri` and `@preset.nz/pom` are phases 2 and 3.
 
 ```
 rhizome-core        mechanics: tree, values, refs, edits, undo, diff, file
@@ -207,10 +207,32 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 - **`tests/pom.rs`** (12 tests). *Synth*: user presets of one kind's sound skipping its switch, with bindings; user presets exported as a preset file and imported into another document, bindings left behind, every refusal; the document lifecycle and projection. *Atlas*: anchored singleton layers, a palette theme built from primitives, a computed aspect preset on the map kind, a node made from a preset, the commands, a layer pasted into another map, policy breaches on open, and models that can't be built.
 - **`tests/workflows.rs`** (6 workflows as data in `tests/workflows/*.json`, numbered 01–07 with 03 retired, transcripts pinned beside them): driven only through commands by id with JSON payloads, `Op` JSON, files and preset reads, against a frozen model of its own. A change to POM that alters a workflow fails here.
 
+## Over a transport (phase 2)
+
+**Commands only** (decision 46): nothing that crosses a transport writes the tree except by running a command.
+
+**`Pom<M>` and `Host`** live in `rhizome-pom`, with no Tauri in them. `Pom<M>` holds one open document behind a lock: the transport calls it, the app's own Rust reads it with `pom.read(|doc| …)`, and `.on_change(|doc| …)` runs after every change (the whole tree replaced included) so the app hands its projection to the engine without locking from the audio thread. `Host` is the same thing with the model erased (`Arc<dyn Host>`), because a transport command can't be generic. Every call returns the `Event`s it caused instead of emitting them, so the shell emits after the lock is released.
+
+| Host call | What it does |
+|---|---|
+| `run(id, payload, coalesce?)` | Runs a command. With a coalesce key, consecutive runs within the window are one undo step: a knob drag |
+| `begin(label)` → token, `end(token)`, `cancel(token)` | A gesture: commands run in between are one undo step; cancel takes them back, as a commit. A new `begin`, or `reset`, ends a gesture the front end lost, keeping its edits |
+| `status()`, `tree()`, `commands(payload)` | What a window shows; the whole tree in the file format, for a mirror to start from; the command list for `native-menu` |
+| `new_document()`, `open(path)` → issues, `save_as(path)` | Files by path; dialogs are the front end's. Save, revert, undo and redo are commands |
+| `reset()` | The front end (re)connected |
+
+`Status` is `{ title, path, unsaved, undo, redo, gesture, generation }`. `generation` only grows, and moves whenever the whole tree is replaced (new, open, revert): the mirror re-reads `tree()`. Events: `Commit` (every one, in order) and `Status` (when it changed). A commit's JSON is pinned in rhizome-core's `tests/golden/commit.json`: `{ seq, label, changes: [{ path, id, change: "value", key, from, to }, …] }`, tagged by `change` as an `Op` is by `op`.
+
+**`value.set { at, key, value }`** is built in: the value goes through the node's schema (kind, range), labelled "Set <key>" in Undo.
+
+**`rhizome-pom-tauri`** is a thin shell, app-level commands like `preset-preferences` (no plugin, no capability entries). Manage a `PomHost::new(pom)` and register `rhizome_pom_tauri::commands::{pom_status, pom_tree, pom_commands, pom_run, pom_begin, pom_end, pom_cancel, pom_connect, pom_new, pom_open, pom_save_as}`. Events `pom://commit`, `pom://status`, `pom://open-document`. Pass `RunEvent::Opened`'s URLs to `rhizome_pom_tauri::opened(app, urls)`: Shard's `opened.rs`, lifted with the extension as a parameter. The front end calls `pom_connect` once mounted: it ends a stale gesture, sends the status, and returns a path Finder asked to open before anything was listening. **A file opened from Finder wins over a restored last document**: restore only when `pom_connect` returns nothing.
+
+Tests: `tests/host.rs` (headless, a made-up *Loom*) and `rhizome-pom-tauri/tests/ipc.rs` (real IPC and events over Tauri's mock runtime).
+
 ## Phases
 
 1. **`rhizome-pom`, headless.** Shipped 2026-10-02.
-2. **`rhizome-pom-tauri`.** Commands and gestures as Tauri commands, `Commit` events, the opened-from-Finder hand-off (from Shard's `opened.rs`), and the command list for `native-menu`.
+2. **`rhizome-pom-tauri`.** Shipped 2026-10-02 (`5d86ea8`, `4c750a1`, `bed6ae2`). See "Over a transport" below.
 3. **`@preset.nz/pom`.** Mirror, hooks, the Tauri transport, the facets bridge with inspector hints.
 4. **More stores.** A bundle folder, then a database, when M&T and Strata need them.
 
