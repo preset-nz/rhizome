@@ -2,7 +2,7 @@
 title: Rhizome API — verbs, shape and guarantees
 type: design
 status: current
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Rhizome API — verbs, shape and guarantees
@@ -197,7 +197,7 @@ Any write that names an opaque node directly is refused. See "Opaque nodes".
 
 ### Reserved, no API in the first slice (decision 25)
 
-The names are fixed now so nothing else takes them: `find(&Query)`, `save_search(name, Query)` for smart groups, `result(at)` and `staleness(at)` for calculated nodes, `time()` for trees that carry it. `find` will return `Found { nodes, incomplete }`, where `incomplete` lists calculated nodes whose result a query needed but which is stale or missing ("Search" in `node-api.md`).
+The names are fixed now so nothing else takes them: `find(&Query)`, `save_search(name, Query)` for smart groups, `result(at)` and `staleness(at)` for calculated nodes, `time()` for trees that carry it. `find` will return `Found { nodes, incomplete }`, where `incomplete` lists calculated nodes whose result a query needed but which is stale or missing ("Search" in `node-api.md`). The predicate set and where spatial and semantic search live: [`rhizome-search.md`](rhizome-search.md).
 
 ---
 
@@ -341,4 +341,5 @@ One record per node, in path order; fields in a fixed order, empty ones left out
 - [`node-api.md`](node-api.md): the model this is the API for.
 - [`native-apps.md`](native-apps.md): undo and redo in the native menu; Edit › Copy, Paste and Duplicate.
 - [`batched-mutations.md`](batched-mutations.md): `for_each`, now an edit over a query result.
+- [`rhizome-search.md`](rhizome-search.md): `find`, its predicates, and spatial and semantic search.
 - `projects/<app>/design/object-model.md`: each app's side of the line.

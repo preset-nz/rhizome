@@ -2,7 +2,7 @@
 title: Rhizome — the node API and object models the desktop suite shares
 type: design
 status: draft
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Rhizome — node API and object models
@@ -208,7 +208,7 @@ Where an app keeps its history (Rust side or webview) is its object model's call
 
 ## Search
 
-Search is the API's main read path, not a helper bolted on.
+Search is the API's main read path, not a helper bolted on. How structured, spatial and semantic search divide between the core, the object model and a cross-file index: [`rhizome-search.md`](rhizome-search.md) (draft, 2026-10-02).
 
 | By | Example |
 |---|---|
@@ -349,5 +349,6 @@ Moved out on 2026-10-02: node roles (Shard's object model), Oblique's transport 
 - [`versioned-persistence.md`](versioned-persistence.md): the file side.
 - [`interaction-state.md`](interaction-state.md): selection is not tree state.
 - [`rhizome-api.md`](rhizome-api.md): the API as built.
+- [`rhizome-search.md`](rhizome-search.md): search, layered: the query predicates, spatial indexes as projections, semantic search in the cross-file index.
 - [`pom.md`](pom.md): POM, the base every object model is built on.
 - `projects/<app>/design/object-model.md`: each app's business logic.
