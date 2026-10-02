@@ -37,7 +37,7 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. **The Oblique spike is built** (`spike/rhizome` in `~/rhizomatic-preset/initiatives/oblique-spike`, `83292cd` + `fd8e6fe`; findings in `projects/oblique/design/object-model.md`). Waiting on Georg to run it (`just run` in the worktree) and judge: open a real `.oblique` (imported, read-only), drag a layer (toast: latency), opacity slider, Cmd+Z/Cmd+Shift+Z, save as `.obliquerz`, reopen. Then: the narrowed-range decision (clamp vs widen); transport decision (28) from the feel; next slice or migration plan.
+1. **The Oblique spike is built** (`spike/rhizome` in `~/rhizomatic-preset/initiatives/oblique-spike`, `83292cd`, `fd8e6fe`, `95e2306`; findings in `projects/oblique/design/object-model.md`). Waiting on Georg to run it (`just run` in the worktree) and judge: open a real `.oblique` (imported, read-only), drag a layer (toast: latency), opacity slider, Cmd+Z/Cmd+Shift+Z, save as `.obliquerz`, reopen. Then: the narrowed-range decision (clamp vs widen); transport decision (28) from the feel; next slice or migration plan.
 2. The spike's mirror is the first draft of `@preset.nz/pom` (phase 3); lift it after, shaped by Oblique.
 3. Cross-file `Ref` resolution (decision 40) before any app loads a library rhizome.
 4. Ops (decisions 43–44): direction only, don't build unasked.
