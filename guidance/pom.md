@@ -47,8 +47,8 @@ pub trait ObjectModel: Sized + 'static {
     const EXTENSION: &'static str;                   // file extension, no dot
     type Projection: Default + Send;                 // a compiled plan, a render list, ()
 
-    fn kinds(k: &mut Kinds);                         // categories and kinds with policy
-    fn presets(_p: &mut Presets) {}                  // preset kinds; none by default
+    fn kinds(k: &mut Kinds);                         // categories, kinds, policy, presets
+    fn themes(_t: &mut Themes) {}                    // shared choices; none by default
     fn commands(_c: &mut Commands<Self>) {}          // app commands, next to the built-ins
     fn project(_tree: &Tree, _into: &mut Self::Projection, _changes: Option<&Changeset>) {}
 }
@@ -60,7 +60,7 @@ An app writes `impl ObjectModel for MyApp` with only its parts, and its domain v
 - **Edits:** `edit`, `edit_ops`, `edit_coalesced`, `begin` / `apply` / `within` / `end` / `cancel`, `undo` / `redo`: rhizome's, passed through.
 - **Projection:** `M::project` runs after open (with `None`, a full rebuild) and after every commit, undo, redo and cancel (with the `Changeset`). `projection()` reads it.
 - **`paste` and `duplicate`** that respect policy (below).
-- Presets, commands and policy, below.
+- Presets, themes, commands and policy, below.
 
 **Decision 3 still holds.** rhizome has no document object; POM adds one a layer up, where files, windows and menus live.
 
@@ -86,9 +86,9 @@ fn kinds(k: &mut Kinds) {
 
 ---
 
-## Presets
+## Presets: on the kind
 
-A preset is **an aggregate of getters and setters**, defined by the app OM and run by POM (decision 37).
+A preset is **a way to fill in a kind's template**, so it is declared on the kind (decision 38). It is an aggregate of getters and setters that the app OM defines (decision 37).
 
 ```rust
 pub trait Aggregate: Send + Sync + 'static {
@@ -96,48 +96,65 @@ pub trait Aggregate: Send + Sync + 'static {
     fn get(&self, node: Node<'_>) -> Self::State;
     fn set(&self, tx: &mut Edit<'_>, node: NodeId, state: &Self::State) -> rhizome_core::Result<Report>;
     fn matches(&self, current: &Self::State, preset: &Self::State) -> bool { current == preset }
-    fn applies_to(&self, _node: Node<'_>) -> bool { true }
 }
 
-fn presets(p: &mut Presets) {
-    p.kind("palette", PaletteKind)                // registered by id
-        .catalogue([("doom-forge", …), ("space-opera", …)])
+fn kinds(k: &mut Kinds) {
+    k.kind(NodeType::new("map") /* … */)
+        .presets(AspectKind)                         // last in the chain
+        .catalogue([("4x3", …), ("16x9", …)]);
+    let sound = NodeValues::new().skip(|k| k.ends_with(".on")).with_bindings();
+    k.kind(granular).presets(sound.clone());       // one aggregate, shared by cloning
+    k.kind(crush).presets(sound);
+}
+```
+
+The app writes the aggregate. POM supplies everything around it, as methods on `Document` that take the node:
+
+| Machinery | `Document` method | What it does |
+|---|---|---|
+| **Catalogue** | — | The kind's built-in presets, in code, never saved |
+| **Names** | `preset_names(node)` | The kind's catalogue, then the user's presets for that kind. Empty for a kind without presets |
+| **User presets** | `save_preset`, `update_preset`, `rename_preset`, `delete_preset` | Document data, keyed by kind, so they **travel with the file** and every node of the kind sees them. Save refuses a taken name, update a missing one, rename a taken one; 1 to 60 characters. One edit, one undo step each |
+| **Apply** | `apply_preset(node, &PresetRef)` | One edit, one undo step; returns a `Report` of what was applied and skipped |
+| **Make from** | `add_from_preset(parent, kind, name, &PresetRef)` | Instantiates the template filled from a preset: add and apply, one edit, one undo step |
+| **Current** | `current_preset(node)` | The first preset, built-in then user, whose state `matches` the node now |
+| **`NodeValues`** | — | The ready-made aggregate: every value in the schema (resolved, so `current` works), optionally the bindings. Customise with `.skip(pred)` and `.with_bindings()` |
+
+`PresetRef` is `Catalogue(name)` or `User(label)`; in JSON `{"catalogue": "…"}` / `{"user": "…"}`. A preset is copied into a node, never followed.
+
+### Worked examples
+
+**Shard: a section's sound.** Each effect kind gets `NodeValues` skipping `<node>.on`, with bindings, shared by cloning. Save, update and apply behave as `presets.rs` does today, including the report.
+
+**Oblique: document aspect.** The document kind's aggregate derives `{ ratio }` from the size, sets the size keeping the long edge, and matches within 0.02. `current_preset` replaces `aspect.ts`'s "which preset best describes this size", and Fault's copy goes away.
+
+**Making from a preset.** `node.add` with `{"preset": {"catalogue": "rocky"}}` makes a layer already filled in. An app whose kinds need more than a bare add (a map with its anchors) registers its own `node.add`.
+
+### Where user presets live
+
+Nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.for` (the kind), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else, and go wherever the file goes. A pasted node doesn't bring its file's user presets into another file. An app can't declare the names `presets` or `preset`: POM registers first, and rhizome refuses duplicates.
+
+---
+
+## Themes: shared choices, followed by cascade
+
+A **theme** is a shared choice that nodes look up through their ancestors, such as a palette chosen for a campaign and overridden for one map. It is never written onto a node, so it isn't a preset (decision 38).
+
+```rust
+fn themes(t: &mut Themes) {
+    t.theme("palette")
+        .catalogue([("doom-forge", palette(…)), ("space-opera", palette(…))])
         .fallback("doom-forge")
         .followed_by(&["campaign", "map"]);
 }
 ```
 
-The app writes the aggregate. POM supplies everything around it, as methods on `Document`:
+- `follow_theme(kind, node, Some(name))` / `None` makes a node follow a theme or stop. Each `followed_by` kind gets a reference key `theme.<kind>`, and the choice is stored as `Ref::file("theme:<kind>/<name>")`: no new value type, readable on disk, skipped if a build drops the entry.
+- `resolve_theme(kind, node)` returns the node's own choice, else the nearest ancestor's, else the fallback, as `ResolvedTheme { follower, name, state }`.
+- `theme_names(kind)` lists the catalogue.
+- Built-in themes only for now. User themes come when an app needs them; M&T's Strata palette import (its epic 08) is the likely first.
 
-| Machinery | `Document` method | What it does |
-|---|---|---|
-| **Catalogue** | — | Built-in presets in code, read-only, never saved |
-| **Names** | `preset_names(kind, node)` | Catalogue first, then the user's presets for this node's type; empty where `applies_to` says no |
-| **User presets** | `save_preset`, `update_preset`, `rename_preset`, `delete_preset` | Saved in the document. Save refuses a taken name, update a missing one; rename refuses a taken one; a name is 1 to 60 characters. Each is one edit, one undo step |
-| **Apply** | `apply_preset(kind, node, &PresetRef)` | One edit, one undo step; returns a `Report` of what was applied and skipped |
-| **Current** | `current_preset(kind, node)` | The first preset whose state `matches` the node now |
-| **Follow** | `follow_preset(kind, node, Some(&r))` / `None` | A node follows a preset by reference instead of copying it |
-| **Resolve** | `resolve_preset(kind, node)` | The node's own followed preset, else the nearest ancestor's, else the kind's fallback. Returns `Resolved { follower, preset, state }` |
-| **`NodeValues`** | — | The ready-made aggregate: every value in a node's schema (resolved, so `current` works), optionally its bindings. Customise with `.skip(pred)` and `.with_bindings()` |
-
-`PresetRef` is `Catalogue(name)` or `User(label)`, and is `{"catalogue": "…"}` / `{"user": "…"}` in JSON.
-
-### Three worked examples
-
-Checked on paper first, then in the tests' made-up models of the same shapes.
-
-**Shard: user presets of one node's sound.** `p.kind("sound", NodeValues::new().skip(|k| k.ends_with(".on")).with_bindings())`. Save, update and apply behave as `presets.rs` does today, including the report. Nothing Shard-specific is left in POM.
-
-**Oblique: document aspect.** A catalogue whose state is derived: `get` reads `{ ratio }` off the size, `set` computes the size keeping the long edge, `matches` allows 0.02, `applies_to` is the document node only. `current_preset` replaces `aspect.ts`'s "which preset best describes this size", and Fault's copy goes away.
-
-**M&T: palette by cascade.** A catalogue of nine settings with a fallback, followed by campaign and map. A layer calls `resolve_preset("palette", layer)`: the map's choice, else the campaign's, else the fallback. That is M&T's `useActiveSetting`, with undo and save for free. Its aggregate's `set` refuses, because palettes are chosen, never written onto a node.
-
-### Where presets live
-
-- **Catalogues** are code.
-- **User presets** are nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.kind`, `preset.for` (the node type it was saved from), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else. An app can't declare a category or type with those names: POM registers first, and rhizome refuses duplicates.
-- **A follower** gets a reference key `follow.<kind>` on each `followed_by` type. A user preset is followed by `Ref::here` to its node, so renaming it keeps the follower. A catalogue entry is followed by `Ref::file("catalogue:<kind>/<name>")`: no new type, readable on disk, unresolved and skipped if a build drops the entry.
-- **Deleting a user preset unfollows** everything that followed it, in the same edit, so nothing points at a preset that's gone. Undo restores both.
+**M&T: palette.** Nine settings with a fallback, followed by campaign and map. A layer calls `resolve_theme("palette", layer)`. That is M&T's `useActiveSetting`, with undo and save for free.
 
 ---
 
@@ -154,7 +171,9 @@ POM implements the **commands-first contract** of [`plugin-primitive.md`](plugin
 | `edit.delete`, `edit.duplicate` | `{ at }` | Disabled by policy, and on the root, categories and opaque nodes |
 | `edit.copy` | `{ at }` | Returns the fragment as `Text` |
 | `edit.paste` | `{ parent, fragment }` | Re-pins |
-| `preset.apply`, `.save`, `.update`, `.rename`, `.delete`, `.follow` | `{ kind, at, preset?, label?, to? }` | The `Document` methods above |
+| `node.add` | `{ parent, type, name, preset? }` | With a preset, made from it |
+| `preset.apply`, `.save`, `.update`, `.rename`, `.delete` | `{ at, preset?, label?, to? }` | Enabled on kinds with presets |
+| `theme.follow` | `{ kind, at, theme? }` | No `theme` stops following |
 
 An app adds its own with `c.add(id, label, enabled, run)`; the same id replaces a built-in. New and Open aren't document commands: they make a `Document`. Capability tokens arrive with the TypeScript half; `enabled` is a closure for now.
 
@@ -189,7 +208,8 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 ## Decided (Georg, 2026-10-02)
 
 1. **Every object model is Rust on POM.** Map & Territory becomes a Rust/Tauri app like the others. One implementation.
-2. **A catalogue preset is referenced as `catalogue:<kind>/<name>`,** a reserved file scheme in a `Ref`.
+2. **A followed theme is referenced as `theme:<kind>/<name>`,** a reserved file scheme in a `Ref`. (Was `catalogue:` while themes were presets.)
+5. **Presets are on the kind; themes are separate** (decision 38). User presets travel with the file.
 3. **Storage is a `Store` trait;** single files are the only store now. A bundle folder (M&T's `.campaign`) and a database (Strata) come when those apps adopt.
 4. **The rhizome changes POM needed are in:** tree rules (`RegistryBuilder::rule`, with `Violation`), `ChangeKind::Removed { type_name }`, and public `Value::to_json` / `from_json`. Reserved names need no change: POM registers first. Preset state is a Text JSON blob until reading its diffs hurts.
 
@@ -197,7 +217,7 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 
 `just pom`, and in `just check`. Both suites use made-up object models, never an app's:
 
-- **`tests/pom.rs`** (12 tests). *Synth*: user presets of one node's sound skipping its switch, with bindings; the document lifecycle and projection. *Atlas*: anchored singleton layers, a palette by cascade, a computed aspect preset, a user preset followed by id, the commands, a layer pasted into another map, policy breaches on open, deleting a followed preset, and models that can't be built.
+- **`tests/pom.rs`** (11 tests). *Synth*: user presets of one kind's sound skipping its switch, with bindings; the document lifecycle and projection. *Atlas*: anchored singleton layers, a palette theme by cascade, a computed aspect preset on the map kind, a node made from a preset, the commands, a layer pasted into another map, policy breaches on open, and models that can't be built.
 - **`tests/workflows.rs`** (6 workflows as data in `tests/workflows/*.json`, transcripts pinned beside them): driven only through commands by id with JSON payloads, `Op` JSON, files and preset reads, against a frozen model of its own. A change to POM that alters a workflow fails here.
 
 ## Phases

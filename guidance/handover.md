@@ -25,7 +25,7 @@ Continues `handovers/shard/handover-node-api.md`, which covered the planning. Th
 ## Next steps
 
 1. **rhizome knows no app** (decision 35, 2026-10-02). App-specific planning moved to `projects/<app>/design/object-model.md`. Adoption is each app's epic, not rhizome's; Shard's object model is the worked one and the likely first. Work on rhizome only when an object model needs a mechanism it lacks.
-2. **POM** (decisions 36, 37; `design/pom.md`): phase 1, `rhizome-pom` headless, shipped 2026-10-02 with its own tests and core-workflow suite. Next is phase 2, `rhizome-pom-tauri` (commands and gestures as Tauri commands, Commit events, opened-from-Finder, the command list for native-menu). Known gap: "not deletable" finds the parent by its old path (see pom.md).
+2. **POM** (decisions 36, 37; `design/pom.md`): phase 1, `rhizome-pom` headless, shipped 2026-10-02 with its own tests and core-workflow suite. Next is phase 2, `rhizome-pom-tauri` (commands and gestures as Tauri commands, Commit events, opened-from-Finder, the command list for native-menu). Presets live on the kind and themes are separate (decision 38). Known gap: "not deletable" finds the parent by its old path (see pom.md).
 3. **Root file value:** `node-api.md` has the root carry its file path as a value; the first slice doesn't. Add when a consumer needs it.
 4. **Reserved, no API yet:** `find`/search, smart groups, calculated results and staleness, time.
 5. The TypeScript package comes with POM phase 3, over Tauri. Wasm still waits for a consumer (decision 19): every app is Tauri.
