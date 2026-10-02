@@ -18,9 +18,11 @@ updated: 2026-10-02
 - **rhizome-pom phase 1: shipped.** Kinds and policy, presets on the kind (catalogue, user presets, apply, current, `add_from_preset`), preset files (`0f9edc2`: flat JSON, one kind, bindings stripped), built-in commands. Themes removed (`0d54204`, decision 39).
 - **POM phase 2: shipped** (`4c750a1`, `bed6ae2`). `Pom<M>` / `Host` in `rhizome-pom/src/host.rs` (no Tauri): commands only, coalesce key, gestures by token, `Status` with a monotonic `generation`, events returned not emitted, `on_change` hook. `value.set` built in. `crates/rhizome-pom-tauri`: app-level commands `commands::pom_*`, events `pom://commit|status|open-document`, `opened.rs` lifted from Shard.
 - **Decision 48 built** (`ef8f202` core rows/schema/patch + mirror invariant; `766528e` POM `View`, `Update` events, `pom_view`, `values.set` batch).
+- **Oblique spike done** (decision 49): coverage, round trip and drag measured; findings in `projects/oblique/design/object-model.md`; migration planned as Oblique Epic 21.
 - **Oblique coverage** (decisions 50–52): coverage map in `projects/oblique/design/object-model.md`; the three gaps closed: `cce5d31` (shaped values, floats, unbounded floats), `a4a3e67` (`ObjectModel::Context`, kinds from runtime data).
+- **From the spike, in rhizome:** `925f6ef` floats survive the file bit for bit (`float_roundtrip`); `86b7a0d` soft max (decision 53). Decision 54: Oblique's transport is Tauri commands.
 - **Tests:** `just check` green. pom.rs 12, host.rs 6, POM workflows 6, ipc.rs 2 (Tauri mock runtime), opened 4, wire 1.
-- **Decisions 39–52** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document. 48: the mirror is DTOs, snapshot then patches. 49: a shared platform; Oblique adopts first via a spike.
+- **Decisions 39–54** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document. 48: the mirror is DTOs, snapshot then patches. 49: a shared platform; Oblique adopts first via a spike.
 - **Georg is unsure we're fully on the same page** about the model (2026-10-02). His framing: rhizome on disk = IFD/RIB, restores exact state, feeds the app graph, all edits through the object model. Decisions 46–47 record it; keep checking new work against that framing.
 - Georg mentioned Swift FOMO (a friend's Swift app). Answered: stay on Rust/Tauri; the commands-only boundary would let a SwiftUI shell sit on the same `Pom<M>` via UniFFI later. No action.
 
@@ -37,11 +39,12 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. **The Oblique spike is built** (`spike/rhizome` in `~/rhizomatic-preset/initiatives/oblique-spike`, `83292cd`, `fd8e6fe`, `95e2306`; findings in `projects/oblique/design/object-model.md`). Waiting on Georg to run it (`just run` in the worktree) and judge: open a real `.oblique` (imported, read-only), drag a layer (toast: latency), opacity slider, Cmd+Z/Cmd+Shift+Z, save as `.obliquerz`, reopen. Then: the narrowed-range decision (clamp vs widen); transport decision (28) from the feel; next slice or migration plan.
-2. The spike's mirror is the first draft of `@preset.nz/pom` (phase 3); lift it after, shaped by Oblique.
-3. Cross-file `Ref` resolution (decision 40) before any app loads a library rhizome.
-4. Ops (decisions 43–44): direction only, don't build unasked.
-5. After any doc change: recopy into `packages/rhizome/guidance/`, commit and push both repos.
+1. **Oblique Epic 21** (`projects/oblique/features/21-rhizome/README.md`) is the adoption plan. Three open decisions for Georg first: how Oblique depends on rhizome (path / private git / publish), the file (keep `.oblique` with rhizome inside vs new extension), undo across the hand-over. Then story 1 (foundation) from the spike's `rhizome_spike.rs` and `src/pom/`.
+2. The spike (`spike/rhizome`, `~/rhizomatic-preset/initiatives/oblique-spike`, last `1bef1bd`) is the working reference: 16/16 real projects round-trip (Rust and TS), drag 4–6 ms median full screen. Never merge it as is.
+3. `@preset.nz/pom` (phase 3) is Epic 21's story 8: extract from Oblique, not ahead of it.
+4. Cross-file `Ref` resolution (decision 40) before any app loads a library rhizome.
+5. Ops (decisions 43–44): direction only.
+6. After any doc change: recopy into `packages/rhizome/guidance/`, commit and push both repos.
 
 ## Gotchas
 

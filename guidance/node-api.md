@@ -70,7 +70,7 @@ The object-model name is Georg's choice, after Houdini's HOM. In Houdini, HOM al
 25. **The first slice** is the node-type registry, categories, nodes with values, one stored order per node, references, groups and **bindings** (envelopes). Time, calculated results, smart groups and search stay as reserved shapes in the enums and the file format, with no API yet.
 26. **Rename `mix.dry` to `grain.mix` before patch nodes carry values by id,** so the tree never sees the old id.
 27. **Structural edits mid-performance use a whole-plan crossfade first.** State migration by node id comes when a delay tail makes it matter. Georg: *"Shard is likely the only app that has an author and a performance mode, if at all."* It is a Shard concern, not an API one.
-28. **Oblique's transport (wasm or Tauri commands) is decided when Oblique migrates.**
+28. **Oblique's transport (wasm or Tauri commands) is decided when Oblique migrates.** Decided: Tauri commands (54).
 
 **From the API layout of 2026-10-02** ([`rhizome-api.md`](rhizome-api.md)):
 
@@ -107,6 +107,9 @@ The object-model name is Georg's choice, after Houdini's HOM. In Houdini, HOM al
 50. **rhizome covers a whole Oblique scene** (Georg, 2026-10-02: *"rhizome needs to be able to cover that"*). The coverage map is in `projects/oblique/design/object-model.md`; its gaps are rhizome's to close: structured values (51), unbounded floats, kinds from runtime data (52).
 51. **Structured values are value kinds with a declared shape.** A fixed float array (a mat4 is 16) and a shaped value (lists, records, optionals of the scalar kinds), validated against its shape and diffed as one value. Vector paths stay one value per node, not a node per anchor. (Georg, 2026-10-02.)
 52. **An object model can take runtime data.** `ObjectModel::kinds` receives the app's context (Oblique's op catalogue from `list_ops`), so kinds can come from data; the app makes the document once that data is in. A kind a build lacks still loads as an opaque node (29). (Georg, 2026-10-02.)
+
+53. **A range can have a soft max** (`ValueSpec::soft_max`): the max is where a control's travel ends; a typed value may go past it, the min still holds, and a load keeps it. Oblique's op params work this way (*"values are not clamped, we said we can enter bigger numbers"*, Georg, 2026-10-02). Decision 31's refusal still applies to hard bounds.
+54. **Oblique's transport is Tauri commands** (decision 28, decided 2026-10-02 from the spike): dragging the heaviest real file, full screen, in a debug build, measured 4–6 ms median and at worst 11 ms from move to update applied, and Georg saw no stutter. rhizome itself costs 0.08 ms per drag command in release. Wasm only if a web build needs it.
 
 **The point of rhizome** (Georg, 2026-10-02): *"we can construct a rhizome, reference other rhizomes, reference parts of rhizome, we can load explicit things, we can group things, we can store app state."* Mechanics an app builds on, not features it gets.
 
