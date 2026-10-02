@@ -5,7 +5,7 @@ status: current
 repo: /Users/georg/rhizomatic-preset/packages/rhizome
 branch: main
 project: rhizome
-topic: rhizome-core (mechanics) and rhizome-pom (POM, the Preset Object Model) — both built, nothing consumed by an app yet.
+topic: rhizome-core (mechanics), rhizome-pom (POM) and rhizome-pom-tauri (phase 2) — all built, nothing consumed by an app yet.
 updated: 2026-10-02
 ---
 
@@ -13,43 +13,41 @@ updated: 2026-10-02
 
 ## Current status
 
-- **Everything pushed** (2026-10-02, both repos). Georg: push without asking (see memory `push-without-asking`).
-- **rhizome-core, first slice: shipped** (epic 01; `6f3513f`, `fe0a210`, `f7cf71b`, `33490ea`). Registry, tree, edits/gestures/coalescing, undo, diff, canonical JSON file, opaque nodes, copy/paste, `Op` as data, tree rules.
-- **rhizome-pom, phase 1 (headless): shipped.** `ObjectModel` + `Document<M>`; kinds with policy; presets on the kind (catalogue, user presets as document nodes keyed by kind, apply, current, `add_from_preset`); built-in commands.
-- **Themes removed from POM** (`0d54204`, decision 39). An app builds them from primitives; `tests/pom.rs` Atlas shows how (palette nodes in a `themes` category, `Ref::here`, app-side cascade). Workflow 03 retired; numbering kept.
-- **Preset export/import** (`7da4514`, reshaped in `0f9edc2`, decision 45): a flat preset file `{"preset": 1, "for": kind, "presets": [{label, state}]}`, one kind, one or more presets. `Aggregate::portable` shapes state for export; `NodeValues` strips bindings (Georg: "for now"). Import all-or-nothing, one undo step. Commands `preset.export {at, labels}` / `preset.import {text}`. Workflow 07 pins the file.
-- **Tests:** `just check` green. pom.rs 12, POM workflows 6 (01, 02, 04–07).
-- **Decisions 39–45 made today** (`design/node-api.md`): 39 themes are the app's; 40 built-in catalogues come from a library rhizome (pulls cross-file `Ref` resolution forward); 41 app state is a category; 42 no value-level refs yet; 43 an op is a file/set of files (direction only); 44 shared signatures (SOP/COP/ROP-style families) are the app's; 45 presets stay in POM, both shapes, plus export/import.
-- **Open conversation with Georg: presets / ops.** His picture of a node type: name, params, implementation, family signature, presets (valid param values), user presets stored against the type, export/import. Mostly matches what's built; the gaps are "implementation" and "family signature" (43, 44), both direction-only. Don't build either unasked.
+- **Everything pushed** (2026-10-02, both repos). Georg: push without asking (memory `push-without-asking`); still ask before publishing or going public.
+- **rhizome-core: shipped** (epic 01). Registry, tree, edits/gestures/coalescing, undo, diff, file format, opaque nodes, copy/paste, `Op` as data, tree rules. `5d86ea8`: `Commit`/`Changeset`/`Value` serialise; shape pinned in `tests/golden/commit.json` (`tests/wire.rs`).
+- **rhizome-pom phase 1: shipped.** Kinds and policy, presets on the kind (catalogue, user presets, apply, current, `add_from_preset`), preset files (`0f9edc2`: flat JSON, one kind, bindings stripped), built-in commands. Themes removed (`0d54204`, decision 39).
+- **POM phase 2: shipped** (`4c750a1`, `bed6ae2`). `Pom<M>` / `Host` in `rhizome-pom/src/host.rs` (no Tauri): commands only, coalesce key, gestures by token, `Status` with a monotonic `generation`, events returned not emitted, `on_change` hook. `value.set` built in. `crates/rhizome-pom-tauri`: app-level commands `commands::pom_*`, events `pom://commit|status|open-document`, `opened.rs` lifted from Shard.
+- **Tests:** `just check` green. pom.rs 12, host.rs 6, POM workflows 6, ipc.rs 2 (Tauri mock runtime), opened 4, wire 1.
+- **Decisions 39–47** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document.
+- **Georg is unsure we're fully on the same page** about the model (2026-10-02). His framing: rhizome on disk = IFD/RIB, restores exact state, feeds the app graph, all edits through the object model. Decisions 46–47 record it; keep checking new work against that framing.
+- Georg mentioned Swift FOMO (a friend's Swift app). Answered: stay on Rust/Tauri; the commands-only boundary would let a SwiftUI shell sit on the same `Pom<M>` via UniFFI later. No action.
 
 ## References
 
-- `~/rhizomatic-preset/guidance/design/node-api.md` — the model, decisions 1–45; "The point of rhizome" quote after 42.
-- `~/rhizomatic-preset/guidance/design/rhizome-api.md` — rhizome-core API as built.
-- `~/rhizomatic-preset/guidance/design/pom.md` — POM as built; themes section now says "the app's".
-- `~/rhizomatic-preset/guidance/design/plugin-primitive.md` — where "op as files" (43) will meet manifests.
-- `~/rhizomatic-preset/guidance/projects/rhizome/README.md` — project index.
-- `~/rhizomatic-preset/guidance/projects/shard/design/object-model.md` — the worked object model.
-- `crates/rhizome-pom/src/{model,presets,document,command}.rs`; `crates/rhizome-core/src/{tree,edit,file,diff}.rs`.
+- `~/rhizomatic-preset/guidance/design/node-api.md` — decisions 1–47.
+- `~/rhizomatic-preset/guidance/design/pom.md` — POM as built; "Over a transport" = phase 2.
+- `~/rhizomatic-preset/guidance/design/rhizome-api.md` — core API; TypeScript section now points at decision 46.
+- `~/rhizomatic-preset/guidance/design/native-apps.md` — rules the shell serves (menu, undo, restore, Finder-open ordering).
+- `~/rhizomatic-preset/guidance/design/tauri-scaffold.md` — `native-menu`, `window-restore`, where `@preset.nz/pom` fits.
+- `~/rhizomatic-preset/guidance/projects/shard/design/object-model.md` — first adopter's plan.
+- `crates/rhizome-pom/src/host.rs`, `crates/rhizome-pom-tauri/src/{lib,commands,opened}.rs`.
 - `packages/rhizome/guidance/` — **copies** of node-api, rhizome-api, pom, handover. Recopy after editing.
 
 ## Next steps
 
-1. Continue the presets/ops conversation if he wants; record answers as decisions in `node-api.md`.
-2. Cross-file `Ref` resolution (`Ref::node_in`, decision 23 → 40): needed before any app adopts a library catalogue. Needs a design pass with Georg: how a document opens a library rhizome, read-only or not, how ids resolve.
-3. POM phase 2, `rhizome-pom-tauri`: commands and gestures as Tauri commands, `Commit` events, opened-from-Finder (lift Shard `src-tauri/src/opened.rs`), the command list for `native-menu`. Keep Tauri out of `rhizome-pom`.
-4. Phase 3, `@preset.nz/pom`: mirror, hooks, Tauri transport, facets bridge.
-5. First adoption is an app's epic (Shard's object model is the worked one). Path dependency on `packages/rhizome/crates/rhizome-pom`.
-6. After any doc change: update `status`/`updated`, recopy into `packages/rhizome/guidance/`, commit both repos.
+1. Phase 3, `@preset.nz/pom` (TypeScript, ships source like facets): the mirror (read `pom_tree`, apply `pom://commit` in `seq` order, re-read on a gap or a `generation` change), hooks (`useNode`, `useStatus`, `useCommands`), `run`/`begin`/`end` wrappers, the facets bridge (needs inspector hints on kinds). Decide with Georg: does the mirror parse the file format in TS, or does Rust send a JSON tree view?
+2. Cross-file `Ref` resolution (decision 23 → 40): before any app loads a library rhizome. Design pass with Georg.
+3. First adoption is an app's epic (Shard's object model is the worked one). Path dependency on `packages/rhizome/crates/rhizome-pom{,-tauri}`.
+4. Open conversation on ops (decisions 43–44, direction only). Don't build unasked.
+5. After any doc change: update `updated`, recopy into `packages/rhizome/guidance/`, commit and push both repos.
 
 ## Gotchas
 
-- **Don't propose a rename for "theme"** or rebuild themes in POM; Georg parked naming and moved themes to apps.
-- **Georg's vocabulary:** rhizome, node API, object model, POM, kind, category, group, smart group, loaded, calculated, preset, theme, op. Don't rename to industry terms; "scene" is dropped.
-- **Nothing app-named in rhizome or POM** code, tests or docs (decision 35). Test models are made up (Synth, Atlas, Gazetteer); the workflow model is frozen.
-- **`just bless` then read every line.** (POM workflows bless with `RHIZOME_BLESS=1 cargo test --test workflows`.)
-- **Unique names are `name-2`,** not `name 2` (`Edit::unique_name`).
-- **A paste of a non-preset into `/presets`** is refused by the core's category check before POM's own type check; POM's check still covers types with no category restriction.
-- **cargo fmt rewraps lines,** so scripted string-replace edits after a format often miss. Re-read before patching.
-- **Known gap:** "not deletable" finds the parent by its old path; rename-parent-and-remove-child in one edit slips past.
-- Sequential ids in tests (`IdSource::sequential()`); goldens depend on them. `serde_json` must not get `preserve_order`.
+- **Tauri `#[tauri::command] pub fn` can't sit at a lib crate's root** (macro name clash); they live in `commands`.
+- **Mock-runtime IPC must use the webview's own URL** as the request URL, else "not allowed. Plugin not found" (non-local origin).
+- **`generation` must fold in the outgoing document's reverts** on replace, or it repeats (a test caught it).
+- **Don't rebuild themes in POM** or propose renaming "theme"; Georg moved them to apps.
+- **Vocabulary:** rhizome, node API, object model, POM, kind, category, group, smart group, loaded, calculated, preset, theme, op. "scene" is dropped as a type name (Georg uses "scene/app graph" informally).
+- **Nothing app-named in rhizome or POM** (decision 35). Test models are made up (Synth, Atlas, Gazetteer, Loom).
+- **`just bless` then read every line.** Unique names are `name-2`. cargo fmt rewraps lines; re-read before scripted patches.
+- Sequential ids in tests; `serde_json` must not get `preserve_order`.
