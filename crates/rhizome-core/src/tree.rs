@@ -203,16 +203,17 @@ impl Tree {
             };
             f(&mut tx)
         }
-        .and_then(|v| run_checks(&self.state, &self.registry).map(|_| v));
+        .and_then(|v| {
+            let changes = diff(&before, &self.state);
+            run_checks(&self.state, &self.registry, &changes)?;
+            Ok((v, changes))
+        });
         match result {
             Err(e) => {
                 self.state = before;
                 Err(e)
             }
-            Ok(v) => {
-                let changes = diff(&before, &self.state);
-                Ok((v, (!changes.is_empty()).then_some((before, changes))))
-            }
+            Ok((v, changes)) => Ok((v, (!changes.is_empty()).then_some((before, changes)))),
         }
     }
 

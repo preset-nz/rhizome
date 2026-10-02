@@ -26,7 +26,9 @@ pub enum ChangeKind {
     Added {
         type_name: String,
     },
-    Removed,
+    Removed {
+        type_name: String,
+    },
     /// A rename or a reparent. Identity is the id, so this is never a remove plus an add.
     Moved {
         from: Path,
@@ -63,7 +65,7 @@ pub enum ChangeKind {
 impl ChangeKind {
     fn rank(&self) -> u8 {
         match self {
-            ChangeKind::Removed => 0,
+            ChangeKind::Removed { .. } => 0,
             ChangeKind::Added { .. } => 1,
             ChangeKind::Moved { .. } => 2,
             ChangeKind::Value { .. } => 3,
@@ -140,7 +142,7 @@ impl Changeset {
         };
         match &c.kind {
             ChangeKind::Added { type_name } => format!("{p}  added {type_name}"),
-            ChangeKind::Removed => format!("{p}  removed"),
+            ChangeKind::Removed { .. } => format!("{p}  removed"),
             ChangeKind::Moved { from } => format!("{p}  moved from {from}"),
             ChangeKind::Value { key, from, to } => {
                 format!("{p}  {key}  {} → {}", opt(from), opt(to))
@@ -209,7 +211,13 @@ pub(crate) fn diff(a: &State, b: &State) -> Changeset {
 
     for (id, path) in &pa {
         if !b.contains(*id) {
-            push(path, *id, ChangeKind::Removed);
+            push(
+                path,
+                *id,
+                ChangeKind::Removed {
+                    type_name: a.node(*id).type_name.clone(),
+                },
+            );
         }
     }
     for (id, path) in &pb {

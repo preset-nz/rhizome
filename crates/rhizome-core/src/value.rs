@@ -53,7 +53,8 @@ impl Value {
         }
     }
 
-    pub(crate) fn to_json(&self) -> Json {
+    /// The value as plain JSON, as the file format writes it.
+    pub fn to_json(&self) -> Json {
         let num = |f: f64| Json::Number(serde_json::Number::from_f64(f).expect("finite"));
         let nums = |v: &[f64]| Json::Array(v.iter().copied().map(num).collect());
         match self {
@@ -68,7 +69,7 @@ impl Value {
     }
 
     /// Reads JSON as a value of `kind`. `None` when it doesn't fit.
-    pub(crate) fn from_json(kind: ValueKind, j: &Json) -> Option<Value> {
+    pub fn from_json(kind: ValueKind, j: &Json) -> Option<Value> {
         fn arr<const N: usize>(j: &Json) -> Option<[f64; N]> {
             let a = j.as_array()?;
             if a.len() != N {

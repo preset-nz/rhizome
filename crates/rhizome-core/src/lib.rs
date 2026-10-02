@@ -28,7 +28,8 @@ pub use id::{IdSource, NodeId};
 pub use op::{Applied, Op, OpRef};
 pub use path::{Path, valid_name};
 pub use registry::{
-    CATEGORY, Check, GROUP, NodeType, Origin, ROOT, Registry, RegistryBuilder, ValueSpec,
+    CATEGORY, Check, GROUP, NodeType, Origin, ROOT, Registry, RegistryBuilder, Rule, ValueSpec,
+    Violation,
 };
 pub use state::{On, Ref};
 pub use tree::{Commit, GestureId, HISTORY, Snapshot, Tree};

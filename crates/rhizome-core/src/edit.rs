@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::diff::Changeset;
 use crate::error::{Error, Result};
 use crate::file::{self, Fragment, PasteReport};
 use crate::id::{IdSource, NodeId};
@@ -109,8 +110,9 @@ pub(crate) fn problem_error(p: Problem, path: String, spec: &ValueSpec, v: &Valu
     }
 }
 
-/// Runs every node type's `check` over the tree. A failure rolls the edit back.
-pub(crate) fn run_checks(state: &State, registry: &Registry) -> Result<()> {
+/// Runs every node type's `check`, then every tree rule, over the tree after an edit.
+/// A failure rolls the edit back.
+pub(crate) fn run_checks(state: &State, registry: &Registry, changes: &Changeset) -> Result<()> {
     for d in state.nodes.values() {
         if d.is_opaque() {
             continue;
@@ -125,6 +127,16 @@ pub(crate) fn run_checks(state: &State, registry: &Registry) -> Result<()> {
         check(&node).map_err(|message| Error::Check {
             path: node.path().to_string(),
             message,
+        })?;
+    }
+    if registry.rules.is_empty() {
+        return Ok(());
+    }
+    let root = Node::new(state, registry, state.root).expect("root");
+    for rule in &registry.rules {
+        rule(&root, changes).map_err(|v| Error::Check {
+            path: v.path,
+            message: v.message,
         })?;
     }
     Ok(())

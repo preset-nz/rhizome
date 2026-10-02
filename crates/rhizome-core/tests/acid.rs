@@ -1109,3 +1109,63 @@ fn load_reports_instead_of_failing() {
         "an unknown category is kept as is"
     );
 }
+
+#[test]
+fn tree_rules_see_the_whole_tree_and_the_changes() {
+    let registry = Registry::builder()
+        .category("things", Origin::Loaded)
+        .node(NodeType::new("box"))
+        .node(NodeType::new("lid"))
+        .rule(|root, changes| {
+            // at most one lid per box, and a lid only leaves with its box
+            for cat in root.children() {
+                for b in cat.children() {
+                    if b.children().filter(|c| c.type_name() == "lid").count() > 1 {
+                        return Err(Violation {
+                            path: b.path().to_string(),
+                            message: "one lid per box".into(),
+                        });
+                    }
+                }
+            }
+            for c in changes.iter() {
+                if let ChangeKind::Removed { type_name } = &c.kind
+                    && type_name == "lid"
+                    && root
+                        .children()
+                        .any(|cat| cat.child(c.path.parent().unwrap().name()).is_some())
+                {
+                    return Err(Violation {
+                        path: c.path.to_string(),
+                        message: "a lid can't be removed from its box".into(),
+                    });
+                }
+            }
+            Ok(())
+        })
+        .build()
+        .unwrap();
+    let mut t = Tree::with_ids(registry, IdSource::sequential());
+    t.edit("Box", |tx| {
+        let b = tx.add("/things", "box", "b")?;
+        tx.add(b, "lid", "lid").map(drop)
+    })
+    .unwrap();
+    let before = t.snapshot();
+    let err = t
+        .edit("Second Lid", |tx| {
+            tx.add("/things/b", "lid", "lid2").map(drop)
+        })
+        .unwrap_err();
+    assert_eq!(err.to_string(), "/things/b: one lid per box");
+    let err = t
+        .edit("Remove Lid", |tx| tx.remove("/things/b/lid"))
+        .unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "/things/b/lid: a lid can't be removed from its box"
+    );
+    assert_eq!(t.snapshot(), before, "refused rules leave no trace");
+    t.edit("Remove Box", |tx| tx.remove("/things/b")).unwrap();
+    assert!(t.at("/things/b").is_none(), "a lid leaves with its box");
+}

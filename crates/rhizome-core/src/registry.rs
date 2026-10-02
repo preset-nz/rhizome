@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
+use crate::diff::Changeset;
 use crate::error::{Error, Result};
 use crate::path::valid_name;
 use crate::value::{KeyName, Value, ValueKind};
@@ -143,6 +144,17 @@ impl ValueSpec {
 /// A rule the object model attaches to a node type, run on every node of that type at commit.
 pub type Check = Arc<dyn Fn(&Node<'_>) -> Result<(), String> + Send + Sync>;
 
+/// Why a tree rule refused an edit, and where.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Violation {
+    pub path: String,
+    pub message: String,
+}
+
+/// A rule over the whole tree, run at every commit with the root and what the edit changed.
+/// For what a per-node `check` can't say: "at most one per parent", "can't be removed".
+pub type Rule = Arc<dyn Fn(&Node<'_>, &Changeset) -> Result<(), Violation> + Send + Sync>;
+
 /// A node type, declared by an app's object model. The core stores and validates nodes of it
 /// and never knows what it means.
 #[derive(Clone)]
@@ -276,16 +288,27 @@ impl NodeType {
 }
 
 /// The node types and categories one app declares. Frozen once built.
-#[derive(Debug)]
 pub struct Registry {
     categories: Vec<(String, Origin)>,
     types: BTreeMap<String, NodeType>,
+    pub(crate) rules: Vec<Rule>,
 }
 
 #[derive(Default)]
 pub struct RegistryBuilder {
     categories: Vec<(String, Origin)>,
     types: Vec<NodeType>,
+    rules: Vec<Rule>,
+}
+
+impl fmt::Debug for Registry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Registry")
+            .field("categories", &self.categories)
+            .field("types", &self.types.keys().collect::<Vec<_>>())
+            .field("rules", &self.rules.len())
+            .finish()
+    }
 }
 
 impl Registry {
@@ -321,6 +344,15 @@ impl RegistryBuilder {
 
     pub fn node(&mut self, t: NodeType) -> &mut Self {
         self.types.push(t);
+        self
+    }
+
+    /// Adds a rule over the whole tree, run at every commit.
+    pub fn rule(
+        &mut self,
+        f: impl Fn(&Node<'_>, &Changeset) -> Result<(), Violation> + Send + Sync + 'static,
+    ) -> &mut Self {
+        self.rules.push(Arc::new(f));
         self
     }
 
@@ -370,6 +402,7 @@ impl RegistryBuilder {
         Ok(Arc::new(Registry {
             categories: self.categories.clone(),
             types,
+            rules: self.rules.clone(),
         }))
     }
 }
