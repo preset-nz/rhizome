@@ -47,7 +47,8 @@ pub trait ObjectModel: Sized + 'static {
     const EXTENSION: &'static str;                   // file extension, no dot
     type Projection: Default + Send;                 // a compiled plan, a render list, ()
 
-    fn kinds(k: &mut Kinds);                         // categories, kinds, policy, presets
+    type Context: Send + Sync + 'static;             // runtime data kinds depend on (decision 52); () if none
+    fn kinds(k: &mut Kinds, cx: &Self::Context);     // categories, kinds, policy, presets
     fn commands(_c: &mut Commands<Self>) {}          // app commands, next to the built-ins
     fn project(_tree: &Tree, _into: &mut Self::Projection, _changes: Option<&Changeset>) {}
 }
@@ -60,6 +61,8 @@ An app writes `impl ObjectModel for MyApp` with only its parts, and its domain v
 - **Projection:** `M::project` runs after open (with `None`, a full rebuild) and after every commit, undo, redo and cancel (with the `Changeset`). `projection()` reads it.
 - **`paste` and `duplicate`** that respect policy (below).
 - Presets, commands and policy, below.
+
+**Kinds from runtime data** (decision 52): an app whose kinds depend on data known only at run time (Oblique's op catalogue from its sidecar) builds documents with `Document::new_in(cx, …)` / `open_in` or `Pom::new_in` / `files_in`; `Document::context()` reads it. A kind a later catalogue lacks loads as an opaque node and saves back unchanged.
 
 **Decision 3 still holds.** rhizome has no document object; POM adds one a layer up, where files, windows and menus live.
 

@@ -18,8 +18,9 @@ updated: 2026-10-02
 - **rhizome-pom phase 1: shipped.** Kinds and policy, presets on the kind (catalogue, user presets, apply, current, `add_from_preset`), preset files (`0f9edc2`: flat JSON, one kind, bindings stripped), built-in commands. Themes removed (`0d54204`, decision 39).
 - **POM phase 2: shipped** (`4c750a1`, `bed6ae2`). `Pom<M>` / `Host` in `rhizome-pom/src/host.rs` (no Tauri): commands only, coalesce key, gestures by token, `Status` with a monotonic `generation`, events returned not emitted, `on_change` hook. `value.set` built in. `crates/rhizome-pom-tauri`: app-level commands `commands::pom_*`, events `pom://commit|status|open-document`, `opened.rs` lifted from Shard.
 - **Decision 48 built** (`ef8f202` core rows/schema/patch + mirror invariant; `766528e` POM `View`, `Update` events, `pom_view`, `values.set` batch).
+- **Oblique coverage** (decisions 50–52): coverage map in `projects/oblique/design/object-model.md`; the three gaps closed: `cce5d31` (shaped values, floats, unbounded floats), `a4a3e67` (`ObjectModel::Context`, kinds from runtime data).
 - **Tests:** `just check` green. pom.rs 12, host.rs 6, POM workflows 6, ipc.rs 2 (Tauri mock runtime), opened 4, wire 1.
-- **Decisions 39–49** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document. 48: the mirror is DTOs, snapshot then patches. 49: a shared platform; Oblique adopts first via a spike.
+- **Decisions 39–52** in `design/node-api.md`. 46: commands only over a transport. 47: a saved rhizome is a scene description (IFD/RIB); one app's node families per document. 48: the mirror is DTOs, snapshot then patches. 49: a shared platform; Oblique adopts first via a spike.
 - **Georg is unsure we're fully on the same page** about the model (2026-10-02). His framing: rhizome on disk = IFD/RIB, restores exact state, feeds the app graph, all edits through the object model. Decisions 46–47 record it; keep checking new work against that framing.
 - Georg mentioned Swift FOMO (a friend's Swift app). Answered: stay on Rust/Tauri; the commands-only boundary would let a SwiftUI shell sit on the same `Pom<M>` via UniFFI later. No action.
 
@@ -36,7 +37,7 @@ updated: 2026-10-02
 
 ## Next steps
 
-1. **The Oblique spike** (decision 49; plan in `projects/oblique/design/object-model.md`). Worktree of `initiatives/oblique` on `spike/rhizome`, path deps on `packages/rhizome/crates/{rhizome-pom,rhizome-pom-tauri}`. Slice: pixel layers. Rewire canvas move drag, opacity slider, save/open; an adapter rebuilds Oblique's `Scene` from the mirror. Before writing: read `src/scene/types.ts`, `store.ts`, `history.ts`, the dependency-cruiser config, project io.
+1. **The Oblique spike** (decision 49; plan and coverage map in `projects/oblique/design/object-model.md`). With 50–52 in, the spike's Rust object model can hold the whole scene (document node, layers with modifiers as op kinds from `list_ops`, vector paths as `shaped`, masks as bindings); the adapter reads the whole scene; writes rewired for the three interactions only. Worktree of `initiatives/oblique` on `spike/rhizome`, path deps on `packages/rhizome/crates/{rhizome-pom,rhizome-pom-tauri}`. Slice: pixel layers. Rewire canvas move drag, opacity slider, save/open; an adapter rebuilds Oblique's `Scene` from the mirror. Before writing: read `src/scene/types.ts`, `store.ts`, `history.ts`, the dependency-cruiser config, project io.
    - Protect real projects: spike documents use their own extension or a scratch folder; no opening existing `.oblique` files.
    - Cmd+Z for the slice routes to `edit.undo`; adapter writes stay out of Oblique's `history.ts`.
    - The adapter keeps object identity for untouched nodes (or `sceneDiff`/prefix cache invalidate everything and the latency number lies).
