@@ -360,6 +360,17 @@ impl<M: ObjectModel> Document<M> {
             .1)
     }
 
+    /// A user preset of the node's kind as text, to import into another document.
+    pub fn export_preset(&self, node: NodeId, label: &str) -> Result<String> {
+        self.model.presets.export(&self.tree, node, label)
+    }
+
+    /// Takes in an exported user preset, in one edit, one undo step. Returns its name.
+    pub fn import_preset(&mut self, text: &str) -> Result<(String, Option<Commit>)> {
+        let model = self.model.clone();
+        self.edit("Import Preset", |tx| model.presets.import(tx, text))
+    }
+
     /// Applies a preset to a node in one edit, one undo step.
     pub fn apply_preset(
         &mut self,

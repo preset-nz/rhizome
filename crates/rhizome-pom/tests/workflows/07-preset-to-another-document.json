@@ -1,0 +1,165 @@
+{
+  "title": "Export a layer preset and import it into another document",
+  "why": "A user preset is stored against its kind in one document. Exported, it is that preset node as a fragment; imported into another document of the same model, it is offered on every layer there. A taken name is refused, and the import is one undo step.",
+  "steps": [
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "west"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/west",
+          "name": "north"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/west/north",
+          "name": "hills"
+        }
+      }
+    },
+    {
+      "edit": {
+        "label": "Seed",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/realms/west/north/hills",
+            "key": "layer.seed",
+            "value": 123
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "preset.save",
+        "payload": {
+          "at": "/realms/west/north/hills",
+          "label": "Mountains"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "preset.export",
+        "payload": {
+          "at": "/realms/west/north/hills",
+          "label": "Nope"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "preset.export",
+        "payload": {
+          "at": "/realms/west/north/hills",
+          "label": "Mountains"
+        }
+      }
+    },
+    "new",
+    {
+      "edit": {
+        "label": "Realm",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/realms",
+            "type": "realm",
+            "name": "east"
+          }
+        ]
+      }
+    },
+    {
+      "run": {
+        "id": "map.add",
+        "payload": {
+          "to": "/realms/east",
+          "name": "south"
+        }
+      }
+    },
+    {
+      "run": {
+        "id": "layer.add",
+        "payload": {
+          "to": "/realms/east/south",
+          "name": "dunes"
+        }
+      }
+    },
+    {
+      "names": {
+        "at": "/realms/east/south/dunes"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.import",
+        "payload": {}
+      }
+    },
+    {
+      "names": {
+        "at": "/realms/east/south/dunes"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.apply",
+        "payload": {
+          "at": "/realms/east/south/dunes",
+          "preset": {
+            "user": "Mountains"
+          }
+        }
+      }
+    },
+    {
+      "current": {
+        "at": "/realms/east/south/dunes"
+      }
+    },
+    {
+      "run": {
+        "id": "preset.import",
+        "payload": {}
+      }
+    },
+    {
+      "run": {
+        "id": "edit.undo",
+        "payload": {}
+      }
+    },
+    {
+      "run": {
+        "id": "edit.undo",
+        "payload": {}
+      }
+    },
+    {
+      "names": {
+        "at": "/realms/east/south/dunes"
+      }
+    }
+  ]
+}

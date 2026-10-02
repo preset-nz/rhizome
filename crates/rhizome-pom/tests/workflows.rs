@@ -233,10 +233,17 @@ impl Session {
                 ("new".into(), vec![])
             }
             Step::Run { id, payload } => {
-                // a paste payload without a fragment takes the clipboard
+                // a paste or import payload without its text takes the clipboard
                 let mut payload = payload.clone();
-                if id == "edit.paste" && payload.get("fragment").is_none() {
-                    payload["fragment"] = json!(self.clipboard.clone().expect("copied first"));
+                let field = match id.as_str() {
+                    "edit.paste" => Some("fragment"),
+                    "preset.import" => Some("text"),
+                    _ => None,
+                };
+                if let Some(f) = field
+                    && payload.get(f).is_none()
+                {
+                    payload[f] = json!(self.clipboard.clone().expect("copied first"));
                 }
                 let lines = match self.doc().run(id, &payload) {
                     Ok(Outcome::Committed(c)) => {
@@ -254,6 +261,7 @@ impl Session {
                 let mut shown = payload.clone();
                 if let Some(o) = shown.as_object_mut() {
                     o.remove("fragment");
+                    o.remove("text");
                 }
                 (format!("run {id} {shown}"), lines)
             }
@@ -396,6 +404,7 @@ fn every_workflow_has_a_test() {
             "04-user-presets",
             "05-aspect-preset",
             "06-policy-refusals",
+            "07-preset-to-another-document",
         ]
     );
 }
@@ -420,6 +429,15 @@ fn copy_a_layer_to_another_map() {
     assert!(
         paste.contains(&"/realms/west/south  order draw  [paper, grid] → [paper, hills, grid]"),
         "{paste:?}"
+    );
+}
+
+#[test]
+fn preset_to_another_document() {
+    let o = run("07-preset-to-another-document");
+    assert_eq!(
+        lines(&o, "run preset.import"),
+        ["/presets/layer  added preset"]
     );
 }
 

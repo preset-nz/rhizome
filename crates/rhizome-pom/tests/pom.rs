@@ -175,6 +175,110 @@ fn synth_presets_of_one_nodes_sound() {
     );
 }
 
+/// A Synth with an osc and no lfo, its ids unlike the source's.
+fn other_synth() -> (Document<Synth>, NodeId) {
+    let mut d = Document::<Synth>::new(MemoryStore::default()).unwrap();
+    let (osc, _) = d
+        .edit("Build", |tx| {
+            let v = tx.add("/voices", "voice", "lead")?;
+            tx.add(v, "osc", "b")
+        })
+        .unwrap();
+    (d, osc)
+}
+
+#[test]
+fn a_user_preset_travels_to_another_document() {
+    let (mut d, _, osc, lfo) = synth();
+    d.edit("Shape", |tx| {
+        tx.set(osc, PITCH, 7.0)?;
+        tx.set(osc, MIX, 0.5)?;
+        tx.bind(osc, On::value(PITCH), lfo, [("depth", Value::Float(0.3))])
+    })
+    .unwrap();
+    d.save_preset(osc, "Warm").unwrap();
+    let text = d.export_preset(osc, "Warm").unwrap();
+    assert!(text.contains("\"preset.for\""), "the preset node: {text}");
+    assert!(d.export_preset(osc, "Cold").is_err());
+
+    let (mut e, b) = other_synth();
+    let steps = e.tree().history_len();
+    let (label, commit) = e.import_preset(&text).unwrap();
+    assert_eq!(label, "Warm");
+    assert!(commit.is_some());
+    assert_eq!(
+        e.tree().history_len(),
+        steps + 1,
+        "an import is one undo step"
+    );
+    assert_eq!(e.preset_names(b).unwrap(), [PresetRef::User("Warm".into())]);
+
+    // values come across; the binding pointed at a node in the other file, so it's reported
+    let (report, _) = e.apply_preset(b, &PresetRef::User("Warm".into())).unwrap();
+    assert_eq!(report.applied, 2, "pitch and mix: {report:?}");
+    assert_eq!(report.skipped.len(), 1, "{report:?}");
+    assert!(report.skipped[0].contains('←'), "{report:?}");
+    assert_eq!(e.tree().get(b).unwrap().get(PITCH), Some(7.0));
+
+    // a taken name is refused, and nothing changes
+    let before = e.tree().serialise();
+    let err = e.import_preset(&text).unwrap_err().to_string();
+    assert!(err.contains("already exists"), "{err}");
+    assert_eq!(e.tree().serialise(), before);
+    e.undo().unwrap();
+    e.undo().unwrap();
+    assert!(
+        e.preset_names(b).unwrap().is_empty(),
+        "undo takes it out again"
+    );
+
+    // only a preset, one of them, for a kind this model has, with state that fits
+    assert!(e.import_preset("not json").is_err());
+    let osc_alone = d.tree().extract([osc]).unwrap().to_text();
+    let err = e.import_preset(&osc_alone).unwrap_err().to_string();
+    assert!(err.contains("can't live in category `presets`"), "{err}");
+    d.save_preset(osc, "Cold").unwrap();
+    let both = d
+        .tree()
+        .extract(["/presets/osc", "/presets/osc-2"])
+        .unwrap()
+        .to_text();
+    let err = e.import_preset(&both).unwrap_err().to_string();
+    assert!(err.contains("one preset"), "{err}");
+    let (mut atlas, _, map) = atlas();
+    atlas.save_preset(map, "Wide").unwrap();
+    let wide = atlas.export_preset(map, "Wide").unwrap();
+    let err = e.import_preset(&wide).unwrap_err().to_string();
+    assert!(err.contains("no map presets"), "{err}");
+    let cold = d.tree().at("/presets/osc-2").unwrap().id();
+    d.edit("Spoil", |tx| {
+        tx.set_value(cold, "preset.state", Value::Text("\"nope\"".into()))
+    })
+    .unwrap();
+    let spoilt = d.export_preset(osc, "Cold").unwrap();
+    let err = e.import_preset(&spoilt).unwrap_err().to_string();
+    assert!(err.contains("doesn't fit"), "{err}");
+    assert!(e.preset_names(b).unwrap().is_empty());
+
+    // and as commands
+    let Outcome::Text(t) = d
+        .run(
+            "preset.export",
+            &json!({"at": "/voices/pad/a", "label": "Warm"}),
+        )
+        .unwrap()
+    else {
+        panic!()
+    };
+    let Outcome::Committed(_) = e.run("preset.import", &json!({"text": t})).unwrap() else {
+        panic!()
+    };
+    assert!(
+        !e.is_enabled("preset.import", &json!({"text": "nope"}))
+            .unwrap()
+    );
+}
+
 #[test]
 fn synth_document_lifecycle_and_projection() {
     let (mut d, store, osc, _) = synth();

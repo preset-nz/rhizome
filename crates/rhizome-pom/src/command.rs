@@ -78,6 +78,11 @@ struct AddArgs {
     preset: Option<PresetRef>,
 }
 
+#[derive(serde::Deserialize)]
+struct ImportArgs {
+    text: String,
+}
+
 fn node_of<M: ObjectModel>(d: &Document<M>, at: &str) -> Result<rhizome_core::NodeId> {
     d.tree()
         .at(at)
@@ -319,6 +324,27 @@ impl<M: ObjectModel> Commands<M> {
                 let a: PresetArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
                 Ok(d.delete_preset(node, &need(a.label, "label")?)?.into())
+            },
+        );
+        c.add(
+            "preset.export",
+            fixed("Export Preset…"),
+            preset_enabled,
+            |d, p| {
+                let a: PresetArgs = payload(p)?;
+                let node = node_of(d, &a.at)?;
+                Ok(Outcome::Text(
+                    d.export_preset(node, &need(a.label, "label")?)?,
+                ))
+            },
+        );
+        c.add(
+            "preset.import",
+            fixed("Import Preset…"),
+            |_, p| payload::<ImportArgs>(p).is_ok_and(|a| Fragment::from_text(&a.text).is_ok()),
+            |d, p| {
+                let a: ImportArgs = payload(p)?;
+                Ok(d.import_preset(&a.text)?.1.into())
             },
         );
         c

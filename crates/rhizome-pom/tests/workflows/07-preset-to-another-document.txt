@@ -1,0 +1,47 @@
+# Export a layer preset and import it into another document
+> new
+> edit Realm
+  /realms/west  added realm
+> run map.add {"name":"north","to":"/realms/west"}
+  /realms/west/north  added map
+  /realms/west/north/grid  added grid
+  /realms/west/north/paper  added paper
+> run layer.add {"name":"hills","to":"/realms/west/north"}
+  /realms/west/north  order draw  [paper, grid] → [paper, hills, grid]
+  /realms/west/north/hills  added layer
+> edit Seed
+  /realms/west/north/hills  layer.seed  unset → 123
+> run preset.save {"at":"/realms/west/north/hills","label":"Mountains"}
+  /presets/layer  added preset
+> run preset.export {"at":"/realms/west/north/hills","label":"Nope"}
+  refused: no preset called “Nope” here
+> run preset.export {"at":"/realms/west/north/hills","label":"Mountains"}
+  1 nodes on the clipboard
+> new
+> edit Realm
+  /realms/east  added realm
+> run map.add {"name":"south","to":"/realms/east"}
+  /realms/east/south  added map
+  /realms/east/south/grid  added grid
+  /realms/east/south/paper  added paper
+> run layer.add {"name":"dunes","to":"/realms/east/south"}
+  /realms/east/south  order draw  [paper, grid] → [paper, dunes, grid]
+  /realms/east/south/dunes  added layer
+> presets at /realms/east/south/dunes
+  rocky
+> run preset.import {}
+  /presets/layer  added preset
+> presets at /realms/east/south/dunes
+  rocky, “Mountains”
+> run preset.apply {"at":"/realms/east/south/dunes","preset":{"user":"Mountains"}}
+  /realms/east/south/dunes  layer.seed  unset → 123
+> current preset at /realms/east/south/dunes
+  “Mountains”
+> run preset.import {}
+  refused: a layer preset called “Mountains” already exists here
+> run edit.undo {}
+  /realms/east/south/dunes  layer.seed  123 → unset
+> run edit.undo {}
+  /presets/layer  removed
+> presets at /realms/east/south/dunes
+  rocky

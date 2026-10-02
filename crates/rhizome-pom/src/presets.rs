@@ -3,7 +3,8 @@
 //! The app's object model gives a kind an [`Aggregate`]: what state a preset holds, how to
 //! read it off a node and how to write it back. POM supplies the rest: built-in presets in
 //! code, user presets saved in the document (they travel with the file), "which preset is
-//! current", applying one, and making a new node from one.
+//! current", applying one, making a new node from one, and moving a user preset between
+//! documents as text.
 //!
 //! Presets are copied into a node, never followed. A shared choice that nodes follow (a
 //! theme) is the app's to build from rhizome's primitives, not POM's.
@@ -12,7 +13,7 @@ use std::collections::BTreeMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use rhizome_core::{Edit, Node, NodeId, NodeType, On, Tree, Value};
+use rhizome_core::{Edit, Fragment, Node, NodeId, NodeType, On, Tree, Value};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
@@ -77,6 +78,7 @@ pub(crate) trait Erased: Send + Sync {
     fn get(&self, node: Node<'_>) -> Json;
     fn set(&self, tx: &mut Edit<'_>, node: NodeId, state: &Json) -> rhizome_core::Result<Report>;
     fn matches(&self, current: &Json, preset: &Json) -> bool;
+    fn fits(&self, state: &Json) -> bool;
 }
 
 impl<A: Aggregate> Erased for A {
@@ -99,6 +101,10 @@ impl<A: Aggregate> Erased for A {
             (Ok(c), Ok(p)) => Aggregate::matches(self, &c, &p),
             _ => false,
         }
+    }
+
+    fn fits(&self, state: &Json) -> bool {
+        serde_json::from_value::<A::State>(state.clone()).is_ok()
     }
 }
 
@@ -313,6 +319,65 @@ impl Presets {
         let kp = self.of(&for_type)?;
         let state = Self::state_in(kp, tx, &for_type, preset)?;
         kp.aggregate.set(tx, node, &state)
+    }
+
+    /// A user preset as text: its node as a rhizome fragment, so an export, a user preset in
+    /// a document and an entry in a library rhizome are one shape.
+    pub(crate) fn export(&self, tree: &Tree, node: NodeId, label: &str) -> Result<String> {
+        let for_type = live(tree, node)?.type_name().to_string();
+        self.of(&for_type)?;
+        let (_, p) = Self::user_presets(tree, &for_type)
+            .into_iter()
+            .find(|(l, _)| l == label)
+            .ok_or_else(|| structural_msg(format!("no preset called “{label}” here")))?;
+        Ok(tree.extract([p.id()])?.to_text())
+    }
+
+    /// Takes in an exported user preset. Refused, and nothing changes, unless it's one preset
+    /// for a kind of this model, its state fits that kind, and its name is free.
+    pub(crate) fn import(&self, tx: &mut Edit<'_>, exported: &str) -> rhizome_core::Result<String> {
+        let fragment = Fragment::from_text(exported)?;
+        if fragment.len() != 1 {
+            return Err(structural_msg(format!(
+                "a preset export holds one preset, not {} nodes",
+                fragment.len()
+            )));
+        }
+        let pasted = tx.paste(format!("/{PRESETS}").as_str(), &fragment)?;
+        let id = pasted.nodes[0];
+        let n = tx.at(id).expect("just pasted");
+        if n.type_name() != PRESET {
+            return Err(structural_msg(format!(
+                "this is a {}, not a preset",
+                n.type_name()
+            )));
+        }
+        let (for_type, label, state) = (text(&n, FOR), text(&n, LABEL), Self::user_state(&n));
+        let kp = self
+            .by_type
+            .get(&for_type)
+            .ok_or_else(|| structural_msg(format!("this document has no {for_type} presets")))?;
+        if !kp.aggregate.fits(&state) {
+            return Err(structural_msg(format!(
+                "this preset doesn't fit a {for_type}"
+            )));
+        }
+        let label = valid_label(&label)?;
+        let cat = tx
+            .at(format!("/{PRESETS}").as_str())
+            .expect("POM's category");
+        let taken = cat.children().any(|p| {
+            p.id() != id
+                && p.type_name() == PRESET
+                && text(&p, FOR) == for_type
+                && text(&p, LABEL) == label
+        });
+        if taken {
+            return Err(structural_msg(format!(
+                "a {for_type} preset called “{label}” already exists here"
+            )));
+        }
+        Ok(label)
     }
 
     /// Instantiates a kind's template filled from a preset: add, then apply, in one edit.
