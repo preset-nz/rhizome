@@ -20,8 +20,8 @@ rhizome knows no app. It stores, validates, edits, undoes, diffs, saves and copi
 
 `guidance/` holds **copies** of the planning docs so the work can continue away from the main machine. The canonical versions live in the private guidance repo (`design/node-api.md`, `design/rhizome-api.md`, `handovers/rhizome/handover.md`). Edit there, then recopy. Relative links inside the copies won't resolve.
 
-- [`guidance/node-api.md`](guidance/node-api.md): the design (draft, 2026-09-17).
-- [`guidance/rhizome-api.md`](guidance/rhizome-api.md): the API layout — verbs, shape, guarantees (draft, 2026-10-02).
+- [`guidance/node-api.md`](guidance/node-api.md): the model and decisions 1 to 35.
+- [`guidance/rhizome-api.md`](guidance/rhizome-api.md): the API as built — verbs, shape, guarantees, and the line between rhizome and an object model.
 - [`guidance/handover.md`](guidance/handover.md): code state and next steps.
 
 ## Licence
