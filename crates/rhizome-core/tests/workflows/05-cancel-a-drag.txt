@@ -1,0 +1,15 @@
+# Cancel a drag with Escape
+> new a
+> edit Build
+  /patches/drone  added patch
+  /patches/drone/granular  added granular
+> begin Drag
+> apply
+  /patches/drone/granular  grain.mix  unset → 0.2
+> apply
+  /patches/drone/crush  added crush
+> cancel
+  /patches/drone/crush  removed
+  /patches/drone/granular  grain.mix  0.2 → unset
+> status
+  seq 4, unsaved, 1 undo steps, undo: Build, redo: -

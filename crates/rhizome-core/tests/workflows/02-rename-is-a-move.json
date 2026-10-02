@@ -1,0 +1,78 @@
+{
+  "title": "Rename a patch",
+  "why": "Renaming a parent is one Moved entry. Its children follow without being listed, and undo puts the name back.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "New Patch",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "crush",
+            "name": "crush"
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/granular",
+            "key": "grain.size",
+            "value": 180.0
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 4
+          },
+          {
+            "op": "set_ref",
+            "at": "/patches/drone",
+            "key": "material",
+            "ref": {
+              "file": "kalimba.wav"
+            }
+          },
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone/crush",
+              "/patches/drone/granular"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Rename",
+        "ops": [
+          {
+            "op": "rename",
+            "at": "/patches/drone",
+            "name": "hum"
+          }
+        ]
+      }
+    },
+    "undo",
+    "redo",
+    "file"
+  ]
+}

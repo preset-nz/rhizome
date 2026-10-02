@@ -1,0 +1,208 @@
+{
+  "title": "Mistakes are refused whole",
+  "why": "A refused edit changes nothing, commits nothing and adds no undo step, even when earlier ops in it were fine.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "New Patch",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "crush",
+            "name": "crush"
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/granular",
+            "key": "grain.size",
+            "value": 180.0
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 4
+          },
+          {
+            "op": "set_ref",
+            "at": "/patches/drone",
+            "key": "material",
+            "ref": {
+              "file": "kalimba.wav"
+            }
+          },
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone/crush",
+              "/patches/drone/granular"
+            ]
+          }
+        ]
+      }
+    },
+    "status",
+    {
+      "edit": {
+        "label": "Bad Range",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/granular",
+            "key": "grain.size",
+            "value": 9000.0
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Kind",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 4.5
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Key",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone",
+            "key": "volume",
+            "value": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Choice",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/modulators",
+            "type": "lfo",
+            "name": "wobble"
+          },
+          {
+            "op": "set",
+            "at": "/modulators/wobble",
+            "key": "lfo.shape",
+            "value": "saw"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Name",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Category",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/images",
+            "type": "patch",
+            "name": "pad"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Move",
+        "ops": [
+          {
+            "op": "move_to",
+            "at": "/patches/drone/crush",
+            "parent": "/images"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Bind",
+        "ops": [
+          {
+            "op": "bind",
+            "target": "/patches/drone/granular",
+            "on": {
+              "slot": "env"
+            },
+            "source": "/patches/drone/crush"
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Order",
+        "ops": [
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Bad Late",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone",
+            "key": "amp.gain",
+            "value": 0.1
+          },
+          {
+            "op": "remove",
+            "at": "/patches"
+          }
+        ]
+      }
+    },
+    "status"
+  ]
+}

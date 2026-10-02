@@ -1,0 +1,143 @@
+# Duplicate an image
+> new a
+> edit Build
+  /images  order draw  [] → [sky, sea]
+  /images/fav  added group
+  /images/sea  added image
+  /images/sky  added image
+  /images/sky/blur  added blur
+  /masks/vignette  added mask
+  /renders/final  added render
+> edit Duplicate
+  /images  order draw  [sky, sea] → [sky, sky-2, sea]
+  /images/fav  members  +/images/sky-2
+  /images/sky-2  added image
+  /images/sky-2/blur  added blur
+> file
+  {
+    "rhizome": 1,
+    "nodes": [
+      {
+        "path": "/",
+        "id": "000000000000000000000000Z8",
+        "type": "root"
+      },
+      {
+        "path": "/images",
+        "id": "000000000000000000000000ZC",
+        "type": "category",
+        "orders": {
+          "draw": [
+            "000000000000000000000000ZF",
+            "000000000000000000000000ZN",
+            "000000000000000000000000ZH"
+          ]
+        }
+      },
+      {
+        "path": "/images/fav",
+        "id": "000000000000000000000000ZJ",
+        "type": "group",
+        "members": [
+          "000000000000000000000000ZF",
+          "000000000000000000000000ZN"
+        ]
+      },
+      {
+        "path": "/images/sea",
+        "id": "000000000000000000000000ZH",
+        "type": "image",
+        "bindings": [
+          {
+            "on": {
+              "slot": "mask"
+            },
+            "source": "000000000000000000000000ZK"
+          }
+        ]
+      },
+      {
+        "path": "/images/sky",
+        "id": "000000000000000000000000ZF",
+        "type": "image",
+        "values": {
+          "opacity": 0.75
+        },
+        "bindings": [
+          {
+            "on": {
+              "slot": "mask"
+            },
+            "source": "000000000000000000000000ZK"
+          }
+        ]
+      },
+      {
+        "path": "/images/sky/blur",
+        "id": "000000000000000000000000ZG",
+        "type": "blur",
+        "values": {
+          "radius": 12.0
+        }
+      },
+      {
+        "path": "/images/sky-2",
+        "id": "000000000000000000000000ZN",
+        "type": "image",
+        "values": {
+          "opacity": 0.75
+        },
+        "bindings": [
+          {
+            "on": {
+              "slot": "mask"
+            },
+            "source": "000000000000000000000000ZK"
+          }
+        ]
+      },
+      {
+        "path": "/images/sky-2/blur",
+        "id": "000000000000000000000000ZP",
+        "type": "blur",
+        "values": {
+          "radius": 12.0
+        }
+      },
+      {
+        "path": "/masks",
+        "id": "000000000000000000000000ZD",
+        "type": "category"
+      },
+      {
+        "path": "/masks/vignette",
+        "id": "000000000000000000000000ZK",
+        "type": "mask"
+      },
+      {
+        "path": "/modulators",
+        "id": "000000000000000000000000ZB",
+        "type": "category"
+      },
+      {
+        "path": "/patches",
+        "id": "000000000000000000000000ZA",
+        "type": "category"
+      },
+      {
+        "path": "/renders",
+        "id": "000000000000000000000000ZE",
+        "type": "category"
+      },
+      {
+        "path": "/renders/final",
+        "id": "000000000000000000000000ZM",
+        "type": "render"
+      },
+      {
+        "path": "/sounds",
+        "id": "000000000000000000000000Z9",
+        "type": "category"
+      }
+    ]
+  }

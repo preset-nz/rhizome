@@ -1,0 +1,101 @@
+# Open a file from a newer version
+> open 10-open-a-newer-file.rhizome
+  issue /patches/drone/shimmer: unknown type `shimmer`, kept as is
+  issue /scenes: unknown category, kept as is
+  issue /scenes/intro: unknown type `scene`, kept as is
+  byte-identical on save: true
+> status
+  seq 0, saved, 0 undo steps, undo: -, redo: -
+> edit Bad Shimmer
+  refused: /patches/drone/shimmer has a type this app doesn't know, so it can't be changed
+> edit Louder
+  /patches/drone  amp.gain  0.8 → 0.9
+> file
+  {
+    "rhizome": 1,
+    "nodes": [
+      {
+        "path": "/",
+        "id": "00000000000000000000000001",
+        "type": "root"
+      },
+      {
+        "path": "/images",
+        "id": "00000000000000000000000002",
+        "type": "category"
+      },
+      {
+        "path": "/masks",
+        "id": "00000000000000000000000003",
+        "type": "category"
+      },
+      {
+        "path": "/modulators",
+        "id": "00000000000000000000000004",
+        "type": "category"
+      },
+      {
+        "path": "/patches",
+        "id": "00000000000000000000000005",
+        "type": "category"
+      },
+      {
+        "path": "/patches/drone",
+        "id": "00000000000000000000000010",
+        "type": "patch",
+        "values": {
+          "amp.gain": 0.9
+        },
+        "orders": {
+          "chain": [
+            "00000000000000000000000011",
+            "00000000000000000000000012"
+          ]
+        }
+      },
+      {
+        "path": "/patches/drone/granular",
+        "id": "00000000000000000000000011",
+        "type": "granular",
+        "values": {
+          "grain.size": 120.0
+        }
+      },
+      {
+        "path": "/patches/drone/shimmer",
+        "id": "00000000000000000000000012",
+        "type": "shimmer",
+        "values": {
+          "shimmer.mix": 0.3,
+          "shimmer.pitch": 12,
+          "shimmer.voices": [
+            "low",
+            "high"
+          ]
+        }
+      },
+      {
+        "path": "/renders",
+        "id": "00000000000000000000000006",
+        "type": "category"
+      },
+      {
+        "path": "/scenes",
+        "id": "00000000000000000000000008",
+        "type": "category"
+      },
+      {
+        "path": "/scenes/intro",
+        "id": "00000000000000000000000013",
+        "type": "scene",
+        "values": {
+          "scene.length": 32
+        }
+      },
+      {
+        "path": "/sounds",
+        "id": "00000000000000000000000007",
+        "type": "category"
+      }
+    ]
+  }

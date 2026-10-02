@@ -1,0 +1,21 @@
+# Drag a slider
+> new a
+> edit New Patch
+  /patches/drone  added patch
+  /patches/drone/granular  added granular
+> begin Drag Grain Size
+> apply
+  /patches/drone/granular  grain.size  unset → 100.0
+> apply
+  /patches/drone/granular  grain.size  100.0 → 180.0
+> apply
+  /patches/drone/granular  grain.size  180.0 → 260.0
+> apply
+  /patches/drone/granular  grain.size  260.0 → 320.0
+> end
+> status
+  seq 5, unsaved, 2 undo steps, undo: Drag Grain Size, redo: -
+> undo
+  /patches/drone/granular  grain.size  320.0 → unset
+> status
+  seq 6, unsaved, 1 undo steps, undo: New Patch, redo: Drag Grain Size

@@ -1,0 +1,87 @@
+# Delete a used image and its mask
+> new a
+> edit Build
+  /images  order draw  [] → [sky, sea]
+  /images/fav  added group
+  /images/sea  added image
+  /images/sky  added image
+  /images/sky/blur  added blur
+  /masks/vignette  added mask
+  /renders/final  added render
+> edit Delete
+  /images  order draw  [sky, sea] → [sea]
+  /images/fav  members  -/images/sky
+  /images/sea  slot mask ← /masks/vignette  bound → unbound
+  /images/sky  removed
+  /images/sky/blur  removed
+  /masks/vignette  removed
+> save
+> reopen
+  issue /renders/final: reference `input` points at a missing node
+  byte-identical: true
+> file
+  {
+    "rhizome": 1,
+    "nodes": [
+      {
+        "path": "/",
+        "id": "000000000000000000000000Z8",
+        "type": "root"
+      },
+      {
+        "path": "/images",
+        "id": "000000000000000000000000ZC",
+        "type": "category",
+        "orders": {
+          "draw": [
+            "000000000000000000000000ZH"
+          ]
+        }
+      },
+      {
+        "path": "/images/fav",
+        "id": "000000000000000000000000ZJ",
+        "type": "group"
+      },
+      {
+        "path": "/images/sea",
+        "id": "000000000000000000000000ZH",
+        "type": "image"
+      },
+      {
+        "path": "/masks",
+        "id": "000000000000000000000000ZD",
+        "type": "category"
+      },
+      {
+        "path": "/modulators",
+        "id": "000000000000000000000000ZB",
+        "type": "category"
+      },
+      {
+        "path": "/patches",
+        "id": "000000000000000000000000ZA",
+        "type": "category"
+      },
+      {
+        "path": "/renders",
+        "id": "000000000000000000000000ZE",
+        "type": "category"
+      },
+      {
+        "path": "/renders/final",
+        "id": "000000000000000000000000ZM",
+        "type": "render",
+        "refs": {
+          "input": {
+            "node": "000000000000000000000000ZF"
+          }
+        }
+      },
+      {
+        "path": "/sounds",
+        "id": "000000000000000000000000Z9",
+        "type": "category"
+      }
+    ]
+  }

@@ -1,0 +1,85 @@
+# Rename a patch
+> new a
+> edit New Patch
+  /patches/drone  added patch
+  /patches/drone/crush  added crush
+  /patches/drone/granular  added granular
+> edit Rename
+  /patches/hum  moved from /patches/drone
+> undo
+  /patches/drone  moved from /patches/hum
+> redo
+  /patches/hum  moved from /patches/drone
+> file
+  {
+    "rhizome": 1,
+    "nodes": [
+      {
+        "path": "/",
+        "id": "000000000000000000000000Z8",
+        "type": "root"
+      },
+      {
+        "path": "/images",
+        "id": "000000000000000000000000ZC",
+        "type": "category"
+      },
+      {
+        "path": "/masks",
+        "id": "000000000000000000000000ZD",
+        "type": "category"
+      },
+      {
+        "path": "/modulators",
+        "id": "000000000000000000000000ZB",
+        "type": "category"
+      },
+      {
+        "path": "/patches",
+        "id": "000000000000000000000000ZA",
+        "type": "category"
+      },
+      {
+        "path": "/patches/hum",
+        "id": "000000000000000000000000ZF",
+        "type": "patch",
+        "refs": {
+          "material": {
+            "file": "kalimba.wav"
+          }
+        },
+        "orders": {
+          "chain": [
+            "000000000000000000000000ZH",
+            "000000000000000000000000ZG"
+          ]
+        }
+      },
+      {
+        "path": "/patches/hum/crush",
+        "id": "000000000000000000000000ZH",
+        "type": "crush",
+        "values": {
+          "crush.bits": 4
+        }
+      },
+      {
+        "path": "/patches/hum/granular",
+        "id": "000000000000000000000000ZG",
+        "type": "granular",
+        "values": {
+          "grain.size": 180.0
+        }
+      },
+      {
+        "path": "/renders",
+        "id": "000000000000000000000000ZE",
+        "type": "category"
+      },
+      {
+        "path": "/sounds",
+        "id": "000000000000000000000000Z9",
+        "type": "category"
+      }
+    ]
+  }

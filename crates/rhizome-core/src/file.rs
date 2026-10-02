@@ -591,6 +591,9 @@ pub(crate) fn load(
     }
 
     let identity: BTreeMap<NodeId, NodeId> = state.nodes.keys().map(|id| (*id, *id)).collect();
+    if let Some(r) = parsed.iter().find(|p| p.path.is_root() && p.id == root) {
+        fill(&mut state, registry, root, &r.rec, &identity, &mut issues);
+    }
     for p in &placed {
         fill(&mut state, registry, p.id, &p.rec, &identity, &mut issues);
     }

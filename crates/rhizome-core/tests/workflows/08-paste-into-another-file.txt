@@ -1,0 +1,89 @@
+# Copy an image into another file
+> new a
+> edit Build
+  /images  order draw  [] → [sky, sea]
+  /images/fav  added group
+  /images/sea  added image
+  /images/sky  added image
+  /images/sky/blur  added blur
+  /masks/vignette  added mask
+  /renders/final  added render
+> copy /images/sky
+  2 nodes on the clipboard
+> new b
+> edit Setup
+  /masks/vignette  added mask
+> paste into /images
+  issue /images/sky: not added to group /images/fav
+  /images/sky  added image
+  /images/sky/blur  added blur
+> file
+  {
+    "rhizome": 1,
+    "nodes": [
+      {
+        "path": "/",
+        "id": "000000000000000000000001YG",
+        "type": "root"
+      },
+      {
+        "path": "/images",
+        "id": "000000000000000000000001YM",
+        "type": "category"
+      },
+      {
+        "path": "/images/sky",
+        "id": "000000000000000000000001YR",
+        "type": "image",
+        "values": {
+          "opacity": 0.75
+        },
+        "bindings": [
+          {
+            "on": {
+              "slot": "mask"
+            },
+            "source": "000000000000000000000001YQ"
+          }
+        ]
+      },
+      {
+        "path": "/images/sky/blur",
+        "id": "000000000000000000000001YS",
+        "type": "blur",
+        "values": {
+          "radius": 12.0
+        }
+      },
+      {
+        "path": "/masks",
+        "id": "000000000000000000000001YN",
+        "type": "category"
+      },
+      {
+        "path": "/masks/vignette",
+        "id": "000000000000000000000001YQ",
+        "type": "mask"
+      },
+      {
+        "path": "/modulators",
+        "id": "000000000000000000000001YK",
+        "type": "category"
+      },
+      {
+        "path": "/patches",
+        "id": "000000000000000000000001YJ",
+        "type": "category"
+      },
+      {
+        "path": "/renders",
+        "id": "000000000000000000000001YP",
+        "type": "category"
+      },
+      {
+        "path": "/sounds",
+        "id": "000000000000000000000001YH",
+        "type": "category"
+      }
+    ]
+  }

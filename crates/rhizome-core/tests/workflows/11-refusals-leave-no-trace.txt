@@ -1,0 +1,30 @@
+# Mistakes are refused whole
+> new a
+> edit New Patch
+  /patches/drone  added patch
+  /patches/drone/crush  added crush
+  /patches/drone/granular  added granular
+> status
+  seq 1, unsaved, 1 undo steps, undo: New Patch, redo: -
+> edit Bad Range
+  refused: /patches/drone/granular: `grain.size` = 9000.0 is outside 5..=500
+> edit Bad Kind
+  refused: /patches/drone/crush: `crush.bits` wants Int, got 4.5
+> edit Bad Key
+  refused: /patches/drone has no key `volume`
+> edit Bad Choice
+  refused: /modulators/wobble: `lfo.shape` has no choice "saw"
+> edit Bad Name
+  refused: /patches/drone already exists
+> edit Bad Category
+  refused: `patch` can't live in category `images`
+> edit Bad Move
+  refused: `crush` can't live in category `images`
+> edit Bad Bind
+  refused: /patches/drone/crush can't be a binding source
+> edit Bad Order
+  refused: /patches/drone is not a child of /patches/drone
+> edit Bad Late
+  refused: /patches is the root or a category; the core owns it
+> status
+  seq 1, unsaved, 1 undo steps, undo: New Patch, redo: -

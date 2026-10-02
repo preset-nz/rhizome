@@ -1,0 +1,88 @@
+# Build a patch, save it, reopen it
+> new a
+> edit New Patch
+  /patches/drone  added patch
+  /patches/drone/crush  added crush
+  /patches/drone/granular  added granular
+> status
+  seq 1, unsaved, 1 undo steps, undo: New Patch, redo: -
+> save
+> status
+  seq 1, saved, 1 undo steps, undo: New Patch, redo: -
+> reopen
+  byte-identical: true
+> status
+  seq 0, saved, 0 undo steps, undo: -, redo: -
+> file
+  {
+    "rhizome": 1,
+    "nodes": [
+      {
+        "path": "/",
+        "id": "000000000000000000000000Z8",
+        "type": "root"
+      },
+      {
+        "path": "/images",
+        "id": "000000000000000000000000ZC",
+        "type": "category"
+      },
+      {
+        "path": "/masks",
+        "id": "000000000000000000000000ZD",
+        "type": "category"
+      },
+      {
+        "path": "/modulators",
+        "id": "000000000000000000000000ZB",
+        "type": "category"
+      },
+      {
+        "path": "/patches",
+        "id": "000000000000000000000000ZA",
+        "type": "category"
+      },
+      {
+        "path": "/patches/drone",
+        "id": "000000000000000000000000ZF",
+        "type": "patch",
+        "refs": {
+          "material": {
+            "file": "kalimba.wav"
+          }
+        },
+        "orders": {
+          "chain": [
+            "000000000000000000000000ZH",
+            "000000000000000000000000ZG"
+          ]
+        }
+      },
+      {
+        "path": "/patches/drone/crush",
+        "id": "000000000000000000000000ZH",
+        "type": "crush",
+        "values": {
+          "crush.bits": 4
+        }
+      },
+      {
+        "path": "/patches/drone/granular",
+        "id": "000000000000000000000000ZG",
+        "type": "granular",
+        "values": {
+          "grain.size": 180.0
+        }
+      },
+      {
+        "path": "/renders",
+        "id": "000000000000000000000000ZE",
+        "type": "category"
+      },
+      {
+        "path": "/sounds",
+        "id": "000000000000000000000000Z9",
+        "type": "category"
+      }
+    ]
+  }

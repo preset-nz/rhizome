@@ -1,0 +1,12 @@
+# Reorder an effect chain
+> new a
+> edit New Patch
+  /patches/drone  added patch
+  /patches/drone/crush  added crush
+  /patches/drone/granular  added granular
+> edit Swap
+  /patches/drone  order chain  [crush, granular] → [granular, crush]
+> undo
+  /patches/drone  order chain  [granular, crush] → [crush, granular]
+> status
+  seq 3, unsaved, 1 undo steps, undo: New Patch, redo: Swap

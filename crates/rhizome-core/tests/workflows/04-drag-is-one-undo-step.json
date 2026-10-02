@@ -1,0 +1,75 @@
+{
+  "title": "Drag a slider",
+  "why": "Every movement of a drag commits so the panel follows, and the whole drag is one undo step.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "New Patch",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          }
+        ]
+      }
+    },
+    {
+      "begin": "Drag Grain Size"
+    },
+    {
+      "apply": [
+        {
+          "op": "set",
+          "at": "/patches/drone/granular",
+          "key": "grain.size",
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "op": "set",
+          "at": "/patches/drone/granular",
+          "key": "grain.size",
+          "value": 180.0
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "op": "set",
+          "at": "/patches/drone/granular",
+          "key": "grain.size",
+          "value": 260.0
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "op": "set",
+          "at": "/patches/drone/granular",
+          "key": "grain.size",
+          "value": 320.0
+        }
+      ]
+    },
+    "end",
+    "status",
+    "undo",
+    "status"
+  ]
+}

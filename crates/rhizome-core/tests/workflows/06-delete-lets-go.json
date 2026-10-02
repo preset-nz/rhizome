@@ -1,0 +1,122 @@
+{
+  "title": "Delete a used image and its mask",
+  "why": "Removing nodes drops them from groups, orders and bindings, each as its own entry. A reference to them stays, unresolved, and the next load reports it.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "Build",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/images",
+            "type": "image",
+            "name": "sky"
+          },
+          {
+            "op": "add",
+            "parent": "/images/sky",
+            "type": "blur",
+            "name": "blur"
+          },
+          {
+            "op": "add",
+            "parent": "/images",
+            "type": "image",
+            "name": "sea"
+          },
+          {
+            "op": "add",
+            "parent": "/images",
+            "type": "group",
+            "name": "fav"
+          },
+          {
+            "op": "add",
+            "parent": "/masks",
+            "type": "mask",
+            "name": "vignette"
+          },
+          {
+            "op": "add",
+            "parent": "/renders",
+            "type": "render",
+            "name": "final"
+          },
+          {
+            "op": "set",
+            "at": "/images/sky",
+            "key": "opacity",
+            "value": 0.75
+          },
+          {
+            "op": "set",
+            "at": "/images/sky/blur",
+            "key": "radius",
+            "value": 12.0
+          },
+          {
+            "op": "bind",
+            "target": "/images/sky",
+            "on": {
+              "slot": "mask"
+            },
+            "source": "/masks/vignette"
+          },
+          {
+            "op": "bind",
+            "target": "/images/sea",
+            "on": {
+              "slot": "mask"
+            },
+            "source": "/masks/vignette"
+          },
+          {
+            "op": "join",
+            "group": "/images/fav",
+            "members": [
+              "/images/sky"
+            ]
+          },
+          {
+            "op": "set_order",
+            "owner": "/images",
+            "name": "draw",
+            "ids": [
+              "/images/sky",
+              "/images/sea"
+            ]
+          },
+          {
+            "op": "set_ref",
+            "at": "/renders/final",
+            "key": "input",
+            "ref": {
+              "node": "000000000000000000000000ZF"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Delete",
+        "ops": [
+          {
+            "op": "remove",
+            "at": "/images/sky"
+          },
+          {
+            "op": "remove",
+            "at": "/masks/vignette"
+          }
+        ]
+      }
+    },
+    "save",
+    "reopen",
+    "file"
+  ]
+}

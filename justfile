@@ -23,6 +23,11 @@ acid:
 workflows:
     cargo test --test core_workflows
 
+# Run the seeded random-Op invariant loop
+[group('quality')]
+invariants:
+    cargo test --test invariants -- --nocapture
+
 # Regenerate golden files. Read every changed golden before committing
 [group('quality')]
 bless:

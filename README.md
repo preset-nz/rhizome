@@ -2,7 +2,17 @@
 
 The shared node API and per-app object models for the preset.nz desktop suite. A network of nodes with no fixed centre.
 
-**Status: planning.** Nothing is scaffolded yet. The first slice is `rhizome-core` (Rust); `rhizome-wasm` and the generated TypeScript package wait for a second consumer.
+**Status: first slice built.** `crates/rhizome-core` holds the registry, the tree, edits with undo, diff, the file format, opaque nodes and copy/paste. `rhizome-wasm` and the generated TypeScript package wait for a second consumer.
+
+## Tests
+
+`just check` runs fmt, clippy and every suite.
+
+- **Acid** (`tests/acid.rs`, `just acid`): builds one of everything through the Rust verbs and again through `Op`s, then operates every verb, refusal and cascade. The built file and the changeset log are goldens in `tests/golden/`.
+- **Core workflows** (`tests/core_workflows.rs`, `just workflows`): twelve workflows a person does, stored as data in `tests/workflows/*.json` and driven only through the stable surface (`Op` JSON, the file format, edits, gestures, undo). Each has a transcript pinned beside it. A change to the SDK that alters a workflow fails here.
+- **Invariants** (`tests/invariants.rs`, `just invariants`): seeded random `Op`s, checking after every step that nothing dangles, values fit their schema, a refused edit leaves no trace, a save reloads identically and undo walks back through every state.
+
+`just bless` rewrites the goldens. Read every changed line before committing it.
 
 ## Design docs
 

@@ -1,0 +1,83 @@
+{
+  "title": "Undo back to the saved point",
+  "why": "Unsaved is derived from the saved snapshot, never a flag, so undoing back to it is clean.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "New Patch",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "crush",
+            "name": "crush"
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/granular",
+            "key": "grain.size",
+            "value": 180.0
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 4
+          },
+          {
+            "op": "set_ref",
+            "at": "/patches/drone",
+            "key": "material",
+            "ref": {
+              "file": "kalimba.wav"
+            }
+          },
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone/crush",
+              "/patches/drone/granular"
+            ]
+          }
+        ]
+      }
+    },
+    "status",
+    "save",
+    {
+      "edit": {
+        "label": "Louder",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone",
+            "key": "amp.gain",
+            "value": 0.5
+          }
+        ]
+      }
+    },
+    "status",
+    "undo",
+    "status",
+    "redo",
+    "status"
+  ]
+}

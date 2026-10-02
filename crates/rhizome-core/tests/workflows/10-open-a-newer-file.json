@@ -1,0 +1,37 @@
+{
+  "title": "Open a file from a newer version",
+  "why": "Nodes of unknown types and categories load as they are, refuse every change, and are saved back byte for byte.",
+  "steps": [
+    {
+      "open": "10-open-a-newer-file.rhizome"
+    },
+    "status",
+    {
+      "edit": {
+        "label": "Bad Shimmer",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/shimmer",
+            "key": "shimmer.mix",
+            "value": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Louder",
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone",
+            "key": "amp.gain",
+            "value": 0.9
+          }
+        ]
+      }
+    },
+    "file"
+  ]
+}

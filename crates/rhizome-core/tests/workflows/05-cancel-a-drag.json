@@ -1,0 +1,53 @@
+{
+  "title": "Cancel a drag with Escape",
+  "why": "Cancel puts back everything the gesture did, including a node it added, and leaves no undo step.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "Build",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          }
+        ]
+      }
+    },
+    {
+      "begin": "Drag"
+    },
+    {
+      "apply": [
+        {
+          "op": "set",
+          "at": "/patches/drone/granular",
+          "key": "grain.mix",
+          "value": 0.2
+        }
+      ]
+    },
+    {
+      "apply": [
+        {
+          "op": "add",
+          "parent": "/patches/drone",
+          "type": "crush",
+          "name": "crush"
+        }
+      ]
+    },
+    "cancel",
+    "status"
+  ]
+}

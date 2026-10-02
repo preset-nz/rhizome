@@ -157,6 +157,9 @@ impl Edit<'_> {
             Op::Set { at, key, value } => {
                 let node = self.at(at).ok_or_else(|| Error::NotFound(at.clone()))?;
                 let path = node.path().to_string();
+                if node.is_opaque() {
+                    return Err(Error::Opaque(path));
+                }
                 let spec = node.node_type().and_then(|t| t.spec(key)).ok_or_else(|| {
                     Error::UnknownKey {
                         path: path.clone(),
@@ -190,6 +193,9 @@ impl Edit<'_> {
                     .at(source)
                     .ok_or_else(|| Error::NotFound(source.clone()))?;
                 let path = src.path().to_string();
+                if src.is_opaque() {
+                    return Err(Error::Opaque(path));
+                }
                 let specs = src
                     .node_type()
                     .and_then(|t| t.binding_values())

@@ -1,0 +1,21 @@
+# Undo back to the saved point
+> new a
+> edit New Patch
+  /patches/drone  added patch
+  /patches/drone/crush  added crush
+  /patches/drone/granular  added granular
+> status
+  seq 1, unsaved, 1 undo steps, undo: New Patch, redo: -
+> save
+> edit Louder
+  /patches/drone  amp.gain  unset → 0.5
+> status
+  seq 2, unsaved, 2 undo steps, undo: Louder, redo: -
+> undo
+  /patches/drone  amp.gain  0.5 → unset
+> status
+  seq 3, saved, 1 undo steps, undo: New Patch, redo: Louder
+> redo
+  /patches/drone  amp.gain  unset → 0.5
+> status
+  seq 4, unsaved, 2 undo steps, undo: Louder, redo: -

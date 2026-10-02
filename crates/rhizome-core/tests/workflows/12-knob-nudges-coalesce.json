@@ -1,0 +1,141 @@
+{
+  "title": "Turn a knob",
+  "why": "Input with no begin and end coalesces: quick nudges share one undo step, a pause starts another.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "New Patch",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "crush",
+            "name": "crush"
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/granular",
+            "key": "grain.size",
+            "value": 180.0
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 4
+          },
+          {
+            "op": "set_ref",
+            "at": "/patches/drone",
+            "key": "material",
+            "ref": {
+              "file": "kalimba.wav"
+            }
+          },
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone/crush",
+              "/patches/drone/granular"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "nudge": {
+        "label": "Nudge Bits",
+        "key": "crush bits",
+        "after_ms": 100,
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "nudge": {
+        "label": "Nudge Bits",
+        "key": "crush bits",
+        "after_ms": 100,
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 6
+          }
+        ]
+      }
+    },
+    {
+      "nudge": {
+        "label": "Nudge Bits",
+        "key": "crush bits",
+        "after_ms": 100,
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 7
+          }
+        ]
+      }
+    },
+    {
+      "nudge": {
+        "label": "Nudge Bits",
+        "key": "crush bits",
+        "after_ms": 100,
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 8
+          }
+        ]
+      }
+    },
+    {
+      "nudge": {
+        "label": "Nudge Bits",
+        "key": "crush bits",
+        "after_ms": 3000,
+        "ops": [
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 12
+          }
+        ]
+      }
+    },
+    "status",
+    "undo",
+    "status"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "title": "Reorder an effect chain",
+  "why": "A reorder is one entry on the owner, never a run of moves.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "New Patch",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/patches",
+            "type": "patch",
+            "name": "drone"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "granular",
+            "name": "granular"
+          },
+          {
+            "op": "add",
+            "parent": "/patches/drone",
+            "type": "crush",
+            "name": "crush"
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/granular",
+            "key": "grain.size",
+            "value": 180.0
+          },
+          {
+            "op": "set",
+            "at": "/patches/drone/crush",
+            "key": "crush.bits",
+            "value": 4
+          },
+          {
+            "op": "set_ref",
+            "at": "/patches/drone",
+            "key": "material",
+            "ref": {
+              "file": "kalimba.wav"
+            }
+          },
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone/crush",
+              "/patches/drone/granular"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Swap",
+        "ops": [
+          {
+            "op": "set_order",
+            "owner": "/patches/drone",
+            "name": "chain",
+            "ids": [
+              "/patches/drone/granular",
+              "/patches/drone/crush"
+            ]
+          }
+        ]
+      }
+    },
+    "undo",
+    "status"
+  ]
+}

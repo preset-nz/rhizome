@@ -1,0 +1,109 @@
+{
+  "title": "Duplicate an image",
+  "why": "A copy gets new ids, its own children, the original's groups and mask, and a place straight after the original in the draw order.",
+  "steps": [
+    {
+      "new": "a"
+    },
+    {
+      "edit": {
+        "label": "Build",
+        "ops": [
+          {
+            "op": "add",
+            "parent": "/images",
+            "type": "image",
+            "name": "sky"
+          },
+          {
+            "op": "add",
+            "parent": "/images/sky",
+            "type": "blur",
+            "name": "blur"
+          },
+          {
+            "op": "add",
+            "parent": "/images",
+            "type": "image",
+            "name": "sea"
+          },
+          {
+            "op": "add",
+            "parent": "/images",
+            "type": "group",
+            "name": "fav"
+          },
+          {
+            "op": "add",
+            "parent": "/masks",
+            "type": "mask",
+            "name": "vignette"
+          },
+          {
+            "op": "add",
+            "parent": "/renders",
+            "type": "render",
+            "name": "final"
+          },
+          {
+            "op": "set",
+            "at": "/images/sky",
+            "key": "opacity",
+            "value": 0.75
+          },
+          {
+            "op": "set",
+            "at": "/images/sky/blur",
+            "key": "radius",
+            "value": 12.0
+          },
+          {
+            "op": "bind",
+            "target": "/images/sky",
+            "on": {
+              "slot": "mask"
+            },
+            "source": "/masks/vignette"
+          },
+          {
+            "op": "bind",
+            "target": "/images/sea",
+            "on": {
+              "slot": "mask"
+            },
+            "source": "/masks/vignette"
+          },
+          {
+            "op": "join",
+            "group": "/images/fav",
+            "members": [
+              "/images/sky"
+            ]
+          },
+          {
+            "op": "set_order",
+            "owner": "/images",
+            "name": "draw",
+            "ids": [
+              "/images/sky",
+              "/images/sea"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "edit": {
+        "label": "Duplicate",
+        "ops": [
+          {
+            "op": "copy",
+            "at": "/images/sky",
+            "parent": "/images"
+          }
+        ]
+      }
+    },
+    "file"
+  ]
+}
