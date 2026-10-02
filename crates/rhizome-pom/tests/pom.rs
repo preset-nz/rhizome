@@ -975,7 +975,7 @@ impl ObjectModel for Stack {
     type Projection = ();
     type Context = Catalogue;
 
-    fn new_document(tx: &mut Edit<'_>, _: &Catalogue) -> rhizome_core::Result<()> {
+    fn seed(tx: &mut Edit<'_>, _: &Catalogue) -> rhizome_core::Result<()> {
         tx.add("/layers", "layer", "background").map(drop)
     }
 

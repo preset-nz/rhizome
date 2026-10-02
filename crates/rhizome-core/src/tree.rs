@@ -93,15 +93,15 @@ impl Tree {
         Tree::from_state(registry, state, ids)
     }
 
-    /// A new tree with what every document of its kind starts with, made by `start`: no undo
+    /// A new tree with what every document of its kind starts with, made by `seed`: no undo
     /// step, no commit, and nothing unsaved. What a new document is born with can't be undone.
-    pub fn starting_with(
+    pub fn seeded(
         registry: Arc<Registry>,
         ids: IdSource,
-        start: impl FnOnce(&mut Edit<'_>) -> Result<()>,
+        seed: impl FnOnce(&mut Edit<'_>) -> Result<()>,
     ) -> Result<Tree> {
         let mut tree = Tree::with_ids(registry, ids);
-        tree.run(start)?;
+        tree.run(seed)?;
         tree.saved = tree.state.clone();
         Ok(tree)
     }

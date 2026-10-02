@@ -34,7 +34,7 @@ pub trait ObjectModel: Sized + 'static {
 
     /// What every new document starts with, such as a document-settings node. Runs once in
     /// `Document::new`, outside history: it can't be undone, and a new document isn't unsaved.
-    fn new_document(_tx: &mut Edit<'_>, _cx: &Self::Context) -> rhizome_core::Result<()> {
+    fn seed(_tx: &mut Edit<'_>, _cx: &Self::Context) -> rhizome_core::Result<()> {
         Ok(())
     }
 
