@@ -5,8 +5,8 @@
 //! code, user presets saved in the document (they travel with the file), "which preset is
 //! current", applying one, and making a new node from one.
 //!
-//! Presets are copied into a node, never followed. A shared choice that nodes look up
-//! through their ancestors is a [theme](crate::Themes).
+//! Presets are copied into a node, never followed. A shared choice that nodes follow (a
+//! theme) is the app's to build from rhizome's primitives, not POM's.
 
 use std::collections::BTreeMap;
 use std::marker::PhantomData;

@@ -2,8 +2,8 @@
 //!
 //! - **Synth**: values and bindings on nodes, user presets of one node's sound that skip its
 //!   on/off switch, a compiled projection.
-//! - **Atlas**: a document of maps with anchored, singleton layers (policy), a built-in
-//!   palette followed by cascade, a computed aspect preset, domain verbs.
+//! - **Atlas**: a document of maps with anchored, singleton layers (policy), a palette theme
+//!   built from rhizome's primitives (decision 39), a computed aspect preset, domain verbs.
 
 use rhizome_core::{
     Changeset, Edit, IdSource, Key, NodeId, NodeType, On, Origin, Tree, Value, ValueSpec,
@@ -227,11 +227,9 @@ struct Atlas;
 const SIZE: Key<[f64; 2]> = Key::new("map.size");
 const SEED: Key<i64> = Key::new("terrain.seed");
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Palette {
-    fill: String,
-    line: String,
-}
+const FILL: &str = "palette.fill";
+const LINE: &str = "palette.line";
+const PALETTE: &str = "palette";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct Aspect {
@@ -269,11 +267,24 @@ impl ObjectModel for Atlas {
 
     fn kinds(k: &mut Kinds) {
         k.category("campaigns", Origin::Loaded);
-        k.kind(NodeType::new("campaign").in_categories(&["campaigns"]));
+        k.category("themes", Origin::Loaded);
+        // a theme is a node with values and no op; followers hold a reference to it
+        k.kind(
+            NodeType::new(PALETTE)
+                .in_categories(&["themes"])
+                .text(FILL, "#000000")
+                .text(LINE, "#ffffff"),
+        );
+        k.kind(
+            NodeType::new("campaign")
+                .in_categories(&["campaigns"])
+                .reference(PALETTE),
+        );
         k.kind(
             NodeType::new("map")
                 .in_categories(&["campaigns"])
-                .vec2(SIZE, [800.0, 600.0]),
+                .vec2(SIZE, [800.0, 600.0])
+                .reference(PALETTE),
         )
         .presets(AspectKind)
         .catalogue([
@@ -302,21 +313,6 @@ impl ObjectModel for Atlas {
         )
         .presets(NodeValues::new())
         .catalogue([("rocky", seeded(7)), ("plains", seeded(42))]);
-    }
-
-    fn themes(t: &mut Themes) {
-        let pal = |fill: &str, line: &str| Palette {
-            fill: fill.into(),
-            line: line.into(),
-        };
-        t.theme("palette")
-            .catalogue([
-                ("doom-forge", pal("#3a1c12", "#f0a040")),
-                ("space-opera", pal("#0b1030", "#80a0ff")),
-                ("hostile-waters", pal("#0a2a30", "#40c0c0")),
-            ])
-            .fallback("doom-forge")
-            .followed_by(&["campaign", "map"]);
     }
 
     fn project(tree: &Tree, into: &mut Vec<String>, _changes: Option<&Changeset>) {
@@ -433,76 +429,87 @@ fn atlas_policy_holds_however_the_tree_is_edited() {
     assert!(d.projection().is_empty());
 }
 
+/// The app's theme op: a node's palette is its own choice, else its nearest ancestor's.
+/// App code over rhizome's primitives; POM has no themes (decision 39).
+fn palette_of(d: &Document<Atlas>, node: NodeId) -> Option<(NodeId, String)> {
+    let mut n = d.tree().get(node);
+    while let Some(here) = n {
+        if let Some(p) = here.resolve(PALETTE) {
+            let Some(Value::Text(line)) = p.value(LINE) else {
+                unreachable!()
+            };
+            return Some((here.id(), line));
+        }
+        n = here.parent();
+    }
+    None
+}
+
 #[test]
-fn atlas_palette_theme_follows_by_cascade() {
+fn atlas_palette_theme_is_built_from_primitives() {
     let (mut d, campaign, map) = atlas();
     let hills = d.tree().at("/campaigns/realm/north/hills").unwrap().id();
-    let palette = |d: &Document<Atlas>, n| d.resolve_theme("palette", n).unwrap().unwrap();
+    assert_eq!(palette_of(&d, hills), None, "no theme until one is chosen");
 
-    let r = palette(&d, hills);
-    assert_eq!(
-        (r.follower, r.name.as_str()),
-        (None, "doom-forge"),
-        "the fallback"
-    );
-    assert_eq!(r.state::<Palette>().unwrap().line, "#f0a040");
-
-    d.follow_theme("palette", campaign, Some("space-opera"))
+    let ((opera, waters), _) = d
+        .edit("Add Palettes", |tx| {
+            let o = tx.add("/themes", PALETTE, "space-opera")?;
+            tx.set_value(o, LINE, Value::Text("#80a0ff".into()))?;
+            let w = tx.add("/themes", PALETTE, "hostile-waters")?;
+            tx.set_value(w, LINE, Value::Text("#40c0c0".into()))?;
+            Ok((o, w))
+        })
         .unwrap();
-    let r = palette(&d, hills);
-    assert_eq!(
-        (r.follower, r.name.as_str()),
-        (Some(campaign), "space-opera"),
-        "from the campaign"
-    );
-
-    d.follow_theme("palette", map, Some("hostile-waters"))
+    let follow = |d: &mut Document<Atlas>, node, theme: Option<NodeId>| {
+        d.edit("Choose Theme", |tx| match theme {
+            Some(t) => tx.set_ref(node, PALETTE, rhizome_core::Ref::here(t)),
+            None => tx.clear_ref(node, PALETTE),
+        })
         .unwrap();
+    };
+
+    follow(&mut d, campaign, Some(opera));
+    assert_eq!(palette_of(&d, hills), Some((campaign, "#80a0ff".into())));
+    follow(&mut d, map, Some(waters));
     assert_eq!(
-        palette(&d, hills).follower,
-        Some(map),
+        palette_of(&d, hills),
+        Some((map, "#40c0c0".into())),
         "the map overrides the campaign"
     );
-
-    d.follow_theme("palette", map, None).unwrap();
+    follow(&mut d, map, None);
     assert_eq!(
-        palette(&d, hills).follower,
+        palette_of(&d, hills).map(|p| p.0),
         Some(campaign),
         "unfollowing falls back to the campaign"
     );
 
-    // the choice is document data: it saves, and readably
-    let text = d.tree().serialise();
-    assert!(
-        text.contains("\"file\": \"theme:palette/space-opera\""),
-        "{text}"
-    );
+    // a followed theme is read, never copied: edit it and every follower sees the change
+    d.edit("Edit Palette", |tx| {
+        tx.set_value(opera, LINE, Value::Text("#ffffff".into()))
+    })
+    .unwrap();
+    assert_eq!(palette_of(&d, hills), Some((campaign, "#ffffff".into())));
+
+    // themes and choices are document data: they save, reopen, and undo like anything else
     let store = MemoryStore::default();
-    store.put("/r.atlas", &text);
+    store.put("/r.atlas", &d.tree().serialise());
     let (again, _) = Document::<Atlas>::open(store, "/r.atlas").unwrap();
     assert_eq!(
-        again
-            .resolve_theme("palette", hills)
-            .unwrap()
-            .unwrap()
-            .follower,
-        Some(campaign)
+        palette_of(&again, hills),
+        Some((campaign, "#ffffff".into()))
     );
+    d.undo().unwrap();
+    assert_eq!(palette_of(&d, hills), Some((campaign, "#80a0ff".into())));
 
-    assert_eq!(
-        d.theme_names("palette").unwrap(),
-        ["doom-forge", "space-opera", "hostile-waters"]
-    );
-    assert!(d.follow_theme("palette", campaign, Some("nope")).is_err());
+    // a terrain has no palette key, so it can't follow one
     assert!(
-        d.follow_theme("palette", hills, Some("space-opera"))
-            .is_err(),
-        "a terrain can't follow"
+        d.edit("Choose Theme", |tx| tx.set_ref(
+            hills,
+            PALETTE,
+            rhizome_core::Ref::here(opera)
+        ))
+        .is_err()
     );
-    assert!(matches!(
-        d.resolve_theme("nope", hills),
-        Err(Error::UnknownTheme(_))
-    ));
 }
 
 #[test]
@@ -711,15 +718,6 @@ fn commands_every_app_gets() {
             .get(SEED),
         Some(7)
     );
-    let Outcome::Committed(_) = d
-        .run(
-            "theme.follow",
-            &json!({"kind": "palette", "at": "/campaigns/realm", "theme": "space-opera"}),
-        )
-        .unwrap()
-    else {
-        panic!()
-    };
     assert!(matches!(
         d.run("nope", &json!({})),
         Err(Error::UnknownCommand(_))
@@ -733,7 +731,7 @@ fn commands_every_app_gets() {
         .into_iter()
         .map(|(id, _, _)| id)
         .collect();
-    assert!(ids.contains(&"file.save".to_string()) && ids.contains(&"theme.follow".to_string()));
+    assert!(ids.contains(&"file.save".to_string()) && ids.contains(&"preset.apply".to_string()));
 }
 
 // ---------------------------------------------------------------- bad models
@@ -748,28 +746,6 @@ impl ObjectModel for TakesPresets {
     }
 }
 
-struct BadFallback;
-impl ObjectModel for BadFallback {
-    const NAME: &'static str = "x";
-    const EXTENSION: &'static str = "x";
-    type Projection = ();
-    fn kinds(_: &mut Kinds) {}
-    fn themes(t: &mut Themes) {
-        t.theme::<Palette>("palette").fallback("nope");
-    }
-}
-
-struct BadFollower;
-impl ObjectModel for BadFollower {
-    const NAME: &'static str = "x";
-    const EXTENSION: &'static str = "x";
-    type Projection = ();
-    fn kinds(_: &mut Kinds) {}
-    fn themes(t: &mut Themes) {
-        t.theme::<Palette>("palette").followed_by(&["ghost"]);
-    }
-}
-
 #[test]
 fn a_model_that_cant_be_built_says_why() {
     let e = Document::<TakesPresets>::new(MemoryStore::default())
@@ -777,16 +753,6 @@ fn a_model_that_cant_be_built_says_why() {
         .unwrap()
         .to_string();
     assert!(e.contains("presets"), "POM holds the presets category: {e}");
-    let e = Document::<BadFallback>::new(MemoryStore::default())
-        .err()
-        .unwrap()
-        .to_string();
-    assert!(e.contains("fallback"), "{e}");
-    let e = Document::<BadFollower>::new(MemoryStore::default())
-        .err()
-        .unwrap()
-        .to_string();
-    assert!(e.contains("ghost"), "{e}");
 }
 
 #[test]

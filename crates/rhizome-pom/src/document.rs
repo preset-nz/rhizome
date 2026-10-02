@@ -10,7 +10,6 @@ use crate::command::Outcome;
 use crate::error::{Error, Result};
 use crate::model::{Model, ObjectModel, Policy, breaches, repin};
 use crate::presets::{PresetRef, Report};
-use crate::themes::ResolvedTheme;
 
 /// Where a document's text lives. Single files today; a bundle folder and a database later.
 pub trait Store: Send {
@@ -384,32 +383,6 @@ impl<M: ObjectModel> Document<M> {
         self.edit(&label, |tx| {
             model.presets.add_from(tx, parent, type_name, name, preset)
         })
-    }
-
-    // ---- themes: shared choices, followed by cascade ----
-
-    pub fn theme_names(&self, kind: &str) -> Result<Vec<String>> {
-        self.model.themes.names(kind)
-    }
-
-    /// What `node` resolves to: its own choice, else the nearest ancestor's, else the fallback.
-    pub fn resolve_theme(&self, kind: &str, node: NodeId) -> Result<Option<ResolvedTheme>> {
-        self.model.themes.resolve(&self.tree, kind, node)
-    }
-
-    /// Makes `node` follow a theme (`None` to stop). Its descendants resolve through it.
-    pub fn follow_theme(
-        &mut self,
-        kind: &str,
-        node: NodeId,
-        name: Option<&str>,
-    ) -> Result<Option<Commit>> {
-        let model = self.model.clone();
-        Ok(self
-            .edit("Choose Theme", |tx| {
-                model.themes.follow(tx, kind, node, name)
-            })?
-            .1)
     }
 
     // ---- commands ----

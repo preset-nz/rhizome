@@ -6,13 +6,12 @@ use rhizome_core::{
 };
 
 use crate::command::Commands;
-use crate::error::{Error, Result};
+use crate::error::Result;
 use std::marker::PhantomData;
 
 use crate::presets::{
     Aggregate, KindPresets, KindPresetsRef, PRESET, PRESETS, Presets, preset_node_type,
 };
-use crate::themes::{Themes, theme_key};
 
 /// The base every app's object model is built on. Implement it with only your parts;
 /// [`Document`](crate::Document) supplies the rest.
@@ -28,9 +27,6 @@ pub trait ObjectModel: Sized + 'static {
 
     /// The app's categories and kinds: node types plus their policy and presets.
     fn kinds(k: &mut Kinds);
-
-    /// The app's themes: shared choices nodes follow by cascade. None by default.
-    fn themes(_t: &mut Themes) {}
 
     /// The app's own commands, next to the built-in ones.
     fn commands(_c: &mut Commands<Self>) {}
@@ -142,10 +138,6 @@ impl Kinds {
         });
         KindRef(self.kinds.last_mut().expect("just pushed"))
     }
-
-    fn find_mut(&mut self, name: &str) -> Option<&mut Kind> {
-        self.kinds.iter_mut().find(|k| k.node_type.name() == name)
-    }
 }
 
 /// Everything POM built from an [`ObjectModel`]: the registry, the policies, the preset
@@ -154,7 +146,6 @@ pub(crate) struct Model<M: ObjectModel> {
     pub registry: Arc<Registry>,
     pub policies: BTreeMap<String, Policy>,
     pub presets: Presets,
-    pub themes: Themes,
     pub commands: Commands<M>,
 }
 
@@ -162,21 +153,6 @@ impl<M: ObjectModel> Model<M> {
     pub fn build() -> Result<Arc<Model<M>>> {
         let mut kinds = Kinds::default();
         M::kinds(&mut kinds);
-        let mut themes = Themes::default();
-        M::themes(&mut themes);
-        themes.validate()?;
-
-        // a kind that follows a theme gets a reference key for it
-        for (theme, followers) in themes.followers() {
-            for t in followers {
-                let k = kinds.find_mut(&t).ok_or_else(|| {
-                    Error::Model(format!(
-                        "theme `{theme}` is followed by undeclared kind `{t}`"
-                    ))
-                })?;
-                k.node_type = k.node_type.clone().reference(theme_key(&theme));
-            }
-        }
 
         // POM's own category and type first, so an app can't take their names
         let mut b = Registry::builder();
@@ -208,7 +184,6 @@ impl<M: ObjectModel> Model<M> {
             registry,
             policies,
             presets,
-            themes,
             commands,
         }))
     }

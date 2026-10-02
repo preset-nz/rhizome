@@ -7,8 +7,6 @@ pub enum Error {
     Io { path: String, message: String },
     #[error("the document has no file yet; save it as something first")]
     NoPath,
-    #[error("no theme `{0}`")]
-    UnknownTheme(String),
     #[error("{0}")]
     Preset(String),
     #[error("no command `{0}`")]
@@ -17,8 +15,6 @@ pub enum Error {
     Disabled(String),
     #[error("command payload: {0}")]
     Payload(String),
-    #[error("object model: {0}")]
-    Model(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

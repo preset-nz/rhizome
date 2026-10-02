@@ -78,14 +78,6 @@ struct AddArgs {
     preset: Option<PresetRef>,
 }
 
-#[derive(serde::Deserialize)]
-struct ThemeArgs {
-    kind: String,
-    at: String,
-    #[serde(default)]
-    theme: Option<String>,
-}
-
 fn node_of<M: ObjectModel>(d: &Document<M>, at: &str) -> Result<rhizome_core::NodeId> {
     d.tree()
         .at(at)
@@ -327,20 +319,6 @@ impl<M: ObjectModel> Commands<M> {
                 let a: PresetArgs = payload(p)?;
                 let node = node_of(d, &a.at)?;
                 Ok(d.delete_preset(node, &need(a.label, "label")?)?.into())
-            },
-        );
-        c.add(
-            "theme.follow",
-            fixed("Choose Theme"),
-            |d, p| {
-                payload::<ThemeArgs>(p).is_ok_and(|a| {
-                    d.tree().at(a.at.as_str()).is_some() && d.theme_names(&a.kind).is_ok()
-                })
-            },
-            |d, p| {
-                let a: ThemeArgs = payload(p)?;
-                let node = node_of(d, &a.at)?;
-                Ok(d.follow_theme(&a.kind, node, a.theme.as_deref())?.into())
             },
         );
         c

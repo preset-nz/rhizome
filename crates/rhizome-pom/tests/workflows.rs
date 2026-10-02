@@ -19,11 +19,6 @@ struct Gazetteer;
 const SIZE: Key<[f64; 2]> = Key::new("map.size");
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Palette {
-    fill: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct Aspect {
     ratio: f64,
 }
@@ -123,18 +118,6 @@ impl ObjectModel for Gazetteer {
         )]);
     }
 
-    fn themes(t: &mut Themes) {
-        let pal = |f: &str| Palette { fill: f.into() };
-        t.theme("palette")
-            .catalogue([
-                ("ember", pal("#3a1c12")),
-                ("night", pal("#0b1030")),
-                ("tide", pal("#0a2a30")),
-            ])
-            .fallback("ember")
-            .followed_by(&["realm", "map"]);
-    }
-
     fn commands(c: &mut Commands<Self>) {
         let exists = |d: &Document<Gazetteer>, p: &Json| {
             payload::<AddArgs>(p).is_ok_and(|a| d.tree().at(a.to.as_str()).is_some())
@@ -183,13 +166,6 @@ struct At {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct ThemeQuery {
-    kind: String,
-    at: String,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
 struct Menu {
     payload: Json,
     ids: Vec<String>,
@@ -213,8 +189,6 @@ enum Step {
     /// A node's presets: its kind's built-in ones, then the user's.
     Names(At),
     Current(At),
-    /// What a node's theme resolves to, through its ancestors.
-    Resolve(ThemeQuery),
     SaveAs(String),
     Reopen,
 }
@@ -334,21 +308,6 @@ impl Session {
                     vec![c.as_ref().map_or("(none)".into(), preset)],
                 )
             }
-            Step::Resolve(q) => {
-                let n = self.node(&q.at);
-                let r = self.doc().resolve_theme(&q.kind, n).unwrap();
-                let line = match r {
-                    None => "(nothing)".to_string(),
-                    Some(r) => {
-                        let from = r
-                            .follower
-                            .map(|f| self.doc().tree().get(f).unwrap().path().to_string())
-                            .unwrap_or_else(|| "the fallback".into());
-                        format!("{} from {from}  {}", r.name, r.state)
-                    }
-                };
-                (format!("resolve {} at {}", q.kind, q.at), vec![line])
-            }
             Step::SaveAs(path) => {
                 let r = self.doc().save_as(path);
                 (
@@ -434,7 +393,6 @@ fn every_workflow_has_a_test() {
         [
             "01-new-map-with-anchors",
             "02-copy-a-layer-to-another-map",
-            "03-palette-by-cascade",
             "04-user-presets",
             "05-aspect-preset",
             "06-policy-refusals",
@@ -462,17 +420,6 @@ fn copy_a_layer_to_another_map() {
     assert!(
         paste.contains(&"/realms/west/south  order draw  [paper, grid] → [paper, hills, grid]"),
         "{paste:?}"
-    );
-}
-
-#[test]
-fn palette_by_cascade() {
-    let o = run("03-palette-by-cascade");
-    assert!(o.iter().filter(|(s, _)| s.starts_with("resolve")).count() >= 4);
-    assert_eq!(
-        o.last().unwrap().1[0],
-        "night from /realms/west  {\"fill\":\"#0b1030\"}",
-        "the choice survives a save"
     );
 }
 

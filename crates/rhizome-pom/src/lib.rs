@@ -13,7 +13,6 @@ mod document;
 mod error;
 mod model;
 mod presets;
-mod themes;
 
 pub use command::{Command, Commands, Outcome, payload};
 pub use document::{Document, FileStore, MemoryStore, Store};
@@ -23,4 +22,3 @@ pub use presets::{
     Aggregate, BindingState, KindPresetsRef, NodeValues, NodeValuesState, PRESET, PRESETS,
     PresetRef, Report,
 };
-pub use themes::{ResolvedTheme, ThemeRef, Themes, theme_key};
