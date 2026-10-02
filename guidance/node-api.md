@@ -27,6 +27,8 @@ Houdini's contexts share one node model and one API (`hou`), and each context br
 | TOPs / PDG (tasks producing cached results) | Strata | Images, plugin artifacts, collections |
 | — (a 2D hex canvas; no direct Houdini analogue) | Map & Territory | Campaigns, maps, layers, cells. Adopts Rhizome when available (decided 2026-09-17, [`../projects/map-and-territory/README.md`](../projects/map-and-territory/README.md) decision 17) |
 
+**rhizome is unaware of the apps** (decision 35). It deals in mechanics only: paths, node types it is told about, values, references, groups, bindings, orders, edits, undo, diff, the file format. Each app's **object model** holds its business logic and lives in the app's repo; its design lives in `projects/<app>/design/object-model.md`. The table above is why the split exists, not something rhizome knows.
+
 So there are two levels:
 
 - **The node API** is generic, shared, and one implementation. It knows paths, nodes, categories, groups, references, values, bindings, order, search, diff and dirty. It never knows what a patch or a mesh is.
@@ -52,7 +54,7 @@ The object-model name is Georg's choice, after Houdini's HOM. In Houdini, HOM al
 12. **Rust implementation. Python not now.**
 13. **Category and group keep those names.** They are generic enough.
 14. **Settings files are TOML.** See [`native-apps.md`](native-apps.md) rule 5.
-15. **First consumer: Shard's multi-patch interface.**
+15. **First consumer: Shard's multi-patch interface.** Since decision 35, rhizome has no consumer it plans for; adopting is each app's epic.
 16. **No in-app scripting yet.** Rust object-model code and CLIs only, until a real script need shows up.
 17. **Smart-group queries are fixed predicates.** No query language to start.
 18. **Cross-file index: decided later.** Search follows references from the open file only.
@@ -78,6 +80,8 @@ The object-model name is Georg's choice, after Houdini's HOM. In Houdini, HOM al
 32. **One binding mechanism.** A bindable source type declares the values a binding carries (a depth, or none). A target is a slot or a value key.
 33. **A write from another source during an open gesture joins it.** Same undo step; `cancel` reverts it too.
 34. **A copy in the same file joins the original's groups.**
+
+35. **rhizome is unaware of the apps.** *"I want rhizome be unaware of the apps. Only deals with the mechanics, references, diff, etc. Each app has their own … that defines the business logic."* (Georg, 2026-10-02.) rhizome's code, tests and docs name no app and hold no domain rule. Each app's object model owns its node types, rules (`check`s), domain verbs and projections, in the app's repo, documented in `projects/<app>/design/object-model.md`. App-specific content that was in this doc moved there on 2026-10-02. Decisions 15, 23, 26 and 27 are kept below as history; 23, 26 and 27 are Shard's and listed in [Shard's object model](../projects/shard/design/object-model.md).
 
 Decisions 31 to 34 were Claude's leans, taken by Georg on 2026-10-02 (*"go with your leans, unless they are a one-way door"*). None is: there are no files people keep yet. The near-one-way doors are the file format and the id encoding, so the file carries a format version from day one.
 
@@ -125,7 +129,7 @@ A node can belong to many groups. A group's contents are put there explicitly.
 
 ### Bindings — defined once, used many times
 
-An envelope in the envelope category binds to many nodes, and a mask in the mask category binds to many nodes or groups. A binding is serialised as a value. Oblique's `Modifier.maskId` → `Scene.maskRefs` is the working precedent. Shard's planned LFO links are bindings too, but from one *value key* to a modulator node, and carrying a depth. The binding model needs both of those; see "Learned from Shard".
+An envelope in the envelope category binds to many nodes, and a mask in the mask category binds to many nodes or groups. A binding is serialised as a value. Oblique's `Modifier.maskId` → `Scene.maskRefs` is the working precedent. A binding can also attach to a *value key* and carry values of its own, such as a depth (decision 32). One mechanism covers both.
 
 ### Order and time
 
@@ -168,7 +172,7 @@ Nothing the engine writes back (meters, modulated values, results, search result
 
 **Snapshot-based, in the Rust core, over the whole tree.** The diff is for display and for an index, not the undo mechanism. Both precedents are snapshots: Oblique holds `Scene` references, Fault clones the mesh per op with a cap of 64. Inverse changesets need an exact inverse for every operation including order and membership, for a memory saving that never shows at these tree sizes. Clone, cap at 50. If cloning ever costs, move to `Arc`-shared nodes; note `im` is MPL-2.0 and fails the licence gate, `rpds` is MIT/Apache.
 
-For Shard, history lives in `src-tauri` around the object model, not the webview. `set_param` is the only UI write today, presets write through the command thread, and MIDI will arrive on the Rust side too; only Rust can tell a hand from a preset from a CC. The consequence: **the tree is the source of truth for values and the `ParamBank` is a compiled projection of it.** Undo restores the tree, recompiles, writes the bank. Modulation never writes the bank or the tree (decision 24 as superseded), so undo needs no filter at all. A drag is one step through explicit begin and end transaction calls from the UI, as Oblique's `history.ts` does.
+Where an app keeps its history (Rust side or webview) is its object model's call. Shard's is in [its object model](../projects/shard/design/object-model.md#undo).
 
 ---
 
@@ -189,7 +193,7 @@ Search is the API's main read path, not a helper bolted on.
 
 **A search can always match a calculated node's recipe. Matching its result requires the result to exist.** When it does not, the search reports the node as stale or missing rather than silently leaving it out, or an incomplete answer looks complete. Houdini's TOPs deal with the same split between a work item's recipe and its cached output.
 
-**Across files:** a search can follow cross-file references (decision 4). This is opt-in, because it opens other files. "What in any file uses this sample?" needs an index of files. **Decided later** (decision 18). For now a search follows references outward from the open file and never consults a global index. Strata is the obvious candidate, but its storage is in question: Georg, 2026-09-13, *"we might need to move strata to sqlite, unless duckdb 2.0 solves the multi-connection issue."* Several apps querying one catalog is exactly the multi-connection case, so settle Strata's storage before making it the suite's index.
+**Across files:** a search can follow cross-file references (decision 4). This is opt-in, because it opens other files. "What in any file uses this sample?" needs an index of files. **Decided later** (decision 18). For now a search follows references outward from the open file and never consults a global index. Where an index lives is not rhizome's call; rhizome only promises the shapes below, so any catalog can consume them. (Strata is one candidate; see its object model.)
 
 **Index-ready now, without designing the index.** Four shapes fixed so a cross-file index is additive later: node ids are globally unique, not per-file counters (Fault's slotmap keys are per-file and would collide); every reverse-index key is `(file, id)` with the file present even for same-file targets, so a per-file index is one shard of the global one; a `Ref` always carries its file, with a canonical spelling for "this file"; every commit produces a `Changeset` with a per-file monotonic sequence number, which is what any index consumes. No storage trait now.
 
@@ -232,12 +236,7 @@ let changes = root.diff(&saved);                   // readable, keyed by path
 
 ### An object model on top
 
-```rust
-let mut shard = ShardObjectModel::new(api::node("/"));
-let m = shard.add_material("~/samples/kalimba.wav");
-let p = shard.add_patch("drone", &m);
-shard.mute_group("lead");
-```
+An app's object model is a declaration of its node types, an extension trait on `Edit` for its domain verbs, `check`s for its rules, and whatever projections it needs (a compiled plan, a render list). It uses only the API. [`rhizome-api.md`](rhizome-api.md) shows the shape; each app's `object-model.md` holds the real one.
 
 ---
 
@@ -265,16 +264,12 @@ Georg's question, 2026-09-13. Three options, cheapest first:
 
 ---
 
-## How each app maps
+## Object models
 
-First readings, to confirm per app when it adopts.
+Each app documents its object model in its own project:
 
-| App | Today | Reading |
-|---|---|---|
-| **Shard** | Flat `.shard`: values by id, a sample path, node presets, LFOs and links. Drift is retired | **First consumer.** Material is loaded; renders and captures are calculated. Patches are inline nodes with effect children in one file (decision 23). The tree becomes the source of truth for values; the bank is compiled from it. See "Shard's audio thread" below |
-| **Oblique** | TS store; array index is draw order; modifiers are records; `maskRefs`; caches outside the store. Its `sceneDiff.ts` already treats a reorder as a real change, agreeing with decision 7 | Categories, child-node modifiers, a stored draw order. Cooks are calculated nodes, which already matches its dirty/cache split. **A migration.** Transport decided then (decision 28) |
-| **Fault** | Rust/WASM core owns mesh, selection and snapshot undo (`mesh-core`, `mesh-ops`, `mesh-wasm`). Selection groups, scatter layers and the modifier stack are planned in `architecture.md`, not built; noise is a destructive op. Corrected 2026-09-13 against the code | Closest in shape. Selection and undo stay app state. The "never compact slots" rule in `document.rs` is the id-stability precedent |
-| **Strata** | DuckDB; Favourites → Shortlist → Collections; plugin artifacts; filters | Images are loaded; plugin artifacts are calculated. Collections are groups, filters are saved searches. Candidate index for cross-file search |
+- [Shard](../projects/shard/design/object-model.md): the worked one. Roles, presets, LFO links, the audio-thread plan.
+- [Oblique](../projects/oblique/design/object-model.md), [Fault](../projects/fault/design/object-model.md), [Strata](../projects/strata/design/object-model.md), [Map & Territory](../projects/map-and-territory/design/object-model.md): stubs holding the first readings of 2026-09-13.
 
 ---
 
@@ -282,29 +277,10 @@ First readings, to confirm per app when it adopts.
 
 **There is no monorepo.** The API crate is its own repo beside `packages/facets`; `packages/rhizome` (decision 19).
 
-- **Rust:** a path dependency while Shard is the only consumer, then pinned git revs or tags once a second app adopts, so each app upgrades when it chooses.
+- **Rust:** a path dependency for an app's first adoption, then pinned git revs or tags once a second app adopts, so each app upgrades when it chooses.
 - **TypeScript:** a versioned npm package, the route `facets` is taking.
 
 ---
-
-## Shard's audio thread
-
-The audio thread never reads the tree. `ShardObjectModel::compile(&tree) -> Plan` runs on the command thread in `src-tauri`, allocating freely. The plan crosses to the audio thread through a lock-free single slot, and the retired plan crosses back through a second slot to be dropped off the audio thread. Shard's allocation guard (`shard_dsp::rt::GuardedAlloc`, held at zero by `tests/audio_thread.rs`) already caught a buffer freed on the audio thread; the plan swap must not repeat it.
-
-```rust
-pub struct Plan {
-    nodes: Vec<NodeSlot>,          // per-type state: Player, Granular, Crush, Ring, Env, …
-    node_ids: Vec<NodeId>,         // parallel to `nodes`
-    edges: Vec<(usize, usize)>,    // signal order, topologically sorted at compile
-    bank: ParamBank,               // sized for this plan; slots resolved at compile
-    param_slots: Vec<(NodeId, ValueKey, usize)>,   // the id → slot map the UI writes through
-    buffers: Vec<Vec<f32>>,        // one per edge, block-sized
-}
-```
-
-`Slots::resolve` in `engine.rs` already does "resolve ids to indices once, panic on a miss"; compile is that generalised to N patches. `ParamBank::new` sized from the constant table becomes `ParamBank::for_plan`, and `index_of` becomes plan-specific. That is the real change to `params.rs`.
-
-**Structural edits mid-performance: crossfade first** (decision 27). At the block boundary where the new plan arrives, run both for 30 to 50 ms under an equal-power crossfade. Grains and tails restart cold. Verifiable: the same tree recompiled must be bit-exact after the fade. **Later, state migration by id:** for every `NodeId` present in both plans, `mem::swap` the preallocated state box from old to new; nodes new to the plan ramp in, removed nodes stay in a draining slot for one release and ramp out. No allocation, no lock. Parameter writes that race the swap are seeded from the tree, so at most one block of one write is lost.
 
 ## Cross-file references
 
@@ -314,65 +290,28 @@ Not in the first slice (decision 23), but the form is fixed so the file format d
 pub struct Ref { file: Option<RelPath>, id: NodeId, path: Path }   // file None = this file
 ```
 
-File relative to the referring file, so a moved project folder survives. The id resolves; the path is what a human reads and is refreshed on save. **Always read the current file, never pin**: `document-model.md` already decided that editing a patch changes every placement of it. A frozen copy is Oblique's lock and bake, a calculated node with a cached result, not a pinned reference. **A missing file leaves the node in place and marks the reference unresolved, with a relink command.** The opposite of Oblique's `pruneMaskState`: a missing file is nearly always a moved file. Shard's `LoadReport.sample_missing` is the precedent.
+File relative to the referring file, so a moved project folder survives. The id resolves; the path is what a human reads and is refreshed on save. **Always read the current file, never pin**: editing a node changes every place that references it. A frozen copy is a calculated node with a cached result, not a pinned reference. **A missing file leaves the node in place and marks the reference unresolved, with a relink command**: a missing file is nearly always a moved file.
 
-**Loaded or calculated across apps:** a node is calculated only when *this app's* object model holds a recipe it can run. Oblique cannot run Shard, so an Oblique image over a Shard render is loaded, referencing the render on disk. Staleness of that render is Shard's concern until a cross-file index exists.
+**Loaded or calculated across files:** a node is calculated only when *this file's* object model holds a recipe it can run. A node over another app's output is loaded, referencing that output on disk; its staleness is the other app's concern until a cross-file index exists.
 
-## Learned from Shard (2026-09-13)
+## Lessons from the first object model (2026-09-13)
 
-Shard is the first consumer and was built alongside this plan. These came out of the code and Georg's use of it. Each is something the registry, the value schema or the compile step would otherwise rediscover. The Shard docs hold the detail; this keeps what is general.
+Shard was built alongside this plan. What it taught that is mechanics, and so rhizome's; the Shard-specific rest (roles, presets, the audio thread) is in [Shard's object model](../projects/shard/design/object-model.md).
 
-**Node types have roles, and roles carry conventions.** Shard's effect sections settled on one pattern, which the registry should validate at `declare` time rather than leave to each app's tests:
-
-- **An effect** has a switch `<node>.on`, drawn in its header rather than as a row. It is stepped and defaults off.
-  - The engine fades the bypass itself over 10 ms, landing on an exact zero, so off is bit-exact with the node's mix at zero.
-  - A one-pole smoother never lands, so the fade has to be a ramp that arrives.
-- **Its first value is `<node>.mix`, named "Mix".** No value's name repeats the node's name ("Frequency", not "Ring freq"), because the header already says it.
-- **Schema order is layout.** Shard's panel draws values in declaration order.
-- **A generator** has the same switch, but its first value is `<node>.gain`, named "Gain". Shard has two: the plain sample and the grain cloud. Generators are summed, not mixed, and a generator's gain rests at unity where an effect's mix rests at zero. Granular was first built as an effect with a crossfade Mix; Georg re-cast it the same day, because it makes sound rather than shaping what comes in.
-- **The master gain** is a plain node at the end of the chain (`amp.gain`), with no switch. Shard first applied it only inside the grain cloud, which made Output Gain silent with granular off.
-- **A modulator is exempt.** An LFO leads with Rate and has no Mix.
-
-So `NodeType` wants a `role` (generator, effect, modulator …). The generator role implies the switch-and-gain shape, and the effect role the switch-and-mix shape. Shard enforces this today with `every_switchable_node_leads_with_its_level` and `no_parameter_repeats_its_node_name` in `params.rs`.
-
-**Presets are a node-level feature, generic enough for the core.** In Shard ([`../projects/shard/features/roadmap.md`](../projects/shard/features/roadmap.md), row 12):
-
-- A preset is a named set of one node's values by key, excluding its switch, so applying one never switches a node in or out.
-- Presets are document data, stored in the file and keyed by node type, then by name.
-- **Save** refuses a name in use, **update** refuses a missing one, and **apply** writes only that node's own values and reports any key it could not apply.
-- Links (bindings with depth) are part of a preset (modulation decision 6).
-
-Nothing in that is Shard-specific.
-
-**Bindings target value keys and carry values.** The model above binds a *slot* (`env`) to a node. Shard's LFO links bind a *value key* (`grain.position`) to a modulator node, with a signed depth. `Bound { slot, … }` in the changeset wants a key-or-slot target and the binding's own values, or links become a second, parallel mechanism.
-
-**Instances are the normal case, not tables.** Shard's parameter table is flat and static, with ids as a wire format. It could not hold "as many LFOs as needed" (modulation decision 8), so LFOs are a list with stable ids: a small precursor of per-node values here. The registry's value schema per node type, with instances carrying `NodeId`s, is the general answer. Shard's flat table is the special case that goes away when patches become nodes.
-
-**Modulation never writes a stored value.** This supersedes decision 24:
-
-- The tree, or Shard's bank, holds the hand's value.
-- The engine computes `denormalise(clamp(normalise(base) + depth × source))` where it reads.
-- Saving saves the base, undo needs no filter, and a diff never shows a wobble.
-
-**The audio thread only swaps things in; it never builds them.** This is not a limit on what can change, only on where memory is made. Everything structural is built on the command thread and swapped in whole at a block boundary: a new sample today, an LFO set next, a compiled `Plan` in decision 27. The old one is handed back to be freed elsewhere. Two traps Shard's allocation guard (`shard_dsp::rt::GuardedAlloc`, zero-held by `tests/audio_thread.rs`) has already caught:
-
-- **Freeing counts as allocating.** A dropped buffer on the audio thread is as bad as a new one, so retire it back to the command thread.
-- **On macOS a `Mutex`'s first lock allocates.** Lock every hand-off slot once before the stream starts.
-
-**Stepped values are values, not indices.** Shard's panel used option indices as values, which only worked while every stepped range started at zero. Octave, from −2 to +2, broke it. A stepped schema entry should expose its value list.
-
-**UI state is not tree state, and it outlives remounts.** Folded sections live in `localStorage`, following [`persisted-ui-state.md`](persisted-ui-state.md). Shard's panel remounts whenever its schema changes, so anything held inside it is lost.
-
-**Renames are cheap while an app is young.** Shard renamed `mix.dry` to `grain.mix` and `env.amount` to `env.mix` within a day, because no saved patches existed. Do not design migrations before files people keep exist. Unknown and missing ids are still reported on load, for hand edits.
+- **Bindings target value keys and carry values,** as well as slots. One mechanism (decision 32), not a second, parallel one per app.
+- **Instances are the normal case, not tables.** Nodes with stable ids and a value schema per type, never a flat table of ids.
+- **Transient values never enter the tree.** Modulated, metered or calculated values are applied where they are read. Saving saves the base, undo needs no filter, and a diff never shows a wobble. There is no API to write one.
+- **Schema order is declaration order,** and rhizome keeps it, because an app may draw values in that order.
+- **Stepped values are values, not indices.** A choice stores the value; the schema exposes the list.
+- **UI state is not tree state.** Folded sections and the like live in [`persisted-ui-state.md`](persisted-ui-state.md), not in nodes.
+- **Renames are cheap while an app is young.** Don't design migrations before files people keep exist. Unknown and missing keys are still reported on load.
 
 ## Still open
 
-- **Node roles:** the set (generator, effect, modulator …), and whether the registry enforces a role's conventions or only records them.
-- **Bindings with a value-key target and a depth:** the shape, before Shard's LFO links are built outside the core and have to be pulled back in.
-- **The cross-file index:** waits on Strata's storage (SQLite or DuckDB 2.0). The four index-ready shapes under Search are fixed now.
-- **Oblique's transport** (decision 28). Wasm gives synchronous calls and a second build with no file access; Tauri commands give one native build with async edits and a read-only mirror of the tree in the webview. Also note Oblique's dependency-cruiser gate that only the sidecar transport may touch `@tauri-apps/api/core`.
-- **The native-menu wiring's home.** Lean: one native-app package with settings as a module inside it, since rules 1, 4 and 5 of `native-apps.md` all touch the same two files per app.
-- **`usePersistedState` "lifted from Strata"** in `native-apps.md`: verify it exists before the settings package plans around it. Shard now has its own, from the collapsible sections.
+- **Presets: rhizome mechanism or object-model logic?** A named set of one node's values, applied in one edit, is generic. What to leave out of a preset (Shard leaves out the switch) is business logic. Lean: a mechanism in rhizome with a per-type list of keys presets skip, which the object model sets. Reserved, no API yet.
+- **The cross-file index:** waits on a decision about where it lives. The four index-ready shapes under Search are fixed now.
+
+Moved out on 2026-10-02: node roles (Shard's object model), Oblique's transport (Oblique's), the native-menu wiring's home and `usePersistedState` (neither is rhizome's; see [`tauri-scaffold.md`](tauri-scaffold.md) and [`native-apps.md`](native-apps.md)).
 
 ## Related
 
@@ -380,5 +319,5 @@ Nothing in that is Shard-specific.
 - [`batched-mutations.md`](batched-mutations.md): `for_each`.
 - [`versioned-persistence.md`](versioned-persistence.md): the file side.
 - [`interaction-state.md`](interaction-state.md): selection is not tree state.
-- [`../projects/fault/design/architecture.md`](../projects/fault/design/architecture.md): the crate-plus-wasm precedent.
-- [`../projects/shard/features/roadmap.md`](../projects/shard/features/roadmap.md), row 10.
+- [`rhizome-api.md`](rhizome-api.md): the API as built.
+- `projects/<app>/design/object-model.md`: each app's business logic.

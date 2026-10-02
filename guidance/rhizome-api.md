@@ -11,7 +11,18 @@ updated: 2026-10-02
 
 Approach: write the call sites first, then read the verbs and guarantees off them. Four callers matter: an object model, a UI gesture over IPC, a load, and a contract test.
 
-**Not Shard's API** (Georg, 2026-10-02: *"don't overfit to shard"*). Shard is the first consumer, not the shape. The examples rotate across apps, and anything that only one app has needed so far (roles, switches, MIDI) stays in that app's object model. A core feature needs a second app that wants it.
+**rhizome is unaware of the apps** (decision 35). It handles mechanics; each app's **object model** holds the business logic, in the app's repo, documented in `projects/<app>/design/object-model.md`.
+
+| rhizome: mechanics | An object model: business logic |
+|---|---|
+| Paths, ids, the tree | Which node types and categories exist, and what they mean |
+| Node types as declared data; validating values against their schema | Rules beyond the schema, as `check`s on its node types |
+| Values, references, groups, bindings, stored orders | Domain verbs over `Edit` (`add_patch`, `add_image`), each one undo step |
+| Edits, gestures, coalescing, undo, `Commit`s | Projections: a compiled plan, a render list, a search index |
+| Diff, unsaved, the file format, load reports, opaque pass-through | Where history lives, which input coalesces, how values are laid out |
+| Copy and paste with remapping | Migrations of its own files, when files people keep exist |
+
+rhizome's code, tests and docs name no app. Its tests use made-up object models. A mechanism moves into rhizome only when two object models need the same one.
 
 ---
 
@@ -20,7 +31,7 @@ Approach: write the call sites first, then read the verbs and guarantees off the
 ### 1. An object model adds a node with children
 
 ```rust
-// oblique/src-tauri/src/model.rs
+// an app's object model, in its own repo (illustrative)
 pub fn declare(r: &mut RegistryBuilder) {
     r.category("images", Origin::Loaded);
     r.category("masks",  Origin::Loaded);
@@ -28,9 +39,9 @@ pub fn declare(r: &mut RegistryBuilder) {
     r.node(NodeType::new("blur").in_categories(&["images"]).float(RADIUS, 0.0..=200.0, 4.0));
 }
 
-pub trait ObliqueEdit { fn add_image(&mut self, file: RelPath) -> Result<NodeId>; }
+pub trait GalleryEdit { fn add_image(&mut self, file: RelPath) -> Result<NodeId>; }
 
-impl ObliqueEdit for Edit<'_> {
+impl GalleryEdit for Edit<'_> {
     fn add_image(&mut self, file: RelPath) -> Result<NodeId> {
         let img  = self.add_unique("/images", "image", file.stem())?;
         let blur = self.add(img, "blur", "blur")?;
@@ -46,7 +57,7 @@ impl ObliqueEdit for Edit<'_> {
 let (img, commit) = tree.edit("Add Image", |tx| tx.add_image(path))?;
 ```
 
-Shard's `add_patch` and Strata's `add_to_collection` have the same shape. What this asks for:
+Any object model's domain verbs have this shape. What this asks for:
 
 - **The object model is a declaration plus an extension trait on `Edit`.** It does not own the tree or wrap it. Domain verbs compose into the caller's edit for free, so "Add Image" is one undo step however many core verbs it uses.
 - **Typed keys.** `const RADIUS: Key<f64> = Key::new("blur.radius")`, written with `set(at, RADIUS, 8.0)` and read with `get(RADIUS)`. Object-model code gets a compile error for a wrong type. Generic code (UI, CLI, IPC) uses `set_value(at, "blur.radius", Value::Float(8.0))` and `value("blur.radius")`, and gets a runtime error.
@@ -71,7 +82,7 @@ await rhizome.end(g);        // or rhizome.cancel(g) on Escape
 What this asks for:
 
 - **Two edit forms, one meaning.** `tree.edit(label, |tx| …)` scopes an edit to a closure, for code and tests; `tree.edit_ops(label, &ops)` is the same with `Op`s. `begin` / `apply` (or `within` with a closure) / `end` / `cancel` keeps it open across calls, for gestures. Both make one undo step. `cancel` restores the snapshot taken at `begin`.
-- **Every write verb is also data.** `Op` is a serde enum with one variant per verb, and `tx.apply(op)` runs it. IPC, a CLI, a test fixture and a future script all speak `Op`. Whether Oblique's transport is wasm or Tauri commands (decision 28), it carries `Op`s in and `Commit`s out. An `Op` names nodes by path or id, references included: `{"op": "set_ref", …, "ref": {"node": "/images/sky"}}`, so a script never depends on how ids were allocated. Workflow 13 holds every variant as JSON.
+- **Every write verb is also data.** `Op` is a serde enum with one variant per verb, and `tx.apply(op)` runs it. IPC, a CLI, a test fixture and a future script all speak `Op`. Whether an app's transport is wasm or Tauri commands, it carries `Op`s in and `Commit`s out. An `Op` names nodes by path or id, references included: `{"op": "set_ref", …, "ref": {"node": "/images/sky"}}`, so a script never depends on how ids were allocated. Workflow 13 holds every variant as JSON.
 - **Writes are visible while the gesture is open.** Each `apply` returns a `Commit` with the entries it made, so the panel updates mid-drag. The undo step is cut at `end`.
 
 ### 3. Load comes back with a report
@@ -110,7 +121,7 @@ for issue in &report.issues { log::warn!("{issue}"); }       // "/images/sky/glo
 | `Path` | Parsed, validated address | `/images/sky/blur`. Sibling names are unique |
 | `Node<'t>` | Read-only view, borrowed from `&Tree` | Can't outlive the next edit; the borrow checker says so |
 | `Edit<'t>` | The only thing with write verbs | Exists inside `edit(…)` or an open gesture |
-| `Value` | `Bool`, `Int(i64)`, `Float(f64)`, `Text`, `Choice(String)`, `Vec2`, `Vec3`, `Colour` (0 to 1 per channel) | `Choice` holds the value, never an index. The vector and colour types are there because Oblique, Fault and Map & Territory each need them; add a type only when two apps do |
+| `Value` | `Bool`, `Int(i64)`, `Float(f64)`, `Text`, `Choice(String)`, `Vec2`, `Vec3`, `Colour` (0 to 1 per channel) | `Choice` holds the value, never an index. The vector and colour types are common enough across 2D and 3D tools to be mechanics; add a kind only when two object models need it |
 | `Key<T>` / `ValueKey` | Typed and untyped value keys | Both spell `"blur.radius"` |
 | `Ref` | `{ file: Option<RelPath>, id, path }` | As in `node-api.md`. `Ref::here(id)` for this file |
 | `Fragment` | A detached subtree in the file format | What copy, paste and the clipboard carry. `to_text` / `from_text`. See "Copy" |
@@ -122,7 +133,7 @@ for issue in &report.issues { log::warn!("{issue}"); }       // "/images/sky/glo
 
 **Children iterate by name.** Hierarchy never implies order (decision 7). Anything ordered is asked for by name: `node.order("modifiers")`.
 
-**No roles in the core.** "Learned from Shard" proposed a `role` on `NodeType` (generator, effect, modulator) with conventions the registry enforces. Only Shard has those roles. Instead, a node type can carry a `check` the object model writes, run at `declare` time on the schema and at commit time on the node. Shard puts its switch-and-mix rule there. If a second app grows the same rule, it moves into the core then.
+**No roles in the core.** A role (generator, effect, modulator) and its conventions are business logic. A node type can carry a `check` the object model writes; rhizome runs every `check` at commit and rolls the edit back if one fails. [Shard's object model](../projects/shard/design/object-model.md#roles) puts its roles there.
 
 ---
 
@@ -149,7 +160,7 @@ Each verb lands in one `ChangeKind`, plus the cascades listed. The changeset is 
 
 Any write that names an opaque node directly is refused. See "Opaque nodes".
 
-**Presets are reserved** (not in the first slice, decision 25). When they come, they sit on top of `set` and `bind` with the rules already decided in "Learned from Shard", made generic: a named set of one node's values keyed by node type; a type marks keys `not_in_presets` (Shard marks its switch); `save_preset` refuses a taken name, `update_preset` a missing one, and `apply_preset` writes only that node's own values and bindings and reports the keys it could not apply.
+**Presets are reserved** (decision 25), and whether they are mechanics or business logic is open (`node-api.md`, "Still open"). The lean: a mechanism here (a named set of one node's values, applied in one edit, reporting keys it couldn't apply), with the object model naming the keys presets skip.
 
 **Not verbs:** there is no write for a transient value: modulated, metered, previewed mid-hover, or calculated. Those never enter the tree, so the API has nowhere to put them.
 
@@ -284,7 +295,7 @@ Generated, never hand-written (`node-api.md`, "Languages"). The same nouns and v
 
 - **Decision 3, "no document object".** `Tree` owns the nodes, the history, the saved snapshot and the registry handle, so something document-shaped exists. Reconciled: `Tree` is a container with no domain state of its own; there is no name, title or metadata outside nodes; and every caller still addresses through paths from `/`. `node-api.md` has the root carry the file it was read from as a value; the first slice doesn't, and the host keeps the path until something needs it in the tree.
 - **Unknown types pass through** instead of refusing the file. Decided; recorded as decision 29 there. An undeclared category passes through the same way.
-- **No roles in the core.** "Learned from Shard" proposed them; here they are an object-model `check` until a second app needs them.
+- **No roles in the core.** The earlier "Learned from Shard" proposed them; they are an object-model `check` (decision 35).
 - **`ChangeKind::Bound`** widens from `{ slot, from, to }` to `{ on: On, source: NodeId, from: Option<values>, to: Option<values> }` on the target's entry, where `On` is `Slot(name)` or `Value(key)` (decision 32).
 
 ---
@@ -323,4 +334,4 @@ One record per node, in path order; fields in a fixed order, empty ones left out
 - [`node-api.md`](node-api.md): the model this is the API for.
 - [`native-apps.md`](native-apps.md): undo and redo in the native menu; Edit › Copy, Paste and Duplicate.
 - [`batched-mutations.md`](batched-mutations.md): `for_each`, now an edit over a query result.
-- [`midi-control-surface.md`](midi-control-surface.md): one source of coalesced writes.
+- `projects/<app>/design/object-model.md`: each app's side of the line.

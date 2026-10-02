@@ -5,7 +5,7 @@ status: current
 repo: /Users/georg/rhizomatic-preset/packages/rhizome
 branch: main
 project: rhizome
-topic: rhizome-core first slice shipped; next is Shard adopting it.
+topic: rhizome-core first slice shipped; rhizome stays unaware of the apps (decision 35).
 updated: 2026-10-02
 ---
 
@@ -24,7 +24,7 @@ Continues `handovers/shard/handover-node-api.md`, which covered the planning. Th
 
 ## Next steps
 
-1. **Shard adopts** (epic 02, not written yet): `ShardObjectModel` in Shard's `src-tauri` declaring patch, granular, crush, ring, envelope, lfo, material; the tree as source of truth; `ParamBank::for_plan` compiled from it; undo in Rust. Path dependency on `packages/rhizome/crates/rhizome-core`.
+1. **rhizome knows no app** (decision 35, 2026-10-02). App-specific planning moved to `projects/<app>/design/object-model.md`. Adoption is each app's epic, not rhizome's; Shard's object model is the worked one and the likely first. Work on rhizome only when an object model needs a mechanism it lacks.
 2. **Root file value:** `node-api.md` has the root carry its file path as a value; the first slice doesn't. Add when a consumer needs it.
 3. **Reserved, no API yet:** presets, `find`/search, smart groups, calculated results and staleness, time.
 4. Wasm and the TypeScript package wait for a second consumer (decision 19).

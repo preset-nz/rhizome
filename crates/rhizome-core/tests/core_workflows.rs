@@ -22,8 +22,8 @@ use std::time::{Duration, Instant};
 use rhizome_core::{IdSource, NodeType, Op, Origin, Registry, Tree, ValueSpec};
 use serde::Deserialize;
 
-/// Frozen. A small studio: sounds and patches from Shard, images and masks from Oblique,
-/// renders as the calculated case.
+/// Frozen. A made-up object model: a small studio with sounds, patches, modulators,
+/// images, masks, and renders as the calculated case. No app's real one.
 fn registry() -> Arc<Registry> {
     Registry::builder()
         .category("sounds", Origin::Loaded)
