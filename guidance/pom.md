@@ -48,7 +48,6 @@ pub trait ObjectModel: Sized + 'static {
     type Projection: Default + Send;                 // a compiled plan, a render list, ()
 
     fn kinds(k: &mut Kinds);                         // categories, kinds, policy, presets
-    fn themes(_t: &mut Themes) {}                    // shared choices; none by default
     fn commands(_c: &mut Commands<Self>) {}          // app commands, next to the built-ins
     fn project(_tree: &Tree, _into: &mut Self::Projection, _changes: Option<&Changeset>) {}
 }
@@ -60,7 +59,7 @@ An app writes `impl ObjectModel for MyApp` with only its parts, and its domain v
 - **Edits:** `edit`, `edit_ops`, `edit_coalesced`, `begin` / `apply` / `within` / `end` / `cancel`, `undo` / `redo`: rhizome's, passed through.
 - **Projection:** `M::project` runs after open (with `None`, a full rebuild) and after every commit, undo, redo and cancel (with the `Changeset`). `projection()` reads it.
 - **`paste` and `duplicate`** that respect policy (below).
-- Presets, themes, commands and policy, below.
+- Presets, commands and policy, below.
 
 **Decision 3 still holds.** rhizome has no document object; POM adds one a layer up, where files, windows and menus live.
 
@@ -118,6 +117,7 @@ The app writes the aggregate. POM supplies everything around it, as methods on `
 | **Apply** | `apply_preset(node, &PresetRef)` | One edit, one undo step; returns a `Report` of what was applied and skipped |
 | **Make from** | `add_from_preset(parent, kind, name, &PresetRef)` | Instantiates the template filled from a preset: add and apply, one edit, one undo step |
 | **Current** | `current_preset(node)` | The first preset, built-in then user, whose state `matches` the node now |
+| **Export / import** | `export_preset(node, label)`, `import_preset(text)` | A user preset as text: its `preset` node as a rhizome fragment, so an export, a user preset in a document and an entry in a library rhizome (decision 40) are one shape. Import is one edit, one undo step, and refuses (changing nothing) anything but one preset, for a kind this model has, whose state fits that kind's aggregate, under a free name (decision 45) |
 | **`NodeValues`** | — | The ready-made aggregate: every value in the schema (resolved, so `current` works), optionally the bindings. Customise with `.skip(pred)` and `.with_bindings()` |
 
 `PresetRef` is `Catalogue(name)` or `User(label)`; in JSON `{"catalogue": "…"}` / `{"user": "…"}`. A preset is copied into a node, never followed.
@@ -132,29 +132,15 @@ The app writes the aggregate. POM supplies everything around it, as methods on `
 
 ### Where user presets live
 
-Nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.for` (the kind), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else, and go wherever the file goes. A pasted node doesn't bring its file's user presets into another file. An app can't declare the names `presets` or `preset`: POM registers first, and rhizome refuses duplicates.
+Nodes in POM's category `presets`, of POM's type `preset`, with Text values `preset.for` (the kind), `preset.label` and `preset.state` (the state as JSON). They undo, diff, save, copy and paste like anything else, and go wherever the file goes. A pasted node doesn't bring its file's user presets into another file; `export_preset` / `import_preset` move one deliberately. **Caveat:** a `NodeValues` preset with bindings names its sources by `NodeId`, which only means something in the file it was saved in. Imported elsewhere, those bindings are reported as skipped on apply. An app can't declare the names `presets` or `preset`: POM registers first, and rhizome refuses duplicates.
 
 ---
 
-## Themes: shared choices, followed by cascade
+## Themes: the app's, not POM's
 
-A **theme** is a shared choice that nodes look up through their ancestors, such as a palette chosen for a campaign and overridden for one map. It is never written onto a node, so it isn't a preset (decision 38).
+Decision 39 ([`node-api.md`](node-api.md)): a theme is a mechanic each app builds from rhizome's primitives, lifted into POM only when two apps share it. The shape: a node with values in a `themes` category; a follower holds a reference key pointing at it (`Ref::here`); the app's theme op reads it, walking ancestors if it cascades. Built-ins come from a library rhizome (decision 40). `tests/pom.rs` builds Atlas's palette this way, in about fifteen lines of app code.
 
-```rust
-fn themes(t: &mut Themes) {
-    t.theme("palette")
-        .catalogue([("doom-forge", palette(…)), ("space-opera", palette(…))])
-        .fallback("doom-forge")
-        .followed_by(&["campaign", "map"]);
-}
-```
-
-- `follow_theme(kind, node, Some(name))` / `None` makes a node follow a theme or stop. Each `followed_by` kind gets a reference key `theme.<kind>`, and the choice is stored as `Ref::file("theme:<kind>/<name>")`: no new value type, readable on disk, skipped if a build drops the entry.
-- `resolve_theme(kind, node)` returns the node's own choice, else the nearest ancestor's, else the fallback, as `ResolvedTheme { follower, name, state }`.
-- `theme_names(kind)` lists the catalogue.
-- Built-in themes only for now. User themes come when an app needs them; M&T's Strata palette import (its epic 08) is the likely first.
-
-**M&T: palette.** Nine settings with a fallback, followed by campaign and map. A layer calls `resolve_theme("palette", layer)`. That is M&T's `useActiveSetting`, with undo and save for free.
+POM had themes (catalogue, fallback, `followed_by`, cascade resolve, `theme.follow`) from `9851880` until `0d54204` removed them. For M&T's palette this means its object model owns the cascade (map → campaign → default).
 
 ---
 
@@ -173,7 +159,8 @@ POM implements the **commands-first contract** of [`plugin-primitive.md`](plugin
 | `edit.paste` | `{ parent, fragment }` | Re-pins |
 | `node.add` | `{ parent, type, name, preset? }` | With a preset, made from it |
 | `preset.apply`, `.save`, `.update`, `.rename`, `.delete` | `{ at, preset?, label?, to? }` | Enabled on kinds with presets |
-| `theme.follow` | `{ kind, at, theme? }` | No `theme` stops following |
+| `preset.export` | `{ at, label }` | Returns the preset as `Text` |
+| `preset.import` | `{ text }` | Enabled when the text is a fragment |
 
 An app adds its own with `c.add(id, label, enabled, run)`; the same id replaces a built-in. New and Open aren't document commands: they make a `Document`. Capability tokens arrive with the TypeScript half; `enabled` is a closure for now.
 
@@ -208,8 +195,8 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 ## Decided (Georg, 2026-10-02)
 
 1. **Every object model is Rust on POM.** Map & Territory becomes a Rust/Tauri app like the others. One implementation.
-2. **A followed theme is referenced as `theme:<kind>/<name>`,** a reserved file scheme in a `Ref`. (Was `catalogue:` while themes were presets.)
-5. **Presets are on the kind; themes are separate** (decision 38). User presets travel with the file.
+2. ~~**A followed theme is referenced as `theme:<kind>/<name>`,** a reserved file scheme in a `Ref`.~~ Superseded by decision 39: themes leave POM.
+5. **Presets are on the kind; themes are separate** (decision 38). User presets travel with the file, and export and import as text (decision 45). Themes then left POM altogether (decision 39).
 3. **Storage is a `Store` trait;** single files are the only store now. A bundle folder (M&T's `.campaign`) and a database (Strata) come when those apps adopt.
 4. **The rhizome changes POM needed are in:** tree rules (`RegistryBuilder::rule`, with `Violation`), `ChangeKind::Removed { type_name }`, and public `Value::to_json` / `from_json`. Reserved names need no change: POM registers first. Preset state is a Text JSON blob until reading its diffs hurts.
 
@@ -217,8 +204,8 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 
 `just pom`, and in `just check`. Both suites use made-up object models, never an app's:
 
-- **`tests/pom.rs`** (11 tests). *Synth*: user presets of one kind's sound skipping its switch, with bindings; the document lifecycle and projection. *Atlas*: anchored singleton layers, a palette theme by cascade, a computed aspect preset on the map kind, a node made from a preset, the commands, a layer pasted into another map, policy breaches on open, and models that can't be built.
-- **`tests/workflows.rs`** (6 workflows as data in `tests/workflows/*.json`, transcripts pinned beside them): driven only through commands by id with JSON payloads, `Op` JSON, files and preset reads, against a frozen model of its own. A change to POM that alters a workflow fails here.
+- **`tests/pom.rs`** (12 tests). *Synth*: user presets of one kind's sound skipping its switch, with bindings; a user preset exported and imported into another document (its bindings reported as skipped there); the document lifecycle and projection. *Atlas*: anchored singleton layers, a palette theme built from primitives, a computed aspect preset on the map kind, a node made from a preset, the commands, a layer pasted into another map, policy breaches on open, and models that can't be built.
+- **`tests/workflows.rs`** (6 workflows as data in `tests/workflows/*.json`, numbered 01–07 with 03 retired, transcripts pinned beside them): driven only through commands by id with JSON payloads, `Op` JSON, files and preset reads, against a frozen model of its own. A change to POM that alters a workflow fails here.
 
 ## Phases
 
