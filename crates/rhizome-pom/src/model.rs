@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use rhizome_core::{
-    ChangeKind, Changeset, Node, NodeType, Origin, Path, Registry, Tree, Violation, valid_name,
+    ChangeKind, Changeset, Edit, Node, NodeId, NodeType, Origin, Path, Registry, Tree, Violation,
+    valid_name,
 };
 
 use crate::command::Commands;
@@ -223,6 +224,16 @@ fn enforce(
             ));
         }
     }
+    match breaches(policies, root).into_iter().next() {
+        Some(v) => Err(v),
+        None => Ok(()),
+    }
+}
+
+/// Every policy breach in the tree, in walk order: counts per parent, then pins. Load
+/// reports these; a commit refuses on the first.
+pub(crate) fn breaches(policies: &BTreeMap<String, Policy>, root: &Node<'_>) -> Vec<Violation> {
+    let mut out = Vec::new();
     let mut stack = vec![*root];
     while let Some(parent) = stack.pop() {
         let children: Vec<Node<'_>> = parent.children().collect();
@@ -236,7 +247,7 @@ fn enforce(
             if let Some(max) = policies.get(*type_name).and_then(|p| p.max_per_parent)
                 && *n > max
             {
-                return Err(violation(
+                out.push(violation(
                     parent.path(),
                     format!("at most {max} {type_name} here"),
                 ));
@@ -257,12 +268,56 @@ fn enforce(
             let at = if first { list.first() } else { list.last() };
             if at.map(|n| n.id()) != Some(child.id()) {
                 let place = if first { "first" } else { "last" };
-                return Err(violation(
+                out.push(violation(
                     child.path(),
                     format!("must stay {place} in `{order}`"),
                 ));
             }
         }
+    }
+    out.sort_by(|a, b| a.path.cmp(&b.path));
+    out
+}
+
+/// Puts `parent`'s pinned children back at their ends of every order that holds them.
+/// For the generic verbs (paste, duplicate), which append without knowing about pins.
+pub(crate) fn repin(
+    policies: &BTreeMap<String, Policy>,
+    tx: &mut Edit<'_>,
+    parent: NodeId,
+) -> rhizome_core::Result<()> {
+    let plan: Vec<(String, Vec<NodeId>)> = {
+        let Some(p) = tx.at(parent) else {
+            return Ok(());
+        };
+        let pin_of = |n: &Node<'_>, order: &str| match policies
+            .get(n.type_name())
+            .and_then(|p| p.pinned.as_ref())
+        {
+            Some(Pin::First(o)) if o == order => Some(true),
+            Some(Pin::Last(o)) if o == order => Some(false),
+            _ => None,
+        };
+        let mut plan = Vec::new();
+        for name in p.order_names() {
+            let list = p.order(name);
+            let (mut first, mut middle, mut last) = (Vec::new(), Vec::new(), Vec::new());
+            for n in &list {
+                match pin_of(n, name) {
+                    Some(true) => first.push(n.id()),
+                    Some(false) => last.push(n.id()),
+                    None => middle.push(n.id()),
+                }
+            }
+            let new: Vec<NodeId> = first.into_iter().chain(middle).chain(last).collect();
+            if new != list.iter().map(|n| n.id()).collect::<Vec<_>>() {
+                plan.push((name.to_string(), new));
+            }
+        }
+        plan
+    };
+    for (name, ids) in plan {
+        tx.set_order(parent, &name, ids)?;
     }
     Ok(())
 }

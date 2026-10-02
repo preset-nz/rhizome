@@ -753,3 +753,79 @@ fn a_model_that_cant_be_built_says_why() {
         .to_string();
     assert!(e.contains("ghost"), "{e}");
 }
+
+#[test]
+fn a_layer_pasted_into_another_map_keeps_the_anchors() {
+    let (mut d, campaign, _) = atlas();
+    d.edit("South", |tx| tx.add_map(campaign, "south")).unwrap();
+    let Outcome::Text(clip) = d
+        .run("edit.copy", &json!({"at": "/campaigns/realm/north/hills"}))
+        .unwrap()
+    else {
+        panic!()
+    };
+    d.run(
+        "edit.paste",
+        &json!({"parent": "/campaigns/realm/south", "fragment": clip}),
+    )
+    .unwrap();
+    let draw: Vec<String> = d
+        .tree()
+        .at("/campaigns/realm/south")
+        .unwrap()
+        .order("draw")
+        .iter()
+        .map(|n| n.name().to_string())
+        .collect();
+    assert_eq!(draw, ["paper", "hills", "grid"], "the grid stays on top");
+}
+
+#[test]
+fn documents_go_to_another_thread() {
+    fn send<T: Send>() {}
+    send::<Document<Synth>>();
+    send::<Document<Atlas>>();
+}
+
+#[test]
+fn open_reports_policy_breaches() {
+    let (d, _, _) = atlas();
+    let text = d.tree().serialise();
+    // a hand-edited file: the draw order lists the grid before the terrain
+    let mut doc: serde_json::Value = serde_json::from_str(&text).unwrap();
+    for n in doc["nodes"].as_array_mut().unwrap() {
+        if n["path"] == "/campaigns/realm/north" {
+            let draw = n["orders"]["draw"].as_array_mut().unwrap();
+            draw.swap(1, 2);
+        }
+    }
+    let store = MemoryStore::default();
+    store.put("/bad.atlas", &serde_json::to_string_pretty(&doc).unwrap());
+    let (_, report) = Document::<Atlas>::open(store, "/bad.atlas").unwrap();
+    let issues: Vec<String> = report.issues.iter().map(|i| i.to_string()).collect();
+    assert_eq!(
+        issues,
+        ["/campaigns/realm/north/grid: policy: must stay last in `draw`"]
+    );
+}
+
+#[test]
+fn deleting_a_followed_preset_unfollows() {
+    let (mut d, campaign, north) = atlas();
+    let (south, _) = d.edit("South", |tx| tx.add_map(campaign, "south")).unwrap();
+    d.save_preset("map-style", north, "Big").unwrap();
+    d.follow_preset("map-style", south, Some(&PresetRef::User("Big".into())))
+        .unwrap();
+    let c = d.delete_preset("map-style", north, "Big").unwrap().unwrap();
+    let lines = c.changes.to_string();
+    assert!(
+        lines.contains("/campaigns/realm/south  follow.map-style"),
+        "{lines}"
+    );
+    let (_, report) = Tree::load(&d.tree().serialise(), d.tree().registry().clone()).unwrap();
+    assert!(
+        report.issues.is_empty(),
+        "nothing left pointing at the deleted preset: {:?}",
+        report.issues
+    );
+}

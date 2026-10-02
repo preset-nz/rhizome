@@ -427,6 +427,19 @@ impl Presets {
         let id = self
             .user_id(tx, kind, &for_type, label)
             .ok_or_else(|| structural_msg(format!("no preset called “{label}” here")))?;
+        // anything following it stops, so nothing points at a preset that's gone
+        let key = follow_key(kind);
+        let followers: Vec<NodeId> = tx
+            .at(id)
+            .expect("live")
+            .referrers()
+            .into_iter()
+            .filter(|(_, k)| *k == key)
+            .map(|(n, _)| n.id())
+            .collect();
+        for f in followers {
+            tx.clear_ref(f, key.as_str())?;
+        }
         tx.remove(id)
     }
 

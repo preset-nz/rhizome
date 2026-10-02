@@ -8,7 +8,7 @@ use serde_json::Value as Json;
 
 use crate::command::Outcome;
 use crate::error::{Error, Result};
-use crate::model::{Model, ObjectModel, Policy};
+use crate::model::{Model, ObjectModel, Policy, breaches, repin};
 use crate::presets::{PresetRef, Report, Resolved};
 
 /// Where a document's text lives. Single files today; a bundle folder and a database later.
@@ -107,7 +107,8 @@ impl<M: ObjectModel> Document<M> {
         let path = path.as_ref();
         let model = Model::<M>::build()?;
         let text = store.read(path).map_err(|e| io(path, e))?;
-        let (tree, report) = Tree::load_with_ids(&text, model.registry.clone(), ids)?;
+        let (tree, mut report) = Tree::load_with_ids(&text, model.registry.clone(), ids)?;
+        report_breaches(&model, &tree, &mut report);
         Ok((
             Self::from_tree(model, tree, Box::new(store), Some(path.to_path_buf())),
             report,
@@ -198,7 +199,8 @@ impl<M: ObjectModel> Document<M> {
     pub fn revert(&mut self) -> Result<LoadReport> {
         let path = self.path.clone().ok_or(Error::NoPath)?;
         let text = self.store.read(&path).map_err(|e| io(&path, e))?;
-        let (tree, report) = Tree::load(&text, self.model.registry.clone())?;
+        let (tree, mut report) = Tree::load(&text, self.model.registry.clone())?;
+        report_breaches(&self.model, &tree, &mut report);
         self.tree = tree;
         self.projection = M::Projection::default();
         M::project(&self.tree, &mut self.projection, None);
@@ -236,6 +238,50 @@ impl<M: ObjectModel> Document<M> {
     ) -> Result<(T, Option<Commit>)> {
         let (v, c) = self.tree.edit_coalesced(label, key, f)?;
         Ok((v, self.projected(c)))
+    }
+
+    pub fn within<T>(
+        &mut self,
+        g: GestureId,
+        f: impl FnOnce(&mut Edit<'_>) -> rhizome_core::Result<T>,
+    ) -> Result<(T, Option<Commit>)> {
+        let (v, c) = self.tree.within(g, f)?;
+        Ok((v, self.projected(c)))
+    }
+
+    /// Pastes a fragment under `parent`, keeping pinned kinds at their ends.
+    pub fn paste(&mut self, parent: &str, fragment: &str) -> Result<Option<Commit>> {
+        let model = self.model.clone();
+        let op = Op::Paste {
+            parent: parent.to_string(),
+            fragment: fragment.to_string(),
+        };
+        Ok(self
+            .edit("Paste", |tx| {
+                tx.apply(&op)?;
+                let p = tx
+                    .at(parent)
+                    .map(|n| n.id())
+                    .ok_or_else(|| rhizome_core::Error::NotFound(parent.into()))?;
+                repin(&model.policies, tx, p)
+            })?
+            .1)
+    }
+
+    /// Copies a node beside itself, keeping pinned kinds at their ends.
+    pub fn duplicate(&mut self, at: &str) -> Result<Option<Commit>> {
+        let model = self.model.clone();
+        Ok(self
+            .edit("Duplicate", |tx| {
+                let parent = tx
+                    .at(at)
+                    .and_then(|n| n.parent())
+                    .map(|n| n.id())
+                    .ok_or_else(|| rhizome_core::Error::NotFound(at.into()))?;
+                tx.copy(at, parent)?;
+                repin(&model.policies, tx, parent)
+            })?
+            .1)
     }
 
     pub fn begin(&mut self, label: &str) -> Result<GestureId> {
@@ -389,5 +435,14 @@ impl<M: ObjectModel> Document<M> {
             return Err(Error::Disabled(id.into()));
         }
         (c.run)(self, payload)
+    }
+}
+
+fn report_breaches<M: ObjectModel>(model: &Model<M>, tree: &Tree, report: &mut LoadReport) {
+    for v in breaches(&model.policies, &tree.root()) {
+        report.issues.push(rhizome_core::Issue {
+            path: v.path,
+            message: format!("policy: {}", v.message),
+        });
     }
 }

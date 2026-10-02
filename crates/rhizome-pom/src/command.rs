@@ -192,13 +192,7 @@ impl<M: ObjectModel> Commands<M> {
             },
             |d, p| {
                 let At { at } = payload(p)?;
-                let parent = d
-                    .tree()
-                    .at(at.as_str())
-                    .and_then(|n| n.parent())
-                    .map(|n| n.path().to_string())
-                    .ok_or_else(|| Error::Payload(format!("no node at {at}")))?;
-                Ok(d.edit_ops("Duplicate", &[Op::Copy { at, parent }])?.into())
+                Ok(d.duplicate(&at)?.into())
             },
         );
         c.add(
@@ -228,8 +222,7 @@ impl<M: ObjectModel> Commands<M> {
             },
             |d, p| {
                 let Paste { parent, fragment } = payload(p)?;
-                Ok(d.edit_ops("Paste", &[Op::Paste { parent, fragment }])?
-                    .into())
+                Ok(d.paste(&parent, &fragment)?.into())
             },
         );
 
