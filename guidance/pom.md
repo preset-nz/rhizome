@@ -178,7 +178,7 @@ Every app's inspector is a facets panel. The rhizome schema already has kinds, r
 
 - a read-only **mirror** of the tree, kept current from `Commit`s;
 - hooks: `useNode(path)`, `useValue(path, key)`, `useHistory()`, `usePresets(kind, node)`, `useCommand(id)`, `useGesture(label)`;
-- one **transport** interface with two implementations: Tauri commands (`rhizome-pom-tauri`) and wasm (`rhizome-wasm`, decision 19's second consumer).
+- one **transport** interface, implemented over Tauri commands (`rhizome-pom-tauri`). Every app is a Tauri app, so wasm still waits for a consumer (decision 19); the interface leaves room for it.
 
 ---
 
@@ -198,7 +198,9 @@ Every app's inspector is a facets panel. The rhizome schema already has kinds, r
 
 ## Forks for Georg
 
-1. **Rust OM or TypeScript OM for a web app.** M&T is Next.js with no Tauri today. Either its object model is Rust compiled to wasm, with one implementation of POM, or POM grows a TypeScript implementation, which is a second one. **Lean: Rust over wasm.** It is "never a second hand-written implementation" (node-api, Languages). M&T moves its layer registry and store behind the wasm transport, and its renderers stay TypeScript as projections. This decides whether "all need it" includes M&T now or after it gains a Rust side.
+One decided, three open.
+
+1. ~~Rust OM or TypeScript OM for a web app.~~ **Decided 2026-10-02:** Map & Territory becomes a Rust/Tauri app like the others (its README, decisions 7 and 19). Every object model is Rust on POM; there is one implementation.
 2. **Referencing a catalogue preset.** A `Ref` points at a node or a file, and a catalogue entry is neither. **Lean: a reserved file scheme,** `Ref::file("catalogue:palette/doom-forge")`: no new type, readable on disk, and unresolved (and reported) if a build drops the entry.
 3. **Storage.** `Document` stores through a `Store` trait from day one. Single file is the only implementation now, and fits Shard, Oblique and Fault. M&T's planned zipped `.campaign` folder and Strata's DuckDB catalogue are later implementations. **Lean: build the trait, ship one store.**
 4. **rhizome changes POM needs.** Each is mechanics, so it belongs in rhizome:
@@ -210,7 +212,7 @@ Every app's inspector is a facets panel. The rhizome schema already has kinds, r
 
 1. **`rhizome-pom`, headless.** `ObjectModel`, `Document<M>` with the single-file store, kinds and policy-as-checks, presets with all five machinery parts, built-in commands, projection calls. Tests: two made-up object models of different shapes, one Shard-like (node values, no files) and one M&T-like (cascade, catalogue, pinned and singleton kinds), plus an acid test per preset machinery part.
 2. **`rhizome-pom-tauri`.** Commands and gestures as Tauri commands, `Commit` events, the opened-from-Finder hand-off (from Shard's `opened.rs`), and menu state for `native-menu`.
-3. **`@preset.nz/pom` and `rhizome-wasm`.** Mirror, hooks, both transports, the facets bridge.
+3. **`@preset.nz/pom`.** Mirror, hooks, the Tauri transport, the facets bridge.
 4. **More stores.** A bundle folder, then a database, when M&T and Strata need them.
 
 ## Related
