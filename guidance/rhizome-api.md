@@ -13,7 +13,7 @@ Approach: write the call sites first, then read the verbs and guarantees off the
 
 **rhizome is unaware of the apps** (decision 35). It handles mechanics; each app's **object model** holds the business logic, in the app's repo, documented in `projects/<app>/design/object-model.md`.
 
-| rhizome: mechanics | An object model: business logic |
+| rhizome: mechanics | An object model: business logic, built on [POM](pom.md) |
 |---|---|
 | Paths, ids, the tree | Which node types and categories exist, and what they mean |
 | Node types as declared data; validating values against their schema | Rules beyond the schema, as `check`s on its node types |
@@ -160,7 +160,7 @@ Each verb lands in one `ChangeKind`, plus the cascades listed. The changeset is 
 
 Any write that names an opaque node directly is refused. See "Opaque nodes".
 
-**Presets are reserved** (decision 25), and whether they are mechanics or business logic is open (`node-api.md`, "Still open"). The lean: a mechanism here (a named set of one node's values, applied in one edit, reporting keys it couldn't apply), with the object model naming the keys presets skip.
+**Presets are not rhizome's.** They live in POM, as aggregates each app's object model defines (decision 37; [`pom.md`](pom.md)).
 
 **Not verbs:** there is no write for a transient value: modulated, metered, previewed mid-hover, or calculated. Those never enter the tree, so the API has nowhere to put them.
 
@@ -195,7 +195,7 @@ Any write that names an opaque node directly is refused. See "Opaque nodes".
 
 ### Reserved, no API in the first slice (decision 25)
 
-The names are fixed now so nothing else takes them: presets (above), `find(&Query)`, `save_search(name, Query)` for smart groups, `result(at)` and `staleness(at)` for calculated nodes, `time()` for trees that carry it. `find` will return `Found { nodes, incomplete }`, where `incomplete` lists calculated nodes whose result a query needed but which is stale or missing ("Search" in `node-api.md`).
+The names are fixed now so nothing else takes them: `find(&Query)`, `save_search(name, Query)` for smart groups, `result(at)` and `staleness(at)` for calculated nodes, `time()` for trees that carry it. `find` will return `Found { nodes, incomplete }`, where `incomplete` lists calculated nodes whose result a query needed but which is stale or missing ("Search" in `node-api.md`).
 
 ---
 

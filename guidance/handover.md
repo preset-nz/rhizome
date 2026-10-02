@@ -25,9 +25,10 @@ Continues `handovers/shard/handover-node-api.md`, which covered the planning. Th
 ## Next steps
 
 1. **rhizome knows no app** (decision 35, 2026-10-02). App-specific planning moved to `projects/<app>/design/object-model.md`. Adoption is each app's epic, not rhizome's; Shard's object model is the worked one and the likely first. Work on rhizome only when an object model needs a mechanism it lacks.
-2. **Root file value:** `node-api.md` has the root carry its file path as a value; the first slice doesn't. Add when a consumer needs it.
-3. **Reserved, no API yet:** presets, `find`/search, smart groups, calculated results and staleness, time.
-4. Wasm and the TypeScript package wait for a second consumer (decision 19).
+2. **POM** (decisions 36, 37; `design/pom.md`, draft): waiting on Georg's answers to its four forks (Rust or TS object model for M&T, catalogue refs, storage, rhizome changes). Then phase 1, `rhizome-pom` headless.
+3. **Root file value:** `node-api.md` has the root carry its file path as a value; the first slice doesn't. Add when a consumer needs it.
+4. **Reserved, no API yet:** `find`/search, smart groups, calculated results and staleness, time.
+5. Wasm and the TypeScript package come with POM phase 3 (M&T is the second consumer decision 19 waited for).
 
 ## Gotchas
 

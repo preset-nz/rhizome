@@ -83,6 +83,9 @@ The object-model name is Georg's choice, after Houdini's HOM. In Houdini, HOM al
 
 35. **rhizome is unaware of the apps.** *"I want rhizome be unaware of the apps. Only deals with the mechanics, references, diff, etc. Each app has their own … that defines the business logic."* (Georg, 2026-10-02.) rhizome's code, tests and docs name no app and hold no domain rule. Each app's object model owns its node types, rules (`check`s), domain verbs and projections, in the app's repo, documented in `projects/<app>/design/object-model.md`. App-specific content that was in this doc moved there on 2026-10-02. Decisions 15, 23, 26 and 27 are kept below as history; 23, 26 and 27 are Shard's and listed in [Shard's object model](../projects/shard/design/object-model.md).
 
+36. **POM, the Preset Object Model,** is the shared base every app's object model is built on: documents, kinds and their policy, presets, commands, projections. It knows no app (35). It lives in the rhizome repo as `rhizome-pom` and `rhizome-pom-tauri`, with `@preset.nz/pom` for TypeScript. Built now, because every app needs it, not extracted later (Georg, 2026-10-02). Design: [`pom.md`](pom.md).
+37. **Presets live in POM** as aggregates of getters and setters that each app's object model defines and customises (Georg, 2026-10-02: *"a funky aggregate of getter setters in pom, customised in the appOM"*). POM supplies catalogues, user presets, "which is current", and following a preset by reference with cascade.
+
 Decisions 31 to 34 were Claude's leans, taken by Georg on 2026-10-02 (*"go with your leans, unless they are a one-way door"*). None is: there are no files people keep yet. The near-one-way doors are the file format and the id encoding, so the file carries a format version from day one.
 
 ---
@@ -308,7 +311,6 @@ Shard was built alongside this plan. What it taught that is mechanics, and so rh
 
 ## Still open
 
-- **Presets: rhizome mechanism or object-model logic?** A named set of one node's values, applied in one edit, is generic. What to leave out of a preset (Shard leaves out the switch) is business logic. Lean: a mechanism in rhizome with a per-type list of keys presets skip, which the object model sets. Reserved, no API yet.
 - **The cross-file index:** waits on a decision about where it lives. The four index-ready shapes under Search are fixed now.
 
 Moved out on 2026-10-02: node roles (Shard's object model), Oblique's transport (Oblique's), the native-menu wiring's home and `usePersistedState` (neither is rhizome's; see [`tauri-scaffold.md`](tauri-scaffold.md) and [`native-apps.md`](native-apps.md)).
@@ -320,4 +322,5 @@ Moved out on 2026-10-02: node roles (Shard's object model), Oblique's transport 
 - [`versioned-persistence.md`](versioned-persistence.md): the file side.
 - [`interaction-state.md`](interaction-state.md): selection is not tree state.
 - [`rhizome-api.md`](rhizome-api.md): the API as built.
+- [`pom.md`](pom.md): POM, the base every object model is built on.
 - `projects/<app>/design/object-model.md`: each app's business logic.
