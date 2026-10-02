@@ -5,34 +5,49 @@ status: current
 repo: /Users/georg/rhizomatic-preset/packages/rhizome
 branch: main
 project: rhizome
-topic: rhizome-core first slice shipped; rhizome stays unaware of the apps (decision 35).
+topic: rhizome-core (mechanics) and rhizome-pom (POM, the Preset Object Model) — both built, nothing consumed by an app yet.
 updated: 2026-10-02
 ---
 
 # Handover — rhizome
 
-Continues `handovers/shard/handover-node-api.md`, which covered the planning. This file covers the code.
-
 ## Current status
 
-- **Repo:** `packages/rhizome`, private remote `preset-nz/rhizome`. Two crates: `crates/rhizome-core` (mechanics) and `crates/rhizome-pom` (POM). Not consumed by any app yet.
-- **First slice shipped** (epic 01): registry, tree, read views, `Edit` with every write verb, `Op` as data, scoped edits, gestures, coalesced edits, snapshot undo (cap 50), diff, canonical JSON file format with a load report, opaque nodes, extract/paste/copy.
-- **Design:** `design/rhizome-api.md` describes the shipped API (status current). `design/node-api.md` holds decisions 1 to 34; 29 to 34 were made 2026-10-02.
-- **Tests:** `just check`. POM: `tests/pom.rs` and `tests/workflows.rs` (data in `tests/workflows/`), `just pom`. Acid (`tests/acid.rs`), core workflows (`tests/core_workflows.rs` + `tests/workflows/*.json` with `*.txt` transcripts), invariants (`tests/invariants.rs`). `just bless` rewrites goldens; read every changed line.
-- **Copies:** `packages/rhizome/guidance/` holds copies of the two design docs and this handover's predecessor. Canonical versions are here.
-- **Not pushed** as of 2026-10-02 unless Georg said so after this was written; check `git status -sb`.
+- **Nothing pushed.** rhizome is 17 commits ahead of `origin/main` (private `preset-nz/rhizome`), guidance 11+. Georg has been asked several times and hasn't answered; ask once, don't push unasked.
+- **rhizome-core, first slice: shipped** (epic 01; `6f3513f`, `fe0a210`, `f7cf71b`). Registry, tree, edits/gestures/coalescing, undo, diff, canonical JSON file, opaque nodes, copy/paste, `Op` as data. Then `33490ea`: tree rules (`RegistryBuilder::rule` + `Violation`), `ChangeKind::Removed { type_name }`, public `Value::to_json`/`from_json`.
+- **rhizome-pom, phase 1 (headless): shipped** (`68adf5f`, `5a75639`, `9a5d40c`, `9851880`). `ObjectModel` trait + `Document<M>`; kinds with policy compiled into one tree rule; presets **on the kind** (`k.kind(t).presets(agg).catalogue([...])`), user presets as document nodes keyed by kind; `add_from_preset`; **themes** separate (catalogue, fallback, `followed_by`, cascade resolve); built-in commands (file, edit, `node.add`, `preset.*`, `theme.follow`).
+- **Tests:** `just check` green, 45-ish tests. core: acid, core_workflows (13), invariants (seeded random Ops). pom: `tests/pom.rs` (11), `tests/workflows.rs` (6 data workflows through commands).
+- **Decisions 35–38 made today** (all in `design/node-api.md`): 35 rhizome knows no app; 36 POM; 37 presets in POM as getter/setter aggregates; 38 presets belong to the kind, themes are separate, user presets travel with the file.
+- **App-specific planning moved out** of rhizome docs into `projects/<app>/design/object-model.md` (Shard in full; stubs for Oblique, Fault, Strata, M&T). M&T becomes Rust/Tauri, object model on POM (its README decision 19).
+- **Open, asked, unanswered (2026-10-02):** themes are generic (Fault hatch style, Oblique colour sets, Shard key/tempo/swing). Georg to choose (a) keep the name "theme" or rename to "setting"/"context" (Shard's key/tempo isn't visual), (b) add **user themes** now (document data, followed by id; the mechanism existed briefly when themes were presets).
+
+## References
+
+- `~/rhizomatic-preset/guidance/design/node-api.md` — the model, decisions 1–38.
+- `~/rhizomatic-preset/guidance/design/rhizome-api.md` — rhizome-core API as built, guarantees ↔ tests.
+- `~/rhizomatic-preset/guidance/design/pom.md` — POM as built: base class, policy, presets, themes, commands, phases, known gaps.
+- `~/rhizomatic-preset/guidance/projects/rhizome/README.md` — project index; epic 01 shipped, POM epic 2.
+- `~/rhizomatic-preset/guidance/projects/shard/design/object-model.md` — the worked object model (roles, presets, audio-thread plan).
+- `crates/rhizome-pom/src/{model,presets,themes,document,command}.rs` — POM; `crates/rhizome-core/src/{tree,edit,file,diff}.rs` — mechanics.
+- `crates/*/tests/workflows/*.json` + `*.txt` — data workflows and pinned transcripts.
+- `packages/rhizome/guidance/` — **copies** of the docs for remote work; canonical lives in the guidance repo. Recopy after editing.
 
 ## Next steps
 
-1. **rhizome knows no app** (decision 35, 2026-10-02). App-specific planning moved to `projects/<app>/design/object-model.md`. Adoption is each app's epic, not rhizome's; Shard's object model is the worked one and the likely first. Work on rhizome only when an object model needs a mechanism it lacks.
-2. **POM** (decisions 36, 37; `design/pom.md`): phase 1, `rhizome-pom` headless, shipped 2026-10-02 with its own tests and core-workflow suite. Next is phase 2, `rhizome-pom-tauri` (commands and gestures as Tauri commands, Commit events, opened-from-Finder, the command list for native-menu). Presets live on the kind and themes are separate (decision 38). Known gap: "not deletable" finds the parent by its old path (see pom.md).
-3. **Root file value:** `node-api.md` has the root carry its file path as a value; the first slice doesn't. Add when a consumer needs it.
-4. **Reserved, no API yet:** `find`/search, smart groups, calculated results and staleness, time.
-5. The TypeScript package comes with POM phase 3, over Tauri. Wasm still waits for a consumer (decision 19): every app is Tauri.
+1. Ask Georg: push both repos? Then the two theme questions (name; user themes now).
+2. If user themes: `themes.rs` gains save/rename/delete as nodes in POM's `presets` category (or a `themes` category), followed by `Ref::here`; delete unfollows (the old `presets.rs` had this, see `5a75639`). Add to `tests/pom.rs` and a workflow; `just bless`, read every changed line.
+3. POM phase 2, `rhizome-pom-tauri`: commands and gestures as Tauri commands, `Commit` events, opened-from-Finder (lift Shard `src-tauri/src/opened.rs`), the command list for `native-menu`. Keep Tauri out of `rhizome-pom`.
+4. Phase 3, `@preset.nz/pom`: mirror, hooks, Tauri transport, facets bridge (needs inspector hints on kinds). Wasm still waits for a consumer.
+5. First adoption is an app's epic, not rhizome's (Shard's object model is the worked one). Path dependency on `packages/rhizome/crates/rhizome-pom`.
+6. After any doc change: update `status`/`updated`, recopy into `packages/rhizome/guidance/`, commit both repos.
 
 ## Gotchas
 
-- Sequential ids (`IdSource::sequential()`) are for tests; apps use ULIDs. Goldens depend on sequential ids, so adding a category to a test registry shifts every id in its goldens.
-- The workflow registry in `tests/core_workflows.rs` is frozen on purpose. Change it and every transcript changes.
-- `serde_json` must not get the `preserve_order` feature; canonical output relies on sorted keys inside values.
-- Georg's vocabulary: rhizome, node API, object model, category, group, smart group, loaded, calculated, kind.
+- **Georg's vocabulary:** rhizome, node API, object model, POM, kind, category, group, smart group, loaded, calculated, preset, theme. Don't rename to industry terms; "scene" is dropped.
+- **Nothing app-named in rhizome or POM** code, tests or docs (decision 35). Test models are made up (Synth, Atlas, Gazetteer); the workflow models are frozen, so changing one changes every transcript.
+- **`just bless` then read every line.** Blessed goldens caught real bugs this session (an elided-fragment label garbling every step).
+- **cargo fmt rewraps lines,** so scripted string-replace edits after a format often miss. Re-read before patching.
+- **Generic paste/duplicate append to every parent order;** POM re-pins pinned kinds (`model.rs` `repin`). A generic `node.add` doesn't place a node in any order: apps override `node.add` with their domain verb.
+- **Known gap:** "not deletable" finds the parent by its old path; rename-parent-and-remove-child in one edit slips past.
+- Sequential ids in tests (`IdSource::sequential()`); goldens depend on them.
+- `serde_json` must not get `preserve_order`: canonical output relies on sorted keys.
