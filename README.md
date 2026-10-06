@@ -4,7 +4,18 @@ The shared node API for the preset.nz desktop apps: mechanics only. A network of
 
 rhizome knows no app. It stores, validates, edits, undoes, diffs, saves and copies nodes of whatever types an app declares. Each app's **object model** holds its business logic, in the app's own repo.
 
-**Status: first slice and POM phase 1 built.** `crates/rhizome-core` holds the mechanics: the registry, the tree, edits with undo, diff, the file format, opaque nodes, copy/paste, tree rules. `crates/rhizome-pom` is POM, the Preset Object Model: the base every app's object model is built on (documents, kinds with policy, presets, commands, projections). The Tauri crate and the TypeScript package come next.
+**Status: first slice and POM phase 1 built.** `crates/rhizome-core` holds the mechanics: the registry, the tree, edits with undo, diff, the file format, opaque nodes, copy/paste, tree rules. `crates/rhizome-pom` is POM, the Preset Object Model: the base every app's object model is built on (documents, kinds with policy, presets, commands, projections). `crates/rhizome-pom-tauri` puts one open document behind Tauri commands and events. A TypeScript package comes next.
+
+## Install
+
+```toml
+[dependencies]
+rhizome-core = "0.1"
+rhizome-pom = "0.1"        # an object model on POM
+rhizome-pom-tauri = "0.1"  # a Tauri 2 app with one open document
+```
+
+Take only what you need: `rhizome-pom` brings `rhizome-core` with it, and `rhizome-pom-tauri` brings both.
 
 ## Tests
 
