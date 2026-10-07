@@ -7,6 +7,7 @@ check:
     cargo fmt --all --check
     cargo clippy --all-targets -- -D warnings
     cargo test
+    just licences
 
 # Run the tests
 [group('quality')]
@@ -45,3 +46,20 @@ bless:
 [group('dev')]
 fmt:
     cargo fmt --all
+
+# Licence check against the committed lock. Reads files only, no network.
+# Re-resolve with `preset-compliance licences scan` after changing dependencies.
+[group('quality')]
+licences:
+    preset-compliance licences check
+
+# Version, changelog, commit and tag from the conventional commits since the last
+# tag (knope.toml). Push and publish stay by hand.
+[group('build')]
+release:
+    knope release
+
+# What `release` would do, without touching anything.
+[group('build')]
+release-preview:
+    knope release --dry-run

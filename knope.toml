@@ -1,0 +1,40 @@
+# Releases: `just release`. Bumps the workspace version, the three crates'
+# path-dependency versions and Cargo.lock in lockstep from the conventional
+# commits since the last tag, writes CHANGELOG.md, rescans the licence lock,
+# commits and tags. Pushing and publishing to crates.io stay manual.
+
+[package]
+versioned_files = [
+    "Cargo.toml",
+    { path = "crates/rhizome-pom/Cargo.toml", dependency = "rhizome-core" },
+    { path = "crates/rhizome-pom-tauri/Cargo.toml", dependency = "rhizome-core" },
+    { path = "crates/rhizome-pom-tauri/Cargo.toml", dependency = "rhizome-pom" },
+    { path = "Cargo.lock", dependency = "rhizome-core" },
+    { path = "Cargo.lock", dependency = "rhizome-pom" },
+    { path = "Cargo.lock", dependency = "rhizome-pom-tauri" },
+]
+changelog = "CHANGELOG.md"
+
+[[workflows]]
+name = "release"
+
+[[workflows.steps]]
+type = "Command"
+command = "just check"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+
+# The licence lock hashes Cargo.toml and Cargo.lock, so a bump makes it stale.
+[[workflows.steps]]
+type = "Command"
+command = "preset-compliance licences scan && git add preset-compliance.lock"
+shell = true
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"release: $version\""
+variables = { "$version" = "Version" }
+
+[[workflows.steps]]
+type = "Release"
