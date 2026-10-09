@@ -11,4 +11,4 @@ readme.workspace = true
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"
-ulid = "1"
+ulid = "3"
