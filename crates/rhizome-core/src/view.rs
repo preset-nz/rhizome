@@ -112,12 +112,18 @@ impl<'a> Node<'a> {
         T::from_value(&self.value(key.name())?)
     }
 
-    /// A value, with the schema default when unset.
+    /// A value, with the schema default when unset. Clones it: for a large value read in a
+    /// loop (a check, a projection), [`Node::value_ref`] borrows instead.
     pub fn value(&self, key: &str) -> Option<Value> {
+        self.value_ref(key).cloned()
+    }
+
+    /// A value, borrowed, with the schema default when unset.
+    pub fn value_ref(&self, key: &str) -> Option<&'a Value> {
         if let Some(v) = self.data.values.get(key) {
-            return Some(v.clone());
+            return Some(v);
         }
-        Some(self.node_type()?.spec(key)?.default.clone())
+        Some(&self.node_type()?.spec(key)?.default)
     }
 
     /// Whether the value is stored, rather than read from the default.
