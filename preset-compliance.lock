@@ -27,7 +27,7 @@ sha256 = "edb1c8e2f6a1fdbbb0b46eab35f98d6e33e22e9e4e6a7d4555b69f113a59ebe6"
 [[inputs]]
 path = "pnpm-lock.yaml"
 ecosystem = "pnpm"
-sha256 = "6c163d2ff2303db6a61d4c80697d255d9eaeffb2e908121d844212d8cfcc9687"
+sha256 = "36289981cc2a1f09bbe2726c33784bcfe0f477de95219a17fdc97be2b5d01a4e"
 
 [[packages]]
 ecosystem = "cargo"
@@ -3223,8 +3223,24 @@ scope = "dev"
 
 [[packages]]
 ecosystem = "pnpm"
+name = "@jridgewell/resolve-uri"
+version = "3.1.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
 name = "@jridgewell/sourcemap-codec"
 version = "1.6.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@jridgewell/trace-mapping"
+version = "0.3.31"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -3367,14 +3383,6 @@ scope = "dev"
 
 [[packages]]
 ecosystem = "pnpm"
-name = "@standard-schema/spec"
-version = "1.1.0"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
 name = "@tauri-apps/api"
 version = "2.12.3"
 source = "registry"
@@ -3455,40 +3463,8 @@ scope = "dev"
 
 [[packages]]
 ecosystem = "pnpm"
-name = "@vitest/expect"
-version = "4.1.11"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
 name = "@vitest/mocker"
-version = "4.1.11"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "@vitest/pretty-format"
-version = "4.1.11"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "@vitest/runner"
-version = "4.1.11"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "@vitest/snapshot"
-version = "4.1.11"
+version = "5.0.3"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -3496,15 +3472,7 @@ scope = "dev"
 [[packages]]
 ecosystem = "pnpm"
 name = "@vitest/spy"
-version = "4.1.11"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "@vitest/utils"
-version = "4.1.11"
+version = "5.0.3"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -3561,14 +3529,6 @@ scope = "dev"
 ecosystem = "pnpm"
 name = "chai"
 version = "6.3.0"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "convert-source-map"
-version = "2.0.0"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -3944,7 +3904,7 @@ scope = "dev"
 [[packages]]
 ecosystem = "pnpm"
 name = "magic-string"
-version = "0.30.21"
+version = "1.4.3"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -3985,14 +3945,6 @@ scope = "dev"
 ecosystem = "pnpm"
 name = "parse5"
 version = "8.0.1"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "pathe"
-version = "2.0.3"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -4095,26 +4047,10 @@ scope = "dev"
 
 [[packages]]
 ecosystem = "pnpm"
-name = "siginfo"
-version = "2.0.0"
-source = "registry"
-declared = "ISC"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
 name = "source-map-js"
 version = "1.2.2"
 source = "registry"
 declared = "BSD-3-Clause"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "stackback"
-version = "0.0.2"
-source = "registry"
-declared = "MIT"
 scope = "dev"
 
 [[packages]]
@@ -4136,7 +4072,7 @@ scope = "dev"
 [[packages]]
 ecosystem = "pnpm"
 name = "tinybench"
-version = "2.9.0"
+version = "6.2.2"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -4153,14 +4089,6 @@ scope = "dev"
 ecosystem = "pnpm"
 name = "tinyglobby"
 version = "0.2.17"
-source = "registry"
-declared = "MIT"
-scope = "dev"
-
-[[packages]]
-ecosystem = "pnpm"
-name = "tinyrainbow"
-version = "3.2.0"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -4224,7 +4152,7 @@ scope = "dev"
 [[packages]]
 ecosystem = "pnpm"
 name = "vitest"
-version = "4.1.11"
+version = "5.0.3"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -4272,7 +4200,7 @@ scope = "dev"
 [[packages]]
 ecosystem = "pnpm"
 name = "why-is-node-running"
-version = "2.3.0"
+version = "3.2.1"
 source = "registry"
 declared = "MIT"
 scope = "dev"
