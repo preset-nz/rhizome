@@ -27,7 +27,7 @@
     "@biomejs/biome": "^2.5.15",
     "@tauri-apps/api": "^2",
     "@testing-library/react": "^16",
-    "@types/node": "^24",
+    "@types/node": "^26",
     "@types/react": "^19",
     "jsdom": "^27",
     "lefthook": "^2.1.17",
