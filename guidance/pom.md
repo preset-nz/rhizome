@@ -2,7 +2,7 @@
 title: POM — the Preset Object Model every app's object model is built on
 type: design
 status: current
-updated: 2026-10-02
+updated: 2026-10-13
 ---
 
 # POM — Preset Object Model
@@ -149,7 +149,7 @@ POM had themes (catalogue, fallback, `followed_by`, cascade resolve, `theme.foll
 
 ## Commands
 
-POM implements the **commands-first contract** of [`plugin-primitive.md`](plugin-primitive.md). A command has an id, a label (a function of the document, so Undo can say what it undoes), `enabled` for a JSON payload, and `run`, which returns an `Outcome`: `Nothing`, `Committed(Commit)` or `Text` (a copied fragment). `Document::run(id, payload)` refuses a disabled command; `commands(payload)` lists every id with its label and state, for `native-menu`.
+POM implements the **commands-first contract** of [`plugin-primitive.md`](plugin-primitive.md). A command has an id, a label (a function of the document, so Undo can say what it undoes), `enabled` for a JSON payload, and `run`, which returns an `Outcome`: `Nothing`, `Committed(Commit)` or `Text` (a copied fragment). `Document::run(id, payload)` refuses a disabled command; `commands(payload)` lists every id with its label and state, for the native menu (`app-kit`, planned as `native-menu` until 2026-10-03).
 
 **Built in, so no app writes them:**
 
@@ -179,6 +179,16 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 
 `@preset.nz/pom`: a read-only mirror of the tree kept current from `Commit`s; hooks such as `useNode`, `useValue`, `useHistory`, `usePresets`, `useCommand` and `useGesture`; one transport interface, implemented over Tauri commands. Every app is a Tauri app, so wasm still waits for a consumer (decision 19).
 
+**First slice: built 2026-10-13** (rhizome `c452129`; 47 TypeScript tests, a new `rhizome-pom` wire golden for `View`, `Update`, `Status` and `Ran`; fresh clone green). Georg, 2026-10-13; M&T epic 15 is the consumer: the webview client of `rhizome-pom-tauri`, extracted from Oblique's epic 21 code and rewritten to name no app. M&T is the second app to need it, which meets decision 19's "second consumer". It lives in the rhizome repo as unbuilt TypeScript in `src-ts/`, the way `packages/math` ships, and is versioned with the crates.
+
+- **Transport.** A `PomBackend` interface over exactly what `rhizome-pom-tauri` exposes: the `pom_*` commands and the `pom://commit` and `pom://status` events. `tauriBackend` implements it, and tests pass a fake. An app's own events (a document host's opened, saved or stepped) stay in the app.
+- **Channel.** One ordered queue, so commands reach Rust in the order they were made and a gesture's `end` finds its token. The gate starts open; holding it shut until the app is ready is an option. `drag` is latest-wins, for scrubs and transforms only: a paint stroke batches its own cells and calls `run` once per frame, so nothing is dropped.
+- **Mirror.** Rows by id with a path index. `connect`, then subscribe, then `view`. An update applies when it is next in line, a `seq` gap re-reads the view, and a new `generation` on the status reloads it. It is created outside React.
+- **Hooks.** `useNode(id)`, `useNodeAt(path)`, `useChildren(id, order)`, `useStatus()`, through `useSyncExternalStore`, so StrictMode's double mount is harmless.
+- **Wire types** come from the Rust structs, and a test loads the rhizome goldens (`view.json`, `commit.json`, and a pinned `Update` and `Status`), so the build fails if the two drift.
+- **Later, in their own slices:** the facets bridge with inspector hints, `useHistory`, `usePresets`, `useCommand`, `useGesture`, and Oblique's move onto the package (its own story).
+- **Unpublished** until Georg publishes it; M&T takes it by path meanwhile (Family requirements, path dependencies).
+
 ---
 
 ## What POM is not
@@ -186,7 +196,7 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 | Not POM's | Whose |
 |---|---|
 | The plugin system (manifests, activation, compute plugins) | [`plugin-primitive.md`](plugin-primitive.md). POM provides commands and kinds that plugins contribute to |
-| Building the native menu | `native-menu` ([`tauri-scaffold.md`](tauri-scaffold.md)) |
+| Building the native menu | `app-kit` ([`tauri-scaffold.md`](tauri-scaffold.md)) |
 | Preferences and Settings | `preferences` |
 | Window size and position | `window-restore` |
 | Selection, hover, tool state | The app ([`interaction-state.md`](interaction-state.md)): not tree state |
@@ -220,7 +230,7 @@ Every app's inspector is a facets panel. A kind's schema (kinds, ranges, default
 |---|---|
 | `run(id, payload, coalesce?)` | Runs a command. With a coalesce key, consecutive runs within the window are one undo step: a knob drag |
 | `begin(label)` → token, `end(token)`, `cancel(token)` | A gesture: commands run in between are one undo step; cancel takes them back, as a commit. A new `begin`, or `reset`, ends a gesture the front end lost, keeping its edits |
-| `status()`, `view()`, `tree()`, `commands(payload)` | What a window shows; the whole document as rows and schema, for a mirror to start from (decision 48); the tree in the file format; the command list for `native-menu` |
+| `status()`, `view()`, `tree()`, `commands(payload)` | What a window shows; the whole document as rows and schema, for a mirror to start from (decision 48); the tree in the file format; the command list for `app-kit`'s menu |
 | `new_document()`, `open(path)` → issues, `save_as(path)` | Files by path; dialogs are the front end's. Save, revert, undo and redo are commands |
 | `reset()` | The front end (re)connected |
 
@@ -238,7 +248,7 @@ Tests: `tests/host.rs` (headless, a made-up *Loom*) and `rhizome-pom-tauri/tests
 
 1. **`rhizome-pom`, headless.** Shipped 2026-10-02.
 2. **`rhizome-pom-tauri`.** Shipped 2026-10-02 (`5d86ea8`, `4c750a1`, `bed6ae2`). See "Over a transport" below.
-3. **`@preset.nz/pom`.** Mirror, hooks, the Tauri transport, the facets bridge with inspector hints.
+3. **`@preset.nz/pom`.** Mirror, hooks, the Tauri transport, the facets bridge with inspector hints. First slice (transport, channel, mirror, read hooks) built 2026-10-13 (rhizome `c452129`), unpublished; see "The TypeScript half".
 4. **More stores.** A bundle folder, then a database, when M&T and Strata need them.
 
 ## Related
@@ -246,5 +256,5 @@ Tests: `tests/host.rs` (headless, a made-up *Loom*) and `rhizome-pom-tauri/tests
 - [`node-api.md`](node-api.md): the model; decisions 35 to 37.
 - [`rhizome-api.md`](rhizome-api.md): the mechanics POM builds on.
 - [`plugin-primitive.md`](plugin-primitive.md): commands and capabilities.
-- [`tauri-scaffold.md`](tauri-scaffold.md): native-menu, preferences, window-restore.
+- [`tauri-scaffold.md`](tauri-scaffold.md): app-kit (was native-menu and window-restore), preferences.
 - `projects/<app>/design/object-model.md`: each app's object model, built on POM.
