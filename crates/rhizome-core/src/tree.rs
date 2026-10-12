@@ -82,9 +82,8 @@ impl Tree {
         let mut state = State::new(ids.next());
         for (name, _) in registry.categories() {
             let id = ids.next();
-            state
-                .nodes
-                .insert(id, NodeData::new(id, name, Some(state.root), CATEGORY));
+            let root = state.root;
+            state.insert(NodeData::new(id, name, Some(root), CATEGORY));
             state
                 .node_mut(state.root)
                 .children
@@ -455,6 +454,73 @@ impl Tree {
 
     /// Derived, never a flag: the current state differs from the saved one.
     pub fn is_unsaved(&self) -> bool {
-        !diff(&self.saved, &self.state).is_empty()
+        // A yes or no, not a changeset: stops at the first difference and skips shared nodes.
+        !self.saved.same_as(&self.state)
+    }
+}
+
+#[cfg(test)]
+mod sharing {
+    use std::sync::Arc;
+
+    use crate::*;
+
+    const SIZE: Key<f64> = Key::new("size");
+
+    fn tree() -> Tree {
+        let registry = Registry::builder()
+            .category("things", Origin::Loaded)
+            .node(
+                NodeType::new("thing")
+                    .in_categories(&["things"])
+                    .float(SIZE, 0.0..=10.0, 1.0),
+            )
+            .build()
+            .expect("registry");
+        Tree::with_ids(registry, IdSource::sequential())
+    }
+
+    #[test]
+    fn an_edit_copies_only_the_nodes_it_writes() {
+        let mut t = tree();
+        let (ids, _) = t
+            .edit("Add", |tx| {
+                Ok((
+                    tx.add("/things", "thing", "a")?,
+                    tx.add("/things", "thing", "b")?,
+                ))
+            })
+            .unwrap();
+        let (a, b) = ids;
+        t.edit("Size", |tx| tx.set(a, SIZE, 5.0)).unwrap();
+        let before = &t.undo.last().expect("a step").state;
+        assert!(!Arc::ptr_eq(&before.nodes[&a], &t.state.nodes[&a]));
+        assert!(Arc::ptr_eq(&before.nodes[&b], &t.state.nodes[&b]));
+        // undo restores the shared state, and the saved check agrees with the diff
+        t.mark_saved();
+        assert!(!t.is_unsaved());
+        t.undo().unwrap();
+        assert!(t.is_unsaved());
+        t.redo().unwrap();
+        assert!(!t.is_unsaved());
+    }
+
+    #[test]
+    fn value_ref_borrows_the_stored_value_or_the_default() {
+        let mut t = tree();
+        let (a, _) = t.edit("Add", |tx| tx.add("/things", "thing", "a")).unwrap();
+        assert_eq!(
+            t.root()
+                .child("things")
+                .unwrap()
+                .child("a")
+                .unwrap()
+                .value_ref("size"),
+            Some(&Value::Float(1.0))
+        );
+        t.edit("Size", |tx| tx.set(a, SIZE, 3.0)).unwrap();
+        let n = t.root().child("things").unwrap().child("a").unwrap();
+        assert_eq!(n.value_ref("size"), Some(&Value::Float(3.0)));
+        assert_eq!(n.value_ref("nope"), None);
     }
 }

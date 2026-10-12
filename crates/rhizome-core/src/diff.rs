@@ -244,6 +244,10 @@ pub(crate) fn diff(a: &State, b: &State) -> Changeset {
             );
             continue;
         };
+        // Still shared with the state before: nothing about this node changed.
+        if std::sync::Arc::ptr_eq(da, &b.nodes[id]) {
+            continue;
+        }
         if da.parent != db.parent || da.name != db.name {
             push(
                 path,

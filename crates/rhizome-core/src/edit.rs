@@ -273,8 +273,7 @@ impl<'t> Edit<'t> {
     pub(crate) fn insert_node(&mut self, parent: NodeId, type_name: &str, name: &str) -> NodeId {
         let id = self.ids.next();
         self.state
-            .nodes
-            .insert(id, NodeData::new(id, name, Some(parent), type_name));
+            .insert(NodeData::new(id, name, Some(parent), type_name));
         self.state
             .node_mut(parent)
             .children

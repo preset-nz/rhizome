@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
@@ -144,16 +145,20 @@ impl NodeData {
 }
 
 /// One file's nodes. Cloned for every undo step and every snapshot.
+///
+/// Each node sits behind an `Arc`, so a clone copies pointers, not values: an edit copies only
+/// the nodes it writes ([`State::node_mut`]), and every other node stays shared between the
+/// before and after states, which also lets [`crate::diff`] skip it by pointer.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct State {
     pub root: NodeId,
-    pub nodes: BTreeMap<NodeId, NodeData>,
+    pub nodes: BTreeMap<NodeId, Arc<NodeData>>,
 }
 
 impl State {
     pub fn new(root: NodeId) -> State {
         let mut nodes = BTreeMap::new();
-        nodes.insert(root, NodeData::new(root, "", None, ROOT));
+        nodes.insert(root, Arc::new(NodeData::new(root, "", None, ROOT)));
         State { root, nodes }
     }
 
@@ -161,8 +166,14 @@ impl State {
         &self.nodes[&id]
     }
 
+    /// The node, for writing: copied first if another state still shares it.
     pub fn node_mut(&mut self, id: NodeId) -> &mut NodeData {
-        self.nodes.get_mut(&id).expect("node exists")
+        Arc::make_mut(self.nodes.get_mut(&id).expect("node exists"))
+    }
+
+    /// Adds or replaces a node.
+    pub fn insert(&mut self, d: NodeData) {
+        self.nodes.insert(d.id, Arc::new(d));
     }
 
     pub fn contains(&self, id: NodeId) -> bool {
@@ -231,9 +242,27 @@ impl State {
         out
     }
 
+    /// Whether two states hold the same nodes: what an empty [`crate::diff`] means, without
+    /// building one. Nodes still shared between them are equal by pointer.
+    pub fn same_as(&self, other: &State) -> bool {
+        self.root == other.root
+            && self.nodes.len() == other.nodes.len()
+            && self.nodes.iter().all(|(id, a)| {
+                other
+                    .nodes
+                    .get(id)
+                    .is_some_and(|b| Arc::ptr_eq(a, b) || a == b)
+            })
+    }
+
     /// Drops every pointer to the given ids: orders, members and bindings. Refs stay, unresolved.
     pub fn forget(&mut self, gone: &BTreeSet<NodeId>) {
+        // Only the nodes that point at something gone are written, so the rest stay shared.
         for d in self.nodes.values_mut() {
+            if !d.pointers().any(|id| gone.contains(&id)) {
+                continue;
+            }
+            let d = Arc::make_mut(d);
             for order in d.orders.values_mut() {
                 order.retain(|id| !gone.contains(id));
             }

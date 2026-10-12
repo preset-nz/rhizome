@@ -581,7 +581,7 @@ pub(crate) fn load(
         if opaque {
             d.raw = Some(p.rec.values.clone());
         }
-        state.nodes.insert(p.id, d);
+        state.insert(d);
         state
             .node_mut(parent)
             .children
@@ -600,9 +600,7 @@ pub(crate) fn load(
     for (name, _) in registry.categories() {
         if !state.node(root).children.contains_key(name) {
             let id = ids.next();
-            state
-                .nodes
-                .insert(id, NodeData::new(id, name, Some(root), CATEGORY));
+            state.insert(NodeData::new(id, name, Some(root), CATEGORY));
             state.node_mut(root).children.insert(name.to_string(), id);
         }
     }
