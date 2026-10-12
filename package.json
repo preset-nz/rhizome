@@ -29,7 +29,7 @@
     "@testing-library/react": "^16",
     "@types/node": "^24",
     "@types/react": "^19",
-    "jsdom": "^27",
+    "jsdom": "^30",
     "lefthook": "^2.1.17",
     "react": "^19",
     "react-dom": "^19",
