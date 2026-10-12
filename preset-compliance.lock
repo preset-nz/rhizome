@@ -27,7 +27,7 @@ sha256 = "edb1c8e2f6a1fdbbb0b46eab35f98d6e33e22e9e4e6a7d4555b69f113a59ebe6"
 [[inputs]]
 path = "pnpm-lock.yaml"
 ecosystem = "pnpm"
-sha256 = "6c163d2ff2303db6a61d4c80697d255d9eaeffb2e908121d844212d8cfcc9687"
+sha256 = "567dd27b976afcc1af940463decb7e28e0d1e7d4c0b5661d5689128074eb7e1f"
 
 [[packages]]
 ecosystem = "cargo"
@@ -3432,7 +3432,7 @@ scope = "dev"
 [[packages]]
 ecosystem = "pnpm"
 name = "@types/node"
-version = "24.19.2"
+version = "26.6.4"
 source = "registry"
 declared = "MIT"
 scope = "dev"
@@ -4208,7 +4208,7 @@ scope = "dev"
 [[packages]]
 ecosystem = "pnpm"
 name = "undici-types"
-version = "7.24.6"
+version = "8.9.0"
 source = "registry"
 declared = "MIT"
 scope = "dev"
