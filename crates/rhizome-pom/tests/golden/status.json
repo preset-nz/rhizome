@@ -1,0 +1,29 @@
+{
+  "gesture": {
+    "generation": 0,
+    "gesture": true,
+    "path": null,
+    "redo": null,
+    "title": "Untitled — Edited",
+    "undo": null,
+    "unsaved": true
+  },
+  "saved": {
+    "generation": 0,
+    "gesture": false,
+    "path": "/looms/one.loom",
+    "redo": null,
+    "title": "one.loom",
+    "undo": "Delete",
+    "unsaved": false
+  },
+  "untitled": {
+    "generation": 0,
+    "gesture": false,
+    "path": null,
+    "redo": null,
+    "title": "Untitled — Edited",
+    "undo": "New thread",
+    "unsaved": true
+  }
+}

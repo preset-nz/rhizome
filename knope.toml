@@ -1,4 +1,4 @@
-# Releases: `just release`. Bumps the workspace version, the three crates'
+# Releases: `just release`. Bumps the workspace version, package.json, the three crates'
 # path-dependency versions and Cargo.lock in lockstep from the conventional
 # commits since the last tag, writes CHANGELOG.md, rescans the licence lock,
 # commits and tags. Pushing and publishing to crates.io stay manual.
@@ -6,6 +6,7 @@
 [package]
 versioned_files = [
     "Cargo.toml",
+    "package.json",
     { path = "crates/rhizome-pom/Cargo.toml", dependency = "rhizome-core" },
     { path = "crates/rhizome-pom-tauri/Cargo.toml", dependency = "rhizome-core" },
     { path = "crates/rhizome-pom-tauri/Cargo.toml", dependency = "rhizome-pom" },
@@ -25,10 +26,11 @@ command = "just check"
 [[workflows.steps]]
 type = "PrepareRelease"
 
-# The licence lock hashes Cargo.toml and Cargo.lock, so a bump makes it stale.
+# knope writes package.json without a trailing newline, which Biome rejects; the licence
+# lock hashes Cargo.toml, Cargo.lock and pnpm-lock.yaml, so a bump makes it stale.
 [[workflows.steps]]
 type = "Command"
-command = "preset-compliance licences scan && git add preset-compliance.lock"
+command = "./node_modules/.bin/biome format --write package.json && preset-compliance licences scan && git add package.json preset-compliance.lock"
 shell = true
 
 [[workflows.steps]]

@@ -7,6 +7,26 @@
 # Guidance: design/family-alignment.md, row 7a.
 version: 2
 updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+      exclude: ["@preset.nz/*"]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      preset:
+        patterns: ["@preset.nz/*"]
+      tauri:
+        patterns: ["@tauri-apps/*"]
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
   - package-ecosystem: cargo
     directory: "/"
     schedule:

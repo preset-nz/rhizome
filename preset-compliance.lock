@@ -24,6 +24,11 @@ sha256 = "9c34f19ac6da64551be2f79dcefb449c601f6965a688c82cbeaa928c1187f1f0"
 path = "crates/rhizome-pom-tauri/Cargo.toml"
 sha256 = "edb1c8e2f6a1fdbbb0b46eab35f98d6e33e22e9e4e6a7d4555b69f113a59ebe6"
 
+[[inputs]]
+path = "pnpm-lock.yaml"
+ecosystem = "pnpm"
+sha256 = "6c163d2ff2303db6a61d4c80697d255d9eaeffb2e908121d844212d8cfcc9687"
+
 [[packages]]
 ecosystem = "cargo"
 name = "adler2"
@@ -3031,3 +3036,1267 @@ version = "1.0.23"
 source = "registry"
 declared = "MIT"
 scope = "shipped"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@acemir/cssom"
+version = "0.9.32"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@asamuzakjp/css-color"
+version = "4.1.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@asamuzakjp/dom-selector"
+version = "6.8.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@asamuzakjp/nwsapi"
+version = "2.3.9"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@babel/code-frame"
+version = "7.29.7"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@babel/helper-validator-identifier"
+version = "7.29.7"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@babel/runtime"
+version = "7.29.10"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/biome"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-darwin-arm64"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-darwin-x64"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-linux-arm64"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-linux-arm64-musl"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-linux-x64"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-linux-x64-musl"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-win32-arm64"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@biomejs/cli-win32-x64"
+version = "2.5.15"
+source = "registry"
+declared = "MIT OR Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@csstools/color-helpers"
+version = "6.1.2"
+source = "registry"
+declared = "MIT-0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@csstools/css-calc"
+version = "3.4.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@csstools/css-color-parser"
+version = "4.2.6"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@csstools/css-parser-algorithms"
+version = "4.0.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@csstools/css-syntax-patches-for-csstree"
+version = "1.1.15"
+source = "registry"
+declared = "MIT-0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@csstools/css-tokenizer"
+version = "4.0.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@exodus/bytes"
+version = "1.16.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@jridgewell/sourcemap-codec"
+version = "1.6.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@oxc-project/types"
+version = "0.153.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-android-arm-eabi"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-android-arm64"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-darwin-arm64"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-darwin-x64"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-freebsd-x64"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-linux-arm-gnueabihf"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-linux-arm64-gnu"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-linux-arm64-musl"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-linux-ppc64-gnu"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-linux-s390x-gnu"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-linux-x64-gnu"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-linux-x64-musl"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-openharmony-arm64"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-win32-arm64-msvc"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/binding-win32-x64-msvc"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@rolldown/pluginutils"
+version = "1.0.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@standard-schema/spec"
+version = "1.1.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@tauri-apps/api"
+version = "2.12.3"
+source = "registry"
+declared = "Apache-2.0 OR MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@testing-library/dom"
+version = "10.4.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@testing-library/react"
+version = "16.3.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@types/aria-query"
+version = "5.0.4"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@types/chai"
+version = "5.2.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@types/deep-eql"
+version = "4.0.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@types/estree"
+version = "1.0.9"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@types/node"
+version = "24.19.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@types/react"
+version = "19.3.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@types/react-dom"
+version = "19.3.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@vitest/expect"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@vitest/mocker"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@vitest/pretty-format"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@vitest/runner"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@vitest/snapshot"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@vitest/spy"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "@vitest/utils"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "agent-base"
+version = "7.1.4"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "ansi-regex"
+version = "5.0.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "ansi-styles"
+version = "5.2.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "aria-query"
+version = "5.3.0"
+source = "registry"
+declared = "Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "assertion-error"
+version = "2.0.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "bidi-js"
+version = "1.1.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "chai"
+version = "6.3.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "convert-source-map"
+version = "2.0.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "css-tree"
+version = "3.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "cssstyle"
+version = "5.3.7"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "csstype"
+version = "3.2.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "data-urls"
+version = "6.0.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "debug"
+version = "4.4.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "decimal.js"
+version = "10.6.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "dequal"
+version = "2.0.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "detect-libc"
+version = "2.1.2"
+source = "registry"
+declared = "Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "dom-accessibility-api"
+version = "0.5.16"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "entities"
+version = "8.1.0"
+source = "registry"
+declared = "BSD-2-Clause"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "es-module-lexer"
+version = "2.3.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "estree-walker"
+version = "3.0.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "expect-type"
+version = "1.4.0"
+source = "registry"
+declared = "Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "fdir"
+version = "6.5.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "fsevents"
+version = "2.3.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "html-encoding-sniffer"
+version = "6.0.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "http-proxy-agent"
+version = "7.0.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "https-proxy-agent"
+version = "7.0.6"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "is-potential-custom-element-name"
+version = "1.0.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "js-tokens"
+version = "4.0.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "jsdom"
+version = "27.4.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-darwin-arm64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-darwin-x64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-freebsd-arm64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-freebsd-x64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-linux-arm64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-linux-x64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-openbsd-arm64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-openbsd-x64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-windows-arm64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lefthook-windows-x64"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-android-arm64"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-darwin-arm64"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-darwin-x64"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-freebsd-x64"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-linux-arm-gnueabihf"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-linux-arm64-gnu"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-linux-arm64-musl"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-linux-x64-gnu"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-linux-x64-musl"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-win32-arm64-msvc"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lightningcss-win32-x64-msvc"
+version = "1.33.0"
+source = "registry"
+declared = "MPL-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lru-cache"
+version = "11.5.3"
+source = "registry"
+declared = "BlueOak-1.0.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "lz-string"
+version = "1.5.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "magic-string"
+version = "0.30.21"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "mdn-data"
+version = "2.27.1"
+source = "registry"
+declared = "CC0-1.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "ms"
+version = "2.1.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "nanoid"
+version = "3.3.20"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "obug"
+version = "2.2.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "parse5"
+version = "8.0.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "pathe"
+version = "2.0.3"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "picocolors"
+version = "1.1.1"
+source = "registry"
+declared = "ISC"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "picomatch"
+version = "4.0.7"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "postcss"
+version = "8.5.29"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "pretty-format"
+version = "27.5.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "punycode"
+version = "2.3.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "react"
+version = "19.3.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "react-dom"
+version = "19.3.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "react-is"
+version = "17.0.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "require-from-string"
+version = "2.0.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "rolldown"
+version = "1.2.13"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "saxes"
+version = "6.0.0"
+source = "registry"
+declared = "ISC"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "scheduler"
+version = "0.28.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "siginfo"
+version = "2.0.0"
+source = "registry"
+declared = "ISC"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "source-map-js"
+version = "1.2.2"
+source = "registry"
+declared = "BSD-3-Clause"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "stackback"
+version = "0.0.2"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "std-env"
+version = "4.3.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "symbol-tree"
+version = "3.2.4"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tinybench"
+version = "2.9.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tinyexec"
+version = "1.3.1"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tinyglobby"
+version = "0.2.17"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tinyrainbow"
+version = "3.2.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tldts"
+version = "7.4.18"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tldts-core"
+version = "7.4.18"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tough-cookie"
+version = "6.0.2"
+source = "registry"
+declared = "BSD-3-Clause"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "tr46"
+version = "6.0.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "typescript"
+version = "5.9.3"
+source = "registry"
+declared = "Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "undici-types"
+version = "7.24.6"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "vite"
+version = "8.3.4"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "vitest"
+version = "4.1.11"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "w3c-xmlserializer"
+version = "5.0.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "webidl-conversions"
+version = "8.0.1"
+source = "registry"
+declared = "BSD-2-Clause"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "whatwg-mimetype"
+version = "4.0.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "whatwg-mimetype"
+version = "5.0.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "whatwg-url"
+version = "15.1.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "why-is-node-running"
+version = "2.3.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "ws"
+version = "8.22.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "xml-name-validator"
+version = "5.0.0"
+source = "registry"
+declared = "Apache-2.0"
+scope = "dev"
+
+[[packages]]
+ecosystem = "pnpm"
+name = "xmlchars"
+version = "2.2.0"
+source = "registry"
+declared = "MIT"
+scope = "dev"

@@ -1,0 +1,114 @@
+{
+  "commands": [
+    {
+      "enabled": true,
+      "id": "file.save",
+      "label": "Save"
+    },
+    {
+      "enabled": false,
+      "id": "file.revert",
+      "label": "Revert to Saved"
+    },
+    {
+      "enabled": true,
+      "id": "edit.undo",
+      "label": "Undo Delete"
+    },
+    {
+      "enabled": false,
+      "id": "edit.redo",
+      "label": "Redo"
+    },
+    {
+      "enabled": false,
+      "id": "edit.delete",
+      "label": "Delete"
+    },
+    {
+      "enabled": false,
+      "id": "edit.duplicate",
+      "label": "Duplicate"
+    },
+    {
+      "enabled": false,
+      "id": "edit.copy",
+      "label": "Copy"
+    },
+    {
+      "enabled": false,
+      "id": "edit.paste",
+      "label": "Paste"
+    },
+    {
+      "enabled": false,
+      "id": "value.set",
+      "label": "Set Value"
+    },
+    {
+      "enabled": false,
+      "id": "values.set",
+      "label": "Set Values"
+    },
+    {
+      "enabled": false,
+      "id": "node.add",
+      "label": "New"
+    },
+    {
+      "enabled": false,
+      "id": "preset.apply",
+      "label": "Apply Preset"
+    },
+    {
+      "enabled": false,
+      "id": "preset.save",
+      "label": "Save Preset…"
+    },
+    {
+      "enabled": false,
+      "id": "preset.update",
+      "label": "Update Preset"
+    },
+    {
+      "enabled": false,
+      "id": "preset.rename",
+      "label": "Rename Preset…"
+    },
+    {
+      "enabled": false,
+      "id": "preset.delete",
+      "label": "Delete Preset"
+    },
+    {
+      "enabled": false,
+      "id": "preset.export",
+      "label": "Export Presets…"
+    },
+    {
+      "enabled": false,
+      "id": "preset.import",
+      "label": "Import Presets…"
+    }
+  ],
+  "committed": {
+    "committed": {
+      "changes": [
+        {
+          "change": "value",
+          "from": null,
+          "id": "00000000000000000000000004",
+          "key": "thread.tension",
+          "path": "/threads/warp",
+          "to": 0.8
+        }
+      ],
+      "label": "Set thread.tension",
+      "seq": 3
+    }
+  },
+  "nothing": "nothing",
+  "text": {
+    "text": "a copied fragment"
+  }
+}

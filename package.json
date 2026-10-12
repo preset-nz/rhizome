@@ -1,0 +1,40 @@
+{
+  "name": "@preset.nz/pom",
+  "version": "0.1.4",
+  "packageManager": "pnpm@11.1.1",
+  "description": "The webview client of rhizome-pom-tauri: an ordered command channel, a read-only mirror of the document and React hooks over it.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/preset-nz/rhizome.git"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src-ts/index.ts"
+  },
+  "files": [
+    "src-ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@tauri-apps/api": "^2",
+    "react": "^19"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@tauri-apps/api": "^2",
+    "@testing-library/react": "^16",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "jsdom": "^27",
+    "lefthook": "^2.1.17",
+    "react": "^19",
+    "react-dom": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.11"
+  }
+}

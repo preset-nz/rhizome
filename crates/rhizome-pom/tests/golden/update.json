@@ -1,0 +1,52 @@
+{
+  "delete": {
+    "changes": [
+      {
+        "change": "removed",
+        "id": "00000000000000000000000005",
+        "path": "/threads/weft",
+        "type": "thread"
+      }
+    ],
+    "generation": 0,
+    "label": "Delete",
+    "removed": [
+      "00000000000000000000000005"
+    ],
+    "rows": [],
+    "seq": 4
+  },
+  "set": {
+    "changes": [
+      {
+        "change": "value",
+        "from": null,
+        "id": "00000000000000000000000004",
+        "key": "thread.tension",
+        "path": "/threads/warp",
+        "to": 0.8
+      }
+    ],
+    "generation": 0,
+    "label": "Set thread.tension",
+    "removed": [],
+    "rows": [
+      {
+        "id": "00000000000000000000000004",
+        "name": "warp",
+        "parent": "00000000000000000000000003",
+        "path": "/threads/warp",
+        "role": "node",
+        "set": [
+          "thread.tension"
+        ],
+        "type": "thread",
+        "values": {
+          "thread.colour": "white",
+          "thread.tension": 0.8
+        }
+      }
+    ],
+    "seq": 3
+  }
+}
