@@ -13,6 +13,9 @@ Moves another value back and forth.
 | Control | Range | Default | What it does |
 |---|---|---|---|
 | Rate | 0.01 Hz to 40 Hz | 1 Hz | How often it moves. |
+| Cutoff | 20 Hz to 20 kHz | 1.5 kHz | Where it stops. |
+| Fade | 10 ms to 2 s | 250 ms | How long it takes. |
+| Tracking | Off, Half, Full | Half | How far it follows the note. |
 
 A binding from it carries:
 

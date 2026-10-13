@@ -101,6 +101,8 @@ export interface ValueSchema {
   description?: string;
   /** A short unit shown after the number, such as `Hz`. */
   unit?: string;
+  /** Display names for an int value's steps, in order from the range's minimum. */
+  names?: string[];
 }
 
 /** rhizome-core `CategorySchema`. */

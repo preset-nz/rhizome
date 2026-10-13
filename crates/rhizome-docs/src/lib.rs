@@ -19,7 +19,7 @@
 //! name.
 //!
 //! The crate knows no app: it reads only the words an app put on its types and values
-//! (`label`, `summary`, `group`, `description`, `unit`).
+//! (`label`, `summary`, `group`, `description`, `unit`, `names`).
 //!
 //! ```
 //! use rhizome_core::{NodeType, Origin, Registry};
@@ -515,12 +515,11 @@ fn range(v: &ValueSchema) -> String {
         ValueKind::Bool => "on or off".into(),
         ValueKind::Int | ValueKind::Float => match v.range {
             Some((min, max)) => {
+                if let Some(names) = names_of(v) {
+                    return names.join(", ");
+                }
                 let more = if v.soft_max { ", or more" } else { "" };
-                format!(
-                    "{} to {}{more}",
-                    with_unit(&number(min), unit),
-                    with_unit(&number(max), unit)
-                )
+                format!("{} to {}{more}", scalar(min, unit), scalar(max, unit))
             }
             None => "any".into(),
         },
@@ -550,7 +549,18 @@ fn default(v: &ValueSchema) -> String {
     match (v.kind, d) {
         (ValueKind::Bool, Json::Bool(b)) => if *b { "on" } else { "off" }.into(),
         (ValueKind::Int | ValueKind::Float, Json::Number(n)) => {
-            with_unit(&n.as_f64().map(number).unwrap_or_default(), unit)
+            let x = n.as_f64().unwrap_or_default();
+            match (names_of(v), n.as_i64()) {
+                (Some(names), Some(i)) => {
+                    let at = i - v.range.map_or(0.0, |r| r.0) as i64;
+                    usize::try_from(at)
+                        .ok()
+                        .and_then(|at| names.get(at))
+                        .cloned()
+                        .unwrap_or_else(|| number(x))
+                }
+                _ => scalar(x, unit),
+            }
         }
         (ValueKind::Text, Json::String(t)) if t.is_empty() => "empty".into(),
         (_, Json::String(t)) => t.clone(),
@@ -584,12 +594,35 @@ fn hex(rgba: &[Json]) -> Option<String> {
     })
 }
 
-/// A number without a trailing `.0`.
+/// The names an int value's steps carry, when there is one for every step in its range.
+fn names_of(v: &ValueSchema) -> Option<&[String]> {
+    if v.kind != ValueKind::Int {
+        return None;
+    }
+    v.names.as_deref().filter(|n| !n.is_empty())
+}
+
+/// A number without a trailing `.0` or float noise (`0.30000001` reads `0.3`).
 fn number(x: f64) -> String {
     if x.fract() == 0.0 && x.abs() < 1e15 {
-        format!("{}", x as i64)
-    } else {
-        format!("{x}")
+        return format!("{}", x as i64);
+    }
+    let s = format!("{x:.5}");
+    let s = s.trim_end_matches('0').trim_end_matches('.');
+    match s {
+        "" | "-0" => "0".into(),
+        s => s.to_string(),
+    }
+}
+
+/// A single number as a person reads it, with its unit: a `%` value is stored as a fraction
+/// and shown ×100; `Hz` from 1000 up reads as `kHz`, and `ms` from 1000 up as `s`.
+fn scalar(x: f64, unit: Option<&str>) -> String {
+    match unit {
+        Some("%") => with_unit(&number(x * 100.0), unit),
+        Some("Hz") if x.abs() >= 1000.0 => with_unit(&number(x / 1000.0), Some("kHz")),
+        Some("ms") if x.abs() >= 1000.0 => with_unit(&number(x / 1000.0), Some("s")),
+        _ => with_unit(&number(x), unit),
     }
 }
 
@@ -658,6 +691,19 @@ mod tests {
         assert_eq!(with_unit("20", Some("Hz")), "20 Hz");
         assert_eq!(with_unit("50", Some("%")), "50%");
         assert_eq!(with_unit("2", Some("×")), "2×");
+    }
+
+    #[test]
+    fn units_scale_and_noise_is_trimmed() {
+        assert_eq!(scalar(0.3, Some("%")), "30%");
+        assert_eq!(scalar(0.30000001, Some("%")), "30%");
+        assert_eq!(scalar(20.0, Some("Hz")), "20 Hz");
+        assert_eq!(scalar(20000.0, Some("Hz")), "20 kHz");
+        assert_eq!(scalar(1500.0, Some("Hz")), "1.5 kHz");
+        assert_eq!(scalar(10.0, Some("ms")), "10 ms");
+        assert_eq!(scalar(2000.0, Some("ms")), "2 s");
+        assert_eq!(number(0.30000001), "0.3");
+        assert_eq!(number(-0.0000001), "0");
     }
 
     #[test]

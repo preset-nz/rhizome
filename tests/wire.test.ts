@@ -70,6 +70,7 @@ const VALUE_SCHEMA = keys<ValueSchema>()([
   'label',
   'description',
   'unit',
+  'names',
 ]);
 const TYPE_SCHEMA = keys<TypeSchema>()([
   'name',

@@ -47,6 +47,9 @@ pub struct ValueSpec {
     pub description: Option<String>,
     /// A short unit shown after the number, such as `Hz`, `ms` or `%`.
     pub unit: Option<String>,
+    /// Display names for an `Int` value's steps, in order from the range's minimum. Words
+    /// only: the core never reads them.
+    pub names: Option<Vec<String>>,
 }
 
 /// Why a value doesn't fit its spec.
@@ -77,6 +80,7 @@ impl ValueSpec {
             label: None,
             description: None,
             unit: None,
+            names: None,
         }
     }
 
@@ -100,6 +104,12 @@ impl ValueSpec {
     /// A short unit shown after the number, such as `Hz`.
     pub fn unit(mut self, unit: &str) -> Self {
         self.unit = Some(unit.to_string());
+        self
+    }
+
+    /// Display names for an int value's steps, in order from the range's minimum.
+    pub fn names(mut self, names: &[&str]) -> Self {
+        self.names = Some(names.iter().map(|n| n.to_string()).collect());
         self
     }
 
@@ -321,6 +331,15 @@ impl NodeType {
     /// Before any value has been added.
     pub fn unit(self, unit: &str) -> Self {
         self.last_value(|s| s.unit(unit), "unit")
+    }
+
+    /// Gives the most recently added int value display names for its steps, in order from
+    /// the range's minimum: `.int("mode", 0..=2, 0).names(&["Off", "Half", "Full"])`.
+    ///
+    /// # Panics
+    /// Before any value has been added.
+    pub fn names(self, names: &[&str]) -> Self {
+        self.last_value(|s| s.names(names), "names")
     }
 
     fn last_value(mut self, f: impl FnOnce(ValueSpec) -> ValueSpec, what: &str) -> Self {

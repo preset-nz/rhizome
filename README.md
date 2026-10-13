@@ -51,7 +51,7 @@ NodeType::new("echo")
     .unit("ms")
 ```
 
-`ValueSpec` has the same `label`, `description`, `described` and `unit` builders, for values passed whole (`.value(...)`, `.bindable([...])`). Read them back from `NodeType::label_text`, `summary_text` and `group_tag`, or from `ValueSpec`'s fields.
+`ValueSpec` has the same `label`, `description`, `described` and `unit` builders, for values passed whole (`.value(...)`, `.bindable([...])`). An int value can also carry `.names(&["Off", "Half", "Full"])`, display names for its steps from the range's minimum; the docs show them as the range and the default. The docs scale a `%` value ×100 (stored 0.3 reads "30%") and show `Hz` and `ms` from 1000 up as `kHz` and `s`. Read them back from `NodeType::label_text`, `summary_text` and `group_tag`, or from `ValueSpec`'s fields.
 
 `rhizome-docs` writes one page per node type plus a `README.md` index: `rhizome_docs::write(dir, &schema, "App")`, or `rhizome-docs <schema.json> <out-dir> [--check] [--app <name>]` for a schema dumped as JSON. A page's table sits between `<!-- generated:begin … -->` and `<!-- generated:end -->`; regenerating rewrites only that and the front-matter keys it owns (`title`, `node`, `group`, `summary`), so prose and hand-added keys stay. `--check` writes nothing and fails on a missing, stale (block or front matter) or orphaned page, a stale index, or a type without a summary; a value without a description only warns.
 

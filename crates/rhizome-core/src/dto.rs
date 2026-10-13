@@ -153,6 +153,9 @@ pub struct ValueSchema {
     /// A short unit shown after the number, such as `Hz`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    /// Display names for an int value's steps, in order from the range's minimum.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub names: Option<Vec<String>>,
 }
 
 fn value_schema(s: &ValueSpec) -> ValueSchema {
@@ -168,6 +171,7 @@ fn value_schema(s: &ValueSpec) -> ValueSchema {
         label: s.label.clone(),
         description: s.description.clone(),
         unit: s.unit.clone(),
+        names: s.names.clone(),
     }
 }
 
