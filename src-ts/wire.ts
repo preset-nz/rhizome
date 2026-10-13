@@ -95,6 +95,12 @@ export interface ValueSchema {
   shape?: Shape;
   /** The range's max is a control's end, not a limit. Absent when false. */
   soft_max?: boolean;
+  /** What a person calls the value. Absent when the app gave none. */
+  label?: string;
+  /** One sentence on what the value does. */
+  description?: string;
+  /** A short unit shown after the number, such as `Hz`. */
+  unit?: string;
 }
 
 /** rhizome-core `CategorySchema`. */
@@ -106,6 +112,12 @@ export interface CategorySchema {
 /** rhizome-core `TypeSchema`. */
 export interface TypeSchema {
   name: string;
+  /** What a person calls the type. Absent when the app gave none. */
+  label?: string;
+  /** One sentence on what a node of this type is. */
+  summary?: string;
+  /** The app's free tag for sorting its types, such as `effect`. */
+  group?: string;
   categories?: string[];
   values?: ValueSchema[];
   refs?: string[];

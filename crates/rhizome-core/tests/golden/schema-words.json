@@ -1,0 +1,73 @@
+{
+  "categories": [
+    {
+      "name": "things",
+      "origin": "loaded"
+    }
+  ],
+  "types": [
+    {
+      "name": "plain",
+      "values": [
+        {
+          "key": "count",
+          "kind": "int",
+          "default": 0,
+          "range": [
+            0.0,
+            4.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "widget",
+      "label": "Widget",
+      "summary": "A made-up node with words.",
+      "group": "parts",
+      "values": [
+        {
+          "key": "size",
+          "kind": "float",
+          "default": 1.0,
+          "range": [
+            0.0,
+            10.0
+          ],
+          "label": "Size",
+          "description": "How big it is.",
+          "unit": "cm"
+        },
+        {
+          "key": "finish",
+          "kind": "choice",
+          "default": "matte",
+          "choices": [
+            "matte",
+            "gloss"
+          ],
+          "label": "Finish",
+          "description": "How it catches the light."
+        },
+        {
+          "key": "on",
+          "kind": "bool",
+          "default": true
+        }
+      ],
+      "bindable": [
+        {
+          "key": "amount",
+          "kind": "float",
+          "default": 0.5,
+          "range": [
+            0.0,
+            1.0
+          ],
+          "label": "Amount",
+          "unit": "%"
+        }
+      ]
+    }
+  ]
+}

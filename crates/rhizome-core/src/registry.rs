@@ -41,6 +41,12 @@ pub struct ValueSpec {
     /// The range's max is where a control's travel ends, not a limit: a typed value may go
     /// past it (Blender's soft max). The min still holds.
     pub soft_max: bool,
+    /// What a person calls the value, such as `Drive`. Words only: the core never reads it.
+    pub label: Option<String>,
+    /// One sentence on what the value does, for documentation and hover text.
+    pub description: Option<String>,
+    /// A short unit shown after the number, such as `Hz`, `ms` or `%`.
+    pub unit: Option<String>,
 }
 
 /// Why a value doesn't fit its spec.
@@ -68,7 +74,33 @@ impl ValueSpec {
             len: None,
             shape: None,
             soft_max: false,
+            label: None,
+            description: None,
+            unit: None,
         }
+    }
+
+    /// Names the value for people. Words only; nothing reads it but documentation and a UI.
+    pub fn label(mut self, label: &str) -> Self {
+        self.label = Some(label.to_string());
+        self
+    }
+
+    /// One sentence on what the value does.
+    pub fn description(mut self, description: &str) -> Self {
+        self.description = Some(description.to_string());
+        self
+    }
+
+    /// Both words at once: the label and the sentence.
+    pub fn described(self, label: &str, description: &str) -> Self {
+        self.label(label).description(description)
+    }
+
+    /// A short unit shown after the number, such as `Hz`.
+    pub fn unit(mut self, unit: &str) -> Self {
+        self.unit = Some(unit.to_string());
+        self
     }
 
     /// Makes the max soft: past it is allowed, the range stays for a control to span.
@@ -224,6 +256,9 @@ pub struct NodeType {
     pub(crate) bindable: Option<Vec<ValueSpec>>,
     pub(crate) categories: Vec<String>,
     pub(crate) check: Option<Check>,
+    pub(crate) label: Option<String>,
+    pub(crate) summary: Option<String>,
+    pub(crate) group: Option<String>,
 }
 
 impl fmt::Debug for NodeType {
@@ -244,7 +279,56 @@ impl NodeType {
             bindable: None,
             categories: Vec::new(),
             check: None,
+            label: None,
+            summary: None,
+            group: None,
         }
+    }
+
+    /// What a person calls the type, such as `Echo`. Words only: the core never reads it.
+    /// Read back with [`label_text`](Self::label_text).
+    pub fn label(mut self, label: &str) -> Self {
+        self.label = Some(label.to_string());
+        self
+    }
+
+    /// One sentence on what a node of this type is. Read back with
+    /// [`summary_text`](Self::summary_text).
+    pub fn summary(mut self, summary: &str) -> Self {
+        self.summary = Some(summary.to_string());
+        self
+    }
+
+    /// A free tag the app sorts its types by, such as `effect`. Unrelated to group nodes. Read
+    /// back with [`group_tag`](Self::group_tag).
+    pub fn group(mut self, group: &str) -> Self {
+        self.group = Some(group.to_string());
+        self
+    }
+
+    /// Gives the most recently added value its label and one-sentence description:
+    /// `.float("drive", 1.0..=10.0, 1.0).described("Drive", "Pushes the signal harder.")`.
+    ///
+    /// # Panics
+    /// Before any value has been added: a mistake in the declaration, not in data.
+    pub fn described(self, label: &str, description: &str) -> Self {
+        self.last_value(|s| s.described(label, description), "described")
+    }
+
+    /// Gives the most recently added value a unit: `.float("delay", 0.0..=2000.0, 250.0).unit("ms")`.
+    ///
+    /// # Panics
+    /// Before any value has been added.
+    pub fn unit(self, unit: &str) -> Self {
+        self.last_value(|s| s.unit(unit), "unit")
+    }
+
+    fn last_value(mut self, f: impl FnOnce(ValueSpec) -> ValueSpec, what: &str) -> Self {
+        let Some(last) = self.values.pop() else {
+            panic!("`{}`: `{what}` follows a value", self.name);
+        };
+        self.values.push(f(last));
+        self
     }
 
     pub fn value(mut self, spec: ValueSpec) -> Self {
@@ -354,6 +438,21 @@ impl NodeType {
 
     pub fn categories(&self) -> &[String] {
         &self.categories
+    }
+
+    /// The label given with [`label`](Self::label), if any.
+    pub fn label_text(&self) -> Option<&str> {
+        self.label.as_deref()
+    }
+
+    /// The sentence given with [`summary`](Self::summary), if any.
+    pub fn summary_text(&self) -> Option<&str> {
+        self.summary.as_deref()
+    }
+
+    /// The tag given with [`group`](Self::group), if any.
+    pub fn group_tag(&self) -> Option<&str> {
+        self.group.as_deref()
     }
 }
 

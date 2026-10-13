@@ -9,7 +9,7 @@
 
 use std::collections::BTreeMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
 
 use crate::diff::{ChangeKind, Changeset};
@@ -86,53 +86,73 @@ pub struct Patch {
     pub removed: Vec<NodeId>,
 }
 
-/// The registry as plain data: what a mirror needs to show and check values.
-#[derive(Clone, Debug, PartialEq, Serialize)]
+/// The registry as plain data: what a mirror needs to show and check values. It reads back
+/// from JSON too, so a tool can take a schema an app dumped.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Schema {
     pub categories: Vec<CategorySchema>,
     pub types: Vec<TypeSchema>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CategorySchema {
     pub name: String,
     pub origin: Origin,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TypeSchema {
     pub name: String,
+    /// What a person calls the type. Absent when the app gave none, as are summary and group.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// One sentence on what a node of this type is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    /// The app's free tag for sorting its types, such as `effect`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group: Option<String>,
     /// Where it may live; empty means any category.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<String>,
     /// In declaration order, which an app may draw in.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<ValueSchema>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub slots: Vec<String>,
     /// The values a binding from this type carries, when it can be bound.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bindable: Option<Vec<ValueSchema>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValueSchema {
     pub key: String,
     pub kind: ValueKind,
     pub default: Json,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<(f64, f64)>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub choices: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub len: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shape: Option<Shape>,
     /// The range's max is a control's end, not a limit.
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub soft_max: bool,
+    /// What a person calls the value. Absent when the app gave none, as are description and
+    /// unit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// One sentence on what the value does.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// A short unit shown after the number, such as `Hz`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
 }
 
 fn value_schema(s: &ValueSpec) -> ValueSchema {
@@ -145,6 +165,9 @@ fn value_schema(s: &ValueSpec) -> ValueSchema {
         len: s.len,
         shape: s.shape.clone(),
         soft_max: s.soft_max,
+        label: s.label.clone(),
+        description: s.description.clone(),
+        unit: s.unit.clone(),
     }
 }
 
@@ -155,6 +178,9 @@ impl Registry {
             .node_types()
             .map(|t| TypeSchema {
                 name: t.name.clone(),
+                label: t.label.clone(),
+                summary: t.summary.clone(),
+                group: t.group.clone(),
                 categories: t.categories.clone(),
                 values: t.values.iter().map(value_schema).collect(),
                 refs: t.refs.clone(),

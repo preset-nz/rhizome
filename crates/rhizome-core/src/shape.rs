@@ -15,10 +15,10 @@
 //! assert!(paths.check(&serde_json::json!([{"anchors": [{"point": [0, 0]}], "closed": true}])).is_ok());
 //! ```
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Shape {
     Bool,

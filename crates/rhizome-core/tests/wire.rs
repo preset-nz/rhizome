@@ -112,3 +112,70 @@ fn floats_survive_the_file_bit_for_bit() {
         assert_eq!(got, Some(Value::Float(*x)), "{x:?}");
     }
 }
+
+/// A type's and a value's words (label, summary, group, description, unit) reach the schema
+/// when given and leave no trace when not, and a dumped schema reads back as it was. Pinned in
+/// `tests/golden/schema-words.json`.
+#[test]
+fn the_schema_carries_words_and_reads_back() {
+    let registry = Registry::builder()
+        .category("things", Origin::Loaded)
+        .node(
+            NodeType::new("widget")
+                .label("Widget")
+                .summary("A made-up node with words.")
+                .group("parts")
+                .float("size", 0.0..=10.0, 1.0)
+                .described("Size", "How big it is.")
+                .unit("cm")
+                .choice("finish", &["matte", "gloss"], "matte")
+                .described("Finish", "How it catches the light.")
+                .bool("on", true)
+                .bindable([ValueSpec::float("amount", 0.0..=1.0, 0.5)
+                    .label("Amount")
+                    .unit("%")]),
+        )
+        .node(NodeType::new("plain").int("count", 0..=4, 0))
+        .build()
+        .unwrap();
+    let widget = registry.node_type("widget").unwrap();
+    assert_eq!(widget.label_text(), Some("Widget"));
+    assert_eq!(widget.summary_text(), Some("A made-up node with words."));
+    assert_eq!(widget.group_tag(), Some("parts"));
+    assert_eq!(widget.spec("size").unwrap().unit.as_deref(), Some("cm"));
+    assert_eq!(widget.spec("on").unwrap().label, None);
+
+    let schema = registry.schema();
+    // pinned for the TypeScript half, which checks these keys against wire.ts
+    golden::check(
+        "schema-words.json",
+        &(serde_json::to_string_pretty(&schema).unwrap() + "\n"),
+    );
+    let json = serde_json::to_value(&schema).unwrap();
+    let types = json["types"].as_array().unwrap();
+    let plain = types.iter().find(|t| t["name"] == "plain").unwrap();
+    for absent in ["label", "summary", "group"] {
+        assert!(plain.get(absent).is_none(), "{absent} should be absent");
+    }
+    for absent in ["label", "description", "unit"] {
+        assert!(
+            plain["values"][0].get(absent).is_none(),
+            "{absent} should be absent"
+        );
+    }
+    let w = types.iter().find(|t| t["name"] == "widget").unwrap();
+    assert_eq!(w["label"], "Widget");
+    assert_eq!(w["group"], "parts");
+    assert_eq!(w["values"][0]["description"], "How big it is.");
+    assert_eq!(w["values"][0]["unit"], "cm");
+    assert_eq!(w["bindable"][0]["label"], "Amount");
+
+    let back: Schema = serde_json::from_value(json).unwrap();
+    assert_eq!(back, schema);
+}
+
+#[test]
+#[should_panic(expected = "`described` follows a value")]
+fn words_for_a_value_need_a_value() {
+    let _ = NodeType::new("widget").described("Size", "How big it is.");
+}

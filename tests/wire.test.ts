@@ -67,9 +67,15 @@ const VALUE_SCHEMA = keys<ValueSchema>()([
   'len',
   'shape',
   'soft_max',
+  'label',
+  'description',
+  'unit',
 ]);
 const TYPE_SCHEMA = keys<TypeSchema>()([
   'name',
+  'label',
+  'summary',
+  'group',
   'categories',
   'values',
   'refs',
@@ -215,6 +221,19 @@ describe('rhizome-core goldens', () => {
     const seen = new Set(commit.changes.map((c) => c.change));
     for (const c of commit.changes) checkChange(c, `commit ${c.change}`);
     expect([...seen].sort()).toEqual(Object.keys(CHANGE).sort());
+  });
+
+  it('schema-words.json: the words a type and a value may carry are wire.ts keys', () => {
+    const words = golden('rhizome-core', 'schema-words.json') as Schema;
+    checkSchema(words, 'schema-words');
+    const widget = words.types.find((t) => t.name === 'widget');
+    expect(widget?.label).toBe('Widget');
+    expect(widget?.summary).toBeTypeOf('string');
+    expect(widget?.group).toBe('parts');
+    const size = widget?.values?.find((v) => v.key === 'size');
+    expect(size?.description).toBeTypeOf('string');
+    expect(size?.unit).toBe('cm');
+    expect(widget?.bindable?.[0]?.label).toBe('Amount');
   });
 
   it('view.json: schema, rows and patch have the shapes of the types', () => {
