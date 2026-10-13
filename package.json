@@ -29,12 +29,12 @@
     "@testing-library/react": "^16",
     "@types/node": "^24",
     "@types/react": "^19",
+    "@types/react-dom": "^19",
     "jsdom": "^27",
     "lefthook": "^2.1.17",
     "react": "^19",
     "react-dom": "^19",
-    "@types/react-dom": "^19",
-    "typescript": "^5.8.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   }
 }
