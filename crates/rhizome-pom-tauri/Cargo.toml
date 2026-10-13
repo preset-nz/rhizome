@@ -8,10 +8,10 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
-rhizome-pom = { path = "../rhizome-pom", version = "0.1.4" }
+rhizome-pom = { path = "../rhizome-pom", version = "0.1.5" }
 serde_json = "1"
 tauri = { version = "2", default-features = false }
 
 [dev-dependencies]
-rhizome-core = { path = "../rhizome-core", version = "0.1.4" }
+rhizome-core = { path = "../rhizome-core", version = "0.1.5" }
 tauri = { version = "2", default-features = false, features = ["test"] }
