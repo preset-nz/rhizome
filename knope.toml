@@ -10,9 +10,11 @@ versioned_files = [
     { path = "crates/rhizome-pom/Cargo.toml", dependency = "rhizome-core" },
     { path = "crates/rhizome-pom-tauri/Cargo.toml", dependency = "rhizome-core" },
     { path = "crates/rhizome-pom-tauri/Cargo.toml", dependency = "rhizome-pom" },
+    { path = "crates/rhizome-docs/Cargo.toml", dependency = "rhizome-core" },
     { path = "Cargo.lock", dependency = "rhizome-core" },
     { path = "Cargo.lock", dependency = "rhizome-pom" },
     { path = "Cargo.lock", dependency = "rhizome-pom-tauri" },
+    { path = "Cargo.lock", dependency = "rhizome-docs" },
 ]
 changelog = "CHANGELOG.md"
 

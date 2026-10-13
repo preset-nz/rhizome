@@ -1,0 +1,12 @@
+[package]
+name = "rhizome-docs"
+version.workspace = true
+description = "Markdown pages from a rhizome schema: one page per node type, its controls generated between markers and the prose around them kept."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[dependencies]
+rhizome-core = { path = "../rhizome-core", version = "0.1.5" }
+serde_json = "1"

@@ -6,15 +6,19 @@ version = 1
 [[inputs]]
 path = "Cargo.lock"
 ecosystem = "cargo"
-sha256 = "2017264d021cfab3558ed3a490f5f4f567c81f9044aee149e00de56732bdd112"
+sha256 = "f168e2f2d336488c25b0602c53aa7f1ab0cfff24edbab704a706c8e71db5f024"
 
 [[inputs]]
 path = "Cargo.toml"
-sha256 = "a5fbd50228e0f76ff7959813c93b4afc4822afb5f13f0ebdb2ec00acebad97be"
+sha256 = "5e957f4e0d383ab012a950607816b9bdb7f12ad644713237b9d0325263851e7b"
 
 [[inputs]]
 path = "crates/rhizome-core/Cargo.toml"
 sha256 = "39d304d28adea201fd27e3242e0668f9d182f72c394d8c629dc7fe093ecedf11"
+
+[[inputs]]
+path = "crates/rhizome-docs/Cargo.toml"
+sha256 = "2c9802fa083b4d69025eef0fefd7541dfb25093d70589e2f922b12eb1097221c"
 
 [[inputs]]
 path = "crates/rhizome-pom/Cargo.toml"

@@ -64,6 +64,7 @@ invariants:
 bless:
     RHIZOME_BLESS=1 cargo test -p rhizome-core --test acid --test core_workflows --test wire
     RHIZOME_BLESS=1 cargo test -p rhizome-pom --test workflows --test wire
+    RHIZOME_BLESS=1 cargo test -p rhizome-docs --test docs
     git status --short crates/*/tests
 
 # Format the code (Biome, cargo fmt)
@@ -77,6 +78,11 @@ fmt:
 [group('quality')]
 licences:
     preset-compliance licences check
+
+# Node pages from a dumped schema: `just docs <schema.json> <out-dir> [--check] [--app <name>]`
+[group('docs')]
+docs *args:
+    cargo run -q -p rhizome-docs -- {{args}}
 
 # Version, changelog, commit and tag from the conventional commits since the last
 # tag (knope.toml). Push and publish stay by hand.

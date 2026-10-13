@@ -2,7 +2,7 @@
 title: Rhizome API — verbs, shape and guarantees
 type: design
 status: current
-updated: 2026-10-03
+updated: 2026-10-14
 ---
 
 # Rhizome API — verbs, shape and guarantees
@@ -288,6 +288,36 @@ Each one is held by a test. If a guarantee has no test, it is a hope. Three suit
 | G13 | Undo walks back through every committed state exactly, and redo forward | invariants; acid undo-all |
 | G14 | Children iterate by name; any other order is asked for by name | acid reads |
 | G15 | No API writes transient values (modulated, metered, previewed, calculated) into the tree | by absence; reviewed, not tested |
+
+---
+
+## Words for people (2026-10-14)
+
+[Node documentation](node-documentation.md) steps 1 and 2. A node type and its values may carry words: optional, stored, never read by the core, so rhizome still knows nothing of what a node means (decision 35).
+
+```rust
+NodeType::new("echo")
+    .label("Echo")                                     // what a person calls it
+    .summary("Repeats what it hears, quieter each time.") // one sentence
+    .group("effect")                                   // a free tag the app sorts by; not a group node
+    .float("echo.time", 1.0..=2000.0, 250.0)
+    .described("Time", "How long before it repeats.")  // label and description of the value just added
+    .unit("ms")                                        // its unit, also on the value just added
+    .bindable([ValueSpec::float("depth", 0.0..=1.0, 0.5).described("Depth", "How much.").unit("%")])
+```
+
+- **On `NodeType`:** builders `label`, `summary`, `group`; accessors `label_text()`, `summary_text()`, `group_tag()` (the builder names are taken). `described(label, description)` and `unit(unit)` act on the most recently added value and panic before any value: a declaration mistake, not data.
+- **On `ValueSpec`:** public fields `label`, `description`, `unit` (`Option<String>`) and builders `label`, `description`, `described`, `unit`, for values passed whole.
+- **In `Schema`:** `TypeSchema` gains `label`, `summary`, `group`; `ValueSchema` gains `label`, `description`, `unit`. Absent from the JSON when unset, so a schema without words serialises exactly as before; `wire.ts` mirrors them as optional fields, pinned by `tests/golden/schema-words.json`. `Schema` (with `ValueKind` and `Shape`) also deserialises, so a tool can read a schema an app dumped.
+
+### `rhizome-docs`
+
+A fourth crate, lib and bin, that turns a `Schema` into markdown: one `<type>.md` per node type and a `README.md` index grouped by `group`. It knows no app.
+
+- `pages(&schema, app)` generates; `update(existing, &page)` merges into a page on disk; `write(dir, &schema, app)` does both for a folder; `check(dir, &schema, app)` writes nothing and returns `Finding`s.
+- A page's table of values (Control, Range, Default, What it does) sits between `<!-- generated:begin … -->` and `<!-- generated:end -->`. Regenerating rewrites that block and the front-matter keys the generator owns (`title`, `node`, `group`, `summary`), and keeps every other byte: prose, hand-added front-matter keys and their order. A new page also gets an H1 and an empty "What it's for".
+- `check` fails a missing, stale (block or front matter) or orphaned page, a stale index and a type without a summary; a value without a description only warns. Orphans are reported, never deleted.
+- Bin: `rhizome-docs <schema.json> <out-dir> [--check] [--app <name>]`, for an app whose catalogue isn't in Rust. The JSON is a `Schema`, or any object holding one under `schema`.
 
 ---
 

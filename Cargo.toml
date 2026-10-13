@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/rhizome-core", "crates/rhizome-pom", "crates/rhizome-pom-tauri"]
+members = ["crates/rhizome-core", "crates/rhizome-pom", "crates/rhizome-pom-tauri", "crates/rhizome-docs"]
 
 [workspace.package]
 edition = "2024"

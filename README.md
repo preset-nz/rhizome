@@ -4,7 +4,7 @@ The shared node API for the preset.nz desktop apps: mechanics only. A network of
 
 rhizome knows no app. It stores, validates, edits, undoes, diffs, saves and copies nodes of whatever types an app declares. Each app's **object model** holds its business logic, in the app's own repo.
 
-**Status: first slice and POM phase 1 built.** `crates/rhizome-core` holds the mechanics: the registry, the tree, edits with undo, diff, the file format, opaque nodes, copy/paste, tree rules. `crates/rhizome-pom` is POM, the Preset Object Model: the base every app's object model is built on (documents, kinds with policy, presets, commands, projections). `crates/rhizome-pom-tauri` puts one open document behind Tauri commands and events. `@preset.nz/pom` (`src-ts/`) is the webview client of `rhizome-pom-tauri`.
+**Status: first slice and POM phase 1 built.** `crates/rhizome-core` holds the mechanics: the registry, the tree, edits with undo, diff, the file format, opaque nodes, copy/paste, tree rules. `crates/rhizome-pom` is POM, the Preset Object Model: the base every app's object model is built on (documents, kinds with policy, presets, commands, projections). `crates/rhizome-pom-tauri` puts one open document behind Tauri commands and events. `crates/rhizome-docs` turns a schema into markdown pages, one per node type. `@preset.nz/pom` (`src-ts/`) is the webview client of `rhizome-pom-tauri`.
 
 ## Install
 
@@ -37,6 +37,24 @@ await channel.run('value.set', { at: '/threads/warp', key: 'thread.tension', val
 - **Hooks**, through `useSyncExternalStore`: `useNode(id)`, `useNodeAt(path)`, `useChildren(id, order)` and `useStatus()`, under a `<PomProvider mirror={mirror}>`. A hook returns the same object until its own node changes.
 - **Wire types** (`Row`, `View`, `Update`, `Status`, `Ran`, ...) follow the Rust structs. The tests read the Rust goldens, so a shape that moves in one half fails the other's build.
 
+## Node documentation: `rhizome-docs`
+
+A type and its values may carry words for people. The core stores them and never reads them; they reach `Schema` (and `wire.ts`) only when given.
+
+```rust
+NodeType::new("echo")
+    .label("Echo")
+    .summary("Repeats what it hears, quieter each time.")
+    .group("effect")
+    .float("echo.time", 1.0..=2000.0, 250.0)
+    .described("Time", "How long before it repeats.") // the value just added
+    .unit("ms")
+```
+
+`ValueSpec` has the same `label`, `description`, `described` and `unit` builders, for values passed whole (`.value(...)`, `.bindable([...])`). Read them back from `NodeType::label_text`, `summary_text` and `group_tag`, or from `ValueSpec`'s fields.
+
+`rhizome-docs` writes one page per node type plus a `README.md` index: `rhizome_docs::write(dir, &schema, "App")`, or `rhizome-docs <schema.json> <out-dir> [--check] [--app <name>]` for a schema dumped as JSON. A page's table sits between `<!-- generated:begin … -->` and `<!-- generated:end -->`; regenerating rewrites only that and the front-matter keys it owns (`title`, `node`, `group`, `summary`), so prose and hand-added keys stay. `--check` writes nothing and fails on a missing, stale (block or front matter) or orphaned page, a stale index, or a type without a summary; a value without a description only warns.
+
 ## Tests
 
 `just check` runs `check-rust` (fmt, clippy and every suite) and `check-ts` (tsc, Biome and vitest), then the licence check.
@@ -47,6 +65,7 @@ await channel.run('value.set', { at: '/threads/warp', key: 'thread.tension', val
 - **Core workflows** (`tests/core_workflows.rs`, `just workflows`): twelve workflows a person does, stored as data in `tests/workflows/*.json` and driven only through the stable surface (`Op` JSON, the file format, edits, gestures, undo). Each has a transcript pinned beside it. A change to the SDK that alters a workflow fails here.
 - **POM** (`crates/rhizome-pom/tests/pom.rs`, `just pom`) and **POM's core workflows** (`tests/workflows.rs`, data in `tests/workflows/*.json`): two made-up object models, and six workflows run through commands by id.
 - **Wire** (`crates/rhizome-pom/tests/wire.rs`): the `View`, `Update`, `Status`, `Ran` and `CommandState` JSON a transport carries, pinned in `crates/rhizome-pom/tests/golden/*.json`. With core's `commit.json` and `view.json` they are what the TypeScript tests (`tests/`, `just test-ts`) read.
+- **Docs** (`crates/rhizome-docs/tests/docs.rs`): the pages for a made-up registry, pinned in `crates/rhizome-docs/tests/golden/`; a rewrite keeps every byte outside the markers; generating twice changes nothing; `check` finds stale blocks, missing pages, orphans and types without a summary.
 - **Invariants** (`tests/invariants.rs`, `just invariants`): seeded random `Op`s, checking after every step that nothing dangles, values fit their schema, a refused edit leaves no trace, a save reloads identically and undo walks back through every state.
 
 `just bless` rewrites the goldens. Read every changed line before committing it.

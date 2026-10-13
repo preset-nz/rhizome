@@ -2130,6 +2130,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rhizome-docs"
+version = "0.1.5"
+dependencies = [
+ "rhizome-core",
+ "serde_json",
+]
+
+[[package]]
 name = "rhizome-pom"
 version = "0.1.5"
 dependencies = [
