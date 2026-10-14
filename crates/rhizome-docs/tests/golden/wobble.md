@@ -24,4 +24,4 @@ A binding from it carries:
 | Depth | -1 to 1 | 0.5 | How far it moves the value. |
 <!-- generated:end -->
 
-## What it's for
+## Using it

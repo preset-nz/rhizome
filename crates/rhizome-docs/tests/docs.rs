@@ -98,8 +98,8 @@ fn a_page_and_the_index_as_generated() {
 fn rewriting_keeps_every_byte_outside_the_block() {
     let fresh = page("widget.md");
     let written = fresh.content.replace(
-        "## What it's for\n",
-        "## What it's for\n\nHand-written, with a trailing space \nand CRLF\r\nand no final newline",
+        "## Using it\n",
+        "## Using it\n\nHand-written, with a trailing space \nand CRLF\r\nand no final newline",
     );
     let written = written.replacen("node: widget\n", "node: widget\nauthor: someone\n", 1);
     // the block goes stale: someone edited the generated table by hand
@@ -209,7 +209,7 @@ fn check_finds_what_is_out_of_step() {
     // a stale block, prose added by hand, and a page whose type is gone
     let path = dir.join("widget.md");
     let text = fs::read_to_string(&path).unwrap();
-    let edited = text.replace("## What it's for\n", "## What it's for\n\nMine.\n");
+    let edited = text.replace("## Using it\n", "## Using it\n\nMine.\n");
     fs::write(
         &path,
         edited.replacen("How fast it turns.", "Old words.", 1),

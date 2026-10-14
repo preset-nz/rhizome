@@ -28,4 +28,4 @@ References: `widget.source`.
 Slots: `mask`.
 <!-- generated:end -->
 
-## What it's for
+## Using it

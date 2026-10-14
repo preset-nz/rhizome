@@ -11,7 +11,7 @@
 //!
 //! Regenerating rewrites only what lies between the markers and the front-matter keys the
 //! generator owns (`title`, `node`, `group`, `summary`); every other byte is kept. A new page
-//! gets front matter, a heading, the block and an empty "What it's for" section for a person
+//! gets front matter, a heading, the block and an empty "Using it" section for a person
 //! to write. The index is generated whole.
 //!
 //! Every type in the schema gets a page. The core's own types (root, category, group) never
@@ -40,7 +40,7 @@
 //! let widget = pages.iter().find(|p| p.file_name == "widget.md").unwrap();
 //! assert!(widget.content.contains("| Size | 0 cm to 10 cm | 1 cm | How big it is. |"));
 //! // a page someone wrote prose around keeps it
-//! let edited = widget.content.replace("## What it's for\n", "## What it's for\n\nMine.\n");
+//! let edited = widget.content.replace("## Using it\n", "## Using it\n\nMine.\n");
 //! assert!(rhizome_docs::update(Some(&edited), widget).contains("Mine."));
 //! ```
 
@@ -414,7 +414,7 @@ fn page(t: &TypeSchema) -> Page {
     s.push_str("---\n\n");
     s.push_str(&format!("# {}\n\n", one_line(title(t))));
     s.push_str(&block(t));
-    s.push_str("\n## What it's for\n");
+    s.push_str("\n## Using it\n");
     Page {
         file_name: format!("{}.md", t.name),
         content: s,
