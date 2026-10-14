@@ -71,12 +71,14 @@ const VALUE_SCHEMA = keys<ValueSchema>()([
   'description',
   'unit',
   'names',
+  'choice_labels',
 ]);
 const TYPE_SCHEMA = keys<TypeSchema>()([
   'name',
   'label',
   'summary',
   'group',
+  'category',
   'categories',
   'values',
   'refs',
@@ -231,9 +233,12 @@ describe('rhizome-core goldens', () => {
     expect(widget?.label).toBe('Widget');
     expect(widget?.summary).toBeTypeOf('string');
     expect(widget?.group).toBe('parts');
+    expect(widget?.category).toBe('hardware');
     const size = widget?.values?.find((v) => v.key === 'size');
     expect(size?.description).toBeTypeOf('string');
     expect(size?.unit).toBe('cm');
+    const finish = widget?.values?.find((v) => v.key === 'finish');
+    expect(finish?.choice_labels).toEqual({ gloss: 'Shiny' });
     expect(widget?.bindable?.[0]?.label).toBe('Amount');
   });
 

@@ -112,6 +112,10 @@ pub struct TypeSchema {
     /// The app's free tag for sorting its types, such as `effect`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
+    /// What the node is to someone browsing, such as `colour`. Beside `group`; absent when
+    /// the app gave none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
     /// Where it may live; empty means any category.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<String>,
@@ -156,6 +160,9 @@ pub struct ValueSchema {
     /// Display names for an int value's steps, in order from the range's minimum.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub names: Option<Vec<String>>,
+    /// Display labels for some of the choices, by choice. Absent when none.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub choice_labels: BTreeMap<String, String>,
 }
 
 fn value_schema(s: &ValueSpec) -> ValueSchema {
@@ -172,6 +179,7 @@ fn value_schema(s: &ValueSpec) -> ValueSchema {
         description: s.description.clone(),
         unit: s.unit.clone(),
         names: s.names.clone(),
+        choice_labels: s.choice_labels.clone(),
     }
 }
 
@@ -185,6 +193,7 @@ impl Registry {
                 label: t.label.clone(),
                 summary: t.summary.clone(),
                 group: t.group.clone(),
+                category: t.category.clone(),
                 categories: t.categories.clone(),
                 values: t.values.iter().map(value_schema).collect(),
                 refs: t.refs.clone(),

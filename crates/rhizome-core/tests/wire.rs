@@ -125,11 +125,13 @@ fn the_schema_carries_words_and_reads_back() {
                 .label("Widget")
                 .summary("A made-up node with words.")
                 .group("parts")
+                .category("hardware")
                 .float("size", 0.0..=10.0, 1.0)
                 .described("Size", "How big it is.")
                 .unit("cm")
                 .choice("finish", &["matte", "gloss"], "matte")
                 .described("Finish", "How it catches the light.")
+                .choice_labels(&[("gloss", "Shiny")])
                 .bool("on", true)
                 .bindable([ValueSpec::float("amount", 0.0..=1.0, 0.5)
                     .label("Amount")
@@ -142,6 +144,7 @@ fn the_schema_carries_words_and_reads_back() {
     assert_eq!(widget.label_text(), Some("Widget"));
     assert_eq!(widget.summary_text(), Some("A made-up node with words."));
     assert_eq!(widget.group_tag(), Some("parts"));
+    assert_eq!(widget.category_tag(), Some("hardware"));
     assert_eq!(widget.spec("size").unwrap().unit.as_deref(), Some("cm"));
     assert_eq!(widget.spec("on").unwrap().label, None);
 
@@ -154,10 +157,10 @@ fn the_schema_carries_words_and_reads_back() {
     let json = serde_json::to_value(&schema).unwrap();
     let types = json["types"].as_array().unwrap();
     let plain = types.iter().find(|t| t["name"] == "plain").unwrap();
-    for absent in ["label", "summary", "group"] {
+    for absent in ["label", "summary", "group", "category"] {
         assert!(plain.get(absent).is_none(), "{absent} should be absent");
     }
-    for absent in ["label", "description", "unit"] {
+    for absent in ["label", "description", "unit", "choice_labels"] {
         assert!(
             plain["values"][0].get(absent).is_none(),
             "{absent} should be absent"
@@ -166,6 +169,11 @@ fn the_schema_carries_words_and_reads_back() {
     let w = types.iter().find(|t| t["name"] == "widget").unwrap();
     assert_eq!(w["label"], "Widget");
     assert_eq!(w["group"], "parts");
+    assert_eq!(w["category"], "hardware");
+    let finish = &w["values"][1];
+    assert_eq!(finish["choice_labels"]["gloss"], "Shiny");
+    assert!(finish["choice_labels"].get("matte").is_none());
+    assert_eq!(finish["choices"], serde_json::json!(["matte", "gloss"]));
     assert_eq!(w["values"][0]["description"], "How big it is.");
     assert_eq!(w["values"][0]["unit"], "cm");
     assert_eq!(w["bindable"][0]["label"], "Amount");
@@ -178,4 +186,12 @@ fn the_schema_carries_words_and_reads_back() {
 #[should_panic(expected = "`described` follows a value")]
 fn words_for_a_value_need_a_value() {
     let _ = NodeType::new("widget").described("Size", "How big it is.");
+}
+
+#[test]
+#[should_panic(expected = "which is not a choice")]
+fn a_label_for_a_choice_that_is_not_there_is_refused() {
+    let _ = NodeType::new("widget")
+        .choice("finish", &["matte", "gloss"], "matte")
+        .choice_labels(&[("satin", "Satin")]);
 }

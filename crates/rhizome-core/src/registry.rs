@@ -50,6 +50,10 @@ pub struct ValueSpec {
     /// Display names for an `Int` value's steps, in order from the range's minimum. Words
     /// only: the core never reads them.
     pub names: Option<Vec<String>>,
+    /// Display labels for a `Choice` value's choices, by choice (`polaroid_600` shown as
+    /// `Instant`). A choice without one shows as itself. Words only: the stored value and
+    /// the check stay on the choice.
+    pub choice_labels: BTreeMap<String, String>,
 }
 
 /// Why a value doesn't fit its spec.
@@ -81,6 +85,7 @@ impl ValueSpec {
             description: None,
             unit: None,
             names: None,
+            choice_labels: BTreeMap::new(),
         }
     }
 
@@ -110,6 +115,23 @@ impl ValueSpec {
     /// Display names for an int value's steps, in order from the range's minimum.
     pub fn names(mut self, names: &[&str]) -> Self {
         self.names = Some(names.iter().map(|n| n.to_string()).collect());
+        self
+    }
+
+    /// Display labels for some of a choice value's choices, as (choice, label) pairs.
+    ///
+    /// # Panics
+    /// On a label for a choice the value doesn't have: a mistake in the declaration.
+    pub fn choice_labels(mut self, labels: &[(&str, &str)]) -> Self {
+        for (choice, label) in labels {
+            assert!(
+                self.choices.iter().any(|c| c == choice),
+                "`{}`: `choice_labels` names {choice:?}, which is not a choice",
+                self.key
+            );
+            self.choice_labels
+                .insert(choice.to_string(), label.to_string());
+        }
         self
     }
 
@@ -269,6 +291,7 @@ pub struct NodeType {
     pub(crate) label: Option<String>,
     pub(crate) summary: Option<String>,
     pub(crate) group: Option<String>,
+    pub(crate) category: Option<String>,
 }
 
 impl fmt::Debug for NodeType {
@@ -292,6 +315,7 @@ impl NodeType {
             label: None,
             summary: None,
             group: None,
+            category: None,
         }
     }
 
@@ -313,6 +337,16 @@ impl NodeType {
     /// back with [`group_tag`](Self::group_tag).
     pub fn group(mut self, group: &str) -> Self {
         self.group = Some(group.to_string());
+        self
+    }
+
+    /// What the node is to someone browsing, such as `colour`, `abstract` or `reverb`. Sits
+    /// beside [`group`](Self::group), which is the app's lane; a picker or an index sorts by
+    /// this. Free text, so an app keeps its short list in one place. Read back with
+    /// [`category_tag`](Self::category_tag). Unrelated to the registry's categories, which
+    /// say where a node may live.
+    pub fn category(mut self, category: &str) -> Self {
+        self.category = Some(category.to_string());
         self
     }
 
@@ -340,6 +374,15 @@ impl NodeType {
     /// Before any value has been added.
     pub fn names(self, names: &[&str]) -> Self {
         self.last_value(|s| s.names(names), "names")
+    }
+
+    /// Gives the most recently added choice value display labels for some of its choices:
+    /// `.choice("stock", &["sx70", "plain"], "plain").choice_labels(&[("sx70", "Instant")])`.
+    ///
+    /// # Panics
+    /// Before any value has been added, or on a label for a choice the value doesn't have.
+    pub fn choice_labels(self, labels: &[(&str, &str)]) -> Self {
+        self.last_value(|s| s.choice_labels(labels), "choice_labels")
     }
 
     fn last_value(mut self, f: impl FnOnce(ValueSpec) -> ValueSpec, what: &str) -> Self {
@@ -472,6 +515,11 @@ impl NodeType {
     /// The tag given with [`group`](Self::group), if any.
     pub fn group_tag(&self) -> Option<&str> {
         self.group.as_deref()
+    }
+
+    /// The category given with [`category`](Self::category), if any.
+    pub fn category_tag(&self) -> Option<&str> {
+        self.category.as_deref()
     }
 }
 

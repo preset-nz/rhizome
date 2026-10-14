@@ -103,6 +103,8 @@ export interface ValueSchema {
   unit?: string;
   /** Display names for an int value's steps, in order from the range's minimum. */
   names?: string[];
+  /** Display labels for some of the choices, by choice. Absent when none. */
+  choice_labels?: Record<string, string>;
 }
 
 /** rhizome-core `CategorySchema`. */
@@ -120,6 +122,8 @@ export interface TypeSchema {
   summary?: string;
   /** The app's free tag for sorting its types, such as `effect`. */
   group?: string;
+  /** What the node is to someone browsing, such as `colour`; beside `group`. Absent when the app gave none. */
+  category?: string;
   categories?: string[];
   values?: ValueSchema[];
   refs?: string[];

@@ -25,6 +25,7 @@
       "label": "Widget",
       "summary": "A made-up node with words.",
       "group": "parts",
+      "category": "hardware",
       "values": [
         {
           "key": "size",
@@ -47,7 +48,10 @@
             "gloss"
           ],
           "label": "Finish",
-          "description": "How it catches the light."
+          "description": "How it catches the light.",
+          "choice_labels": {
+            "gloss": "Shiny"
+          }
         },
         {
           "key": "on",
