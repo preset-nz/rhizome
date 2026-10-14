@@ -8,7 +8,7 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
-rhizome-core = { path = "../rhizome-core", version = "0.1.5" }
+rhizome-core = { path = "../rhizome-core", version = "0.1.6" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

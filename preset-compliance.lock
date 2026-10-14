@@ -6,11 +6,11 @@ version = 1
 [[inputs]]
 path = "Cargo.lock"
 ecosystem = "cargo"
-sha256 = "2017264d021cfab3558ed3a490f5f4f567c81f9044aee149e00de56732bdd112"
+sha256 = "b186e28f02be5db00a8028dd5acf5a786f4c48ccd502a558f473eebe82efdd34"
 
 [[inputs]]
 path = "Cargo.toml"
-sha256 = "a5fbd50228e0f76ff7959813c93b4afc4822afb5f13f0ebdb2ec00acebad97be"
+sha256 = "1869cabf10bea4bcd6cb8b818c1422e6b34fab073993950efb85e4f5117a57b4"
 
 [[inputs]]
 path = "crates/rhizome-core/Cargo.toml"
@@ -18,11 +18,11 @@ sha256 = "39d304d28adea201fd27e3242e0668f9d182f72c394d8c629dc7fe093ecedf11"
 
 [[inputs]]
 path = "crates/rhizome-pom/Cargo.toml"
-sha256 = "60f06834e9a95d6c88bea8c6aaf415c23c357e51c21802a07d7a58b4d323c49f"
+sha256 = "6608e41013a928fade77caa7195a812d7efb3e263cd06a37e90c33b96d0c2949"
 
 [[inputs]]
 path = "crates/rhizome-pom-tauri/Cargo.toml"
-sha256 = "c7162d409e33a4644ea0e0e1139354e8bae6d87239b8a4dc2b1f2a3f999b6ccf"
+sha256 = "a033aff0cc14dce0104a0f98882d62f63579e9163e79fc31d73993c72afe1529"
 
 [[inputs]]
 path = "pnpm-lock.yaml"
