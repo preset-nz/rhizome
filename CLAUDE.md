@@ -1,6 +1,6 @@
 # rhizome
 
-The shared node API and POM. Own repo under `preset-nz`, no monorepo. Four crates and one npm package (`@preset.nz/pom`, `src-ts/`, the webview client of `rhizome-pom-tauri`; no Tauri in the crates, no app in the package): `crates/rhizome-core` (mechanics), `crates/rhizome-pom` (POM, the Preset Object Model: the base every app's object model is built on; `guidance/pom.md`) `crates/rhizome-pom-tauri` (one open document over Tauri: commands only, events, the opened-from-Finder hand-off) and `crates/rhizome-docs` (a schema to markdown pages, one per node type, with a generated block between markers and prose kept around it; lib and bin). Keep Tauri out of all but `rhizome-pom-tauri`.
+The shared node API and POM. Own repo under `preset-nz`, no monorepo. Three crates and one npm package (`@preset.nz/pom`, `src-ts/`, the webview client of `rhizome-pom-tauri`; no Tauri in the crates, no app in the package): `crates/rhizome-core` (mechanics), `crates/rhizome-pom` (POM, the Preset Object Model: the base every app's object model is built on; `guidance/pom.md`) and `crates/rhizome-pom-tauri` (one open document over Tauri: commands only, events, the opened-from-Finder hand-off). The docs generator moved to `packages/preset-docs` (2026-10-14). Keep Tauri out of all but `rhizome-pom-tauri`.
 
 **rhizome and POM are unaware of the apps** (decision 35). Code, tests and docs here name no app and hold no domain rule. Each app's **object model** (node types, rules as `check`s, domain verbs, projections) lives in the app's repo and is planned in the guidance repo's `projects/<app>/design/object-model.md`. If a change here is only needed by one app, it belongs in that app's object model.
 
@@ -14,7 +14,6 @@ The shared node API and POM. Own repo under `preset-nz`, no monorepo. Four crate
   - POM's wire (`crates/rhizome-pom/tests/wire.rs`): `View`, `Update`, `Status`, `Ran` and the command list, pinned in `crates/rhizome-pom/tests/golden/*.json`;
   - the TypeScript package (`tests/*.test.ts`, `just test-ts`): channel, mirror and hooks against a fake `PomBackend`, plus `tests/wire.test.ts`, which reads core's `commit.json` and `view.json` and POM's goldens so a drift between `src-ts/wire.ts` and the Rust structs fails the build. Change a wire struct, bless, and update `wire.ts` in the same commit;
   - the Tauri transport (`crates/rhizome-pom-tauri/tests/ipc.rs`): real IPC and events over Tauri's mock runtime;
-  - the docs generator (`crates/rhizome-docs/tests/docs.rs`): pages for a made-up registry pinned in `crates/rhizome-docs/tests/golden/`, prose outside the markers kept byte for byte, and `check`.
 - **`just bless`** rewrites goldens and transcripts (POM's wire goldens included). Read every changed line before committing; blessing whatever the code prints proves nothing.
 - Use Georg's vocabulary: rhizome, node API, object model, category, group, smart group, loaded, calculated, kind. Don't rename to industry terms; "scene" is dropped.
 - A mechanism moves into rhizome only when two object models need it (decision 30). Test fixtures are made-up object models, not copies of an app's.

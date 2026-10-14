@@ -310,14 +310,9 @@ NodeType::new("echo")
 - **On `ValueSpec`:** public fields `label`, `description`, `unit` (`Option<String>`) and builders `label`, `description`, `described`, `unit`, for values passed whole.
 - **In `Schema`:** `TypeSchema` gains `label`, `summary`, `group`; `ValueSchema` gains `label`, `description`, `unit`. Absent from the JSON when unset, so a schema without words serialises exactly as before; `wire.ts` mirrors them as optional fields, pinned by `tests/golden/schema-words.json`. `Schema` (with `ValueKind` and `Shape`) also deserialises, so a tool can read a schema an app dumped.
 
-### `rhizome-docs`
+### The pages
 
-A fourth crate, lib and bin, that turns a `Schema` into markdown: one `<type>.md` per node type and a `README.md` index grouped by `group`. It knows no app.
-
-- `pages(&schema, app)` generates; `update(existing, &page)` merges into a page on disk; `write(dir, &schema, app)` does both for a folder; `check(dir, &schema, app)` writes nothing and returns `Finding`s.
-- A page's table of values (Control, Range, Default, What it does) sits between `<!-- generated:begin … -->` and `<!-- generated:end -->`. Regenerating rewrites that block and the front-matter keys the generator owns (`title`, `node`, `group`, `summary`), and keeps every other byte: prose, hand-added front-matter keys and their order. A new page also gets an H1 and an empty "What it's for".
-- `check` fails a missing, stale (block or front matter) or orphaned page, a stale index and a type without a summary; a value without a description only warns. Orphans are reported, never deleted.
-- Bin: `rhizome-docs <schema.json> <out-dir> [--check] [--app <name>]`, for an app whose catalogue isn't in Rust. The JSON is a `Schema`, or any object holding one under `schema`.
+The generator that was `rhizome-docs` is [preset-docs](https://github.com/preset-nz/preset-docs) since 2026-10-14: its own package, reading a `Schema` through its `rhizome` feature.
 
 ---
 
