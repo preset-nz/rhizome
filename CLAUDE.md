@@ -4,7 +4,7 @@ The shared node API and POM. Own repo under `preset-nz`. Three crates and one np
 
 **rhizome and POM are unaware of the apps** (decision 35). Code, tests and docs here name no app and hold no domain rule. Each app's **object model** (node types, rules as `check`s, domain verbs, projections) lives in the app's repo and is planned in the guidance repo's `projects/<app>/design/object-model.md`. If a change here is only needed by one app, it belongs in that app's object model.
 
-- **Read first:** `guidance/handover.md` (state, next steps), then `guidance/rhizome-api.md` (the API as built) and `guidance/node-api.md` (the model, decisions 1 to 45). The `guidance/*.md` files here are stale copies; the canonical docs are `~/rhizomatic-preset/guidance/design/{node-api,rhizome-api,pom}.md` and `handovers/rhizome/handover.md`. If you change a decision, say so in the commit and update the canonical doc.
+- **Read first:** `~/rhizomatic-preset/guidance/handovers/rhizome/handover.md` (state, next steps), then `~/rhizomatic-preset/guidance/design/rhizome-api.md` (the API as built) and `design/node-api.md` (the model and its decisions). If you change a decision, say so in the commit and update that doc.
 - **`just check`** (`check-rust`: fmt, clippy, every Rust suite; `check-ts`: tsc, Biome, vitest; then licences) is the signal. Suites:
   - acid (`tests/acid.rs`): one of everything, built and operated;
   - core workflows (`tests/core_workflows.rs`, data in `tests/workflows/*.json`): driven only through `Op` JSON, the file format, edits, gestures and undo. Its registry is **frozen**; changing it changes every transcript;
